@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { Navbar } from "@/components/layout/Navbar";
 import { AuthGuard } from "@/components/shared/AuthGuard";
+import { Footer } from "@/components/shared/Footer";
 import { Toaster } from "@/components/ui/sonner";
+import ErrorDiagnosticsModal from "@/components/shared/ErrorDiagnosticsModal";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -35,12 +37,14 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} min-h-screen bg-background text-foreground pb-16`}>
         <AuthGuard>
+          <Navbar />
           <main className="flex-1">
             {children}
           </main>
-          <BottomNav />
+          <Footer />
         </AuthGuard>
         <Toaster position="top-center" />
+        <ErrorDiagnosticsModal />
       </body>
     </html>
   );

@@ -4,6 +4,12 @@ export interface City {
   slug: string;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface Review {
   id: string;
   rating: number;
@@ -49,4 +55,34 @@ export interface SearchDeficit {
   categorySlug: string;
   query: string | null;
   failedCount: number;
+}
+
+export interface CatalogItem {
+  id: string;
+  vendorId: string;
+  categoryId: string;
+  title: string;
+  description?: string;
+  price?: number;
+  mediaUrl?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  category?: Category;
+}
+
+export interface Lead {
+  id: string;
+  catalogItemId: string;
+  vendorId: string;
+  customerName: string;
+  customerPhone: string;
+  customerRequirement?: string;
+  status: 'NEW' | 'CONTACTED' | 'CONVERTED' | 'REJECTED';
+  createdAt: string;
+  updatedAt: string;
+  catalogItem?: {
+    title: string;
+    price?: number;
+  };
 }

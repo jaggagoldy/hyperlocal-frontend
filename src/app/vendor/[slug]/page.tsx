@@ -6,6 +6,7 @@ import { ArrowLeft, BadgeCheck, MapPin, Phone, MessageCircle, Clock } from 'luci
 import apiClient from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { ReviewSection } from '@/components/vendor/ReviewSection';
+import { THEME_FLAVORS, ThemeFlavor } from '@/config/themes';
 
 import { Vendor, Media } from '@/types/models';
 
@@ -66,11 +67,14 @@ export default function VendorProfilePage() {
   const shopPhotos = vendor.media?.filter((m: Media) => m.type === 'shop_photo') || [];
   const rateCards = vendor.media?.filter((m: Media) => m.type === 'rate_card') || [];
 
+  const currentThemeId = (vendor as any).themeFlavor as ThemeFlavor || 'trust-utility';
+  const theme = THEME_FLAVORS[currentThemeId] || THEME_FLAVORS['trust-utility'];
+
   return (
-    <div className="flex flex-col min-h-screen bg-background pb-[100px]">
+    <div className={`flex flex-col min-h-screen pb-[100px] ${theme.colors.background}`}>
       {/* Sticky Header */}
-      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border px-4 py-3 flex items-center gap-3">
-        <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors">
+      <header className={`sticky top-0 z-40 bg-background/50 backdrop-blur-md border-b border-border px-4 py-3 flex items-center gap-3 bg-gradient-to-r ${theme.colors.headerGradient}`}>
+        <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-black/5 transition-colors">
           <ArrowLeft className="w-6 h-6 text-foreground" />
         </button>
         <div className="flex-1 truncate">
@@ -91,7 +95,7 @@ export default function VendorProfilePage() {
           
           <div className="flex flex-col gap-3">
             <div className="flex items-start gap-3 text-sm text-muted-foreground">
-              <MapPin className="w-5 h-5 shrink-0 text-primary mt-0.5" />
+              <MapPin className={`w-5 h-5 shrink-0 mt-0.5 ${theme.colors.primary}`} />
               <span className="leading-relaxed">
                 {vendor.localityName}
                 {vendor.chowkLandmark && `, Near ${vendor.chowkLandmark}`}
@@ -100,7 +104,7 @@ export default function VendorProfilePage() {
             </div>
             
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <Clock className="w-5 h-5 shrink-0 text-primary" />
+              <Clock className={`w-5 h-5 shrink-0 ${theme.colors.primary}`} />
               <span>{vendor.openingTime || '09:00 AM'} - {vendor.closingTime || '08:00 PM'}</span>
             </div>
           </div>
@@ -157,17 +161,17 @@ export default function VendorProfilePage() {
       </main>
 
       {/* Sticky Action Footer */}
-      <div className="fixed bottom-0 left-0 w-full bg-background border-t border-border p-4 flex gap-3 z-50 pb-safe shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+      <div className={`fixed bottom-0 left-0 w-full border-t border-border p-4 flex gap-3 z-50 pb-safe shadow-[0_-4px_12px_rgba(0,0,0,0.05)] ${theme.colors.background}`}>
         <Button 
           variant="outline" 
-          className="flex-1 h-14 rounded-xl border-primary text-primary hover:bg-primary/10 font-bold text-lg"
+          className={`flex-1 h-14 rounded-xl font-bold text-lg border-2 border-current hover:bg-black/5 ${theme.colors.primary}`}
           onClick={() => handleInteraction('call_click')}
         >
           <Phone className="w-5 h-5 mr-2" />
           Call
         </Button>
         <Button 
-          className="flex-1 h-14 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-lg"
+          className={`flex-1 h-14 rounded-xl font-bold text-lg ${theme.colors.button}`}
           onClick={() => handleInteraction('whatsapp_click')}
         >
           <MessageCircle className="w-5 h-5 mr-2" />
