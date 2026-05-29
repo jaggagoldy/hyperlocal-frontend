@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Mail, Phone, Lock, Eye, EyeOff, Sparkles, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import apiClient from '@/lib/api-client';
+import { useGoogleLogin } from '@react-oauth/google';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -113,8 +114,30 @@ export default function VendorLoginPage() {
     }
   };
 
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      try {
+        const response = await apiClient.post('/auth/google', {
+          accessToken: tokenResponse.access_token,
+          context: 'vendor'
+        });
+        const { token, user } = response.data;
+        useAuthStore.getState().setAuth(token, user);
+        toast.success('Successfully logged into Pro Dashboard with Google!');
+        
+        router.push('/vendor-dashboard');
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Google Login failed');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => toast.error('Google Login was canceled or failed')
+  });
+
   const handleGoogleLogin = () => {
-    toast.info('Google Login for Pro Dashboard coming soon!');
+    googleLogin();
   };
 
   return (

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, ChevronLeft, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import apiClient from '@/lib/api-client';
+import { useGoogleLogin } from '@react-oauth/google';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -182,8 +183,35 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     }
   };
 
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      try {
+        const response = await apiClient.post('/auth/google', {
+          accessToken: tokenResponse.access_token,
+          context: 'customer'
+        });
+        const { token, user } = response.data;
+        setAuth(token, user);
+        toast.success('Successfully logged in with Google!');
+        
+        if (!user?.name) {
+          setMode('onboard');
+        } else {
+          handleClose();
+          if (onSuccess) onSuccess();
+        }
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Google Login failed');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => toast.error('Google Login was canceled or failed')
+  });
+
   const handleGoogleLogin = () => {
-    toast.info('Google Login coming soon!');
+    googleLogin();
   };
 
   const content = (

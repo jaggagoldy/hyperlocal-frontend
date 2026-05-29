@@ -7,6 +7,7 @@ import { Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 import apiClient from '@/lib/api-client';
+import { useGoogleLogin } from '@react-oauth/google';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -103,9 +104,34 @@ export default function LoginPage() {
     }
   };
 
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      try {
+        const response = await apiClient.post('/auth/google', {
+          accessToken: tokenResponse.access_token,
+          context: 'customer'
+        });
+        const { token, user } = response.data;
+        useAuthStore.getState().setAuth(token, user);
+        toast.success('Successfully logged in with Google!');
+        
+        if (!user?.name) {
+          router.push('/onboarding');
+        } else {
+          router.push('/');
+        }
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Google Login failed');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => toast.error('Google Login was canceled or failed')
+  });
+
   const handleGoogleLogin = () => {
-    // In a real app, this would redirect to Google OAuth consent screen
-    toast.success('Google Login integration coming soon!');
+    googleLogin();
   };
 
   return (

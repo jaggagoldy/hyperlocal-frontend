@@ -7,6 +7,7 @@ import { Footer } from "@/components/shared/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import ErrorDiagnosticsModal from "@/components/shared/ErrorDiagnosticsModal";
 import { TutorialModal } from '@/components/shared/TutorialModal';
+import GoogleAuthProvider from '@/components/providers/GoogleAuthProvider';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,16 +38,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} min-h-screen bg-background text-foreground`} suppressHydrationWarning>
-        <AuthGuard>
-          <TutorialModal />
-          <Navbar />
-          <main className="flex-1">
-            {children}
-          </main>
-          <Footer />
-        </AuthGuard>
-        <Toaster position="top-center" />
-        <ErrorDiagnosticsModal />
+        <GoogleAuthProvider>
+          <AuthGuard>
+            <TutorialModal />
+            <Navbar />
+            <main className="flex-1">
+              {children}
+            </main>
+            <Footer />
+          </AuthGuard>
+          <Toaster position="top-center" />
+          <ErrorDiagnosticsModal />
+        </GoogleAuthProvider>
       </body>
     </html>
   );
