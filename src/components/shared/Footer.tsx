@@ -83,7 +83,7 @@ export function Footer() {
 
           <div className="text-sm text-zinc-400 space-y-1">
             <p className="font-medium text-white mb-1">Mobile:</p>
-            <p>+91-9818867316 / +971-562198924</p>
+            <p>+91-8929294892</p>
           </div>
         </div>
       </div>

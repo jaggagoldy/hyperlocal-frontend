@@ -69,6 +69,7 @@ export interface CatalogItem {
   createdAt: string;
   updatedAt: string;
   category?: Category;
+  vendor?: any;
 }
 
 export interface Lead {

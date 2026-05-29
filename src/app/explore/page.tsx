@@ -20,12 +20,16 @@ import {
   HelpCircle,
   Megaphone,
   Check,
-  Loader2
+  Loader2,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { useSearchStore } from '@/store/searchStore';
-import { useDebounce } from '@/hooks/useDebounce';
-import { EnquiryDrawer } from '@/components/shared/EnquiryDrawer';
+import { useAuthStore } from '@/store/authStore';
 import apiClient from '@/lib/api-client';
+import { useDebounce } from '@/hooks/useDebounce';
+import { ServiceSidebar } from '@/components/shared/ServiceSidebar';
+
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { CatalogItem } from '@/types/models';
@@ -79,6 +83,7 @@ const VERTICALS = [
 export default function ExplorePage() {
   const router = useRouter();
   const { t, language } = useTranslation();
+  const { user, activeContext, updateToken } = useAuthStore();
   const { 
     selectedCity, 
     selectedCategory, 
@@ -90,12 +95,33 @@ export default function ExplorePage() {
     setPage 
   } = useSearchStore();
 
+  // Smart Pro CTA: dual-profile users switch context instead of being sent to register
+  const isDualProfile = user?.hasCustomerProfile && user?.hasVendorProfile;
+  const isVendorContext = activeContext === 'vendor';
+  
+  const handleProCta = async () => {
+    if (isDualProfile) {
+      try {
+        const res = await apiClient.post('/auth/switch-context', { targetContext: 'vendor' });
+        const { token, user: newUser } = res.data.data;
+        updateToken(token, newUser);
+        toast.success('🔧 Switched to Pro Dashboard');
+        router.push('/vendor-dashboard');
+      } catch {
+        router.push('/vendor-dashboard');
+      }
+    } else {
+      router.push('/vendor/register');
+    }
+  };
+
   const [localQuery, setLocalQuery] = useState(searchQuery);
   const debouncedQuery = useDebounce(localQuery, 500);
   
   const [items, setItems] = useState<(CatalogItem & { vendor: any })[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
 
   // Cities List (Fetched dynamically from backend)
   const [cities, setCities] = useState<any[]>([]);
@@ -122,6 +148,48 @@ export default function ExplorePage() {
   const [notifyInput, setNotifyInput] = useState('');
   const [isSubmittingNotify, setIsSubmittingNotify] = useState(false);
   const [hasSubscribedNotify, setHasSubscribedNotify] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [activeAdIndex, setActiveAdIndex] = useState(0);
+
+  const SIDEBAR_ADS = [
+    {
+      sponsor: "Sheluxe",
+      category: "Lingerie",
+      title: "Revamp your intimate wear collection",
+      discount: "at 50% off",
+      bgGradient: "from-orange-50 via-rose-50 to-orange-100",
+      buttonBg: "bg-[#826953] hover:bg-[#6c5541]",
+      titleColor: "text-rose-900",
+      url: "https://example.com/sheluxe"
+    },
+    {
+      sponsor: "Urban Cleaners",
+      category: "Home Services",
+      title: "Professional deep cleaning for your home",
+      discount: "Flat 20% Off",
+      bgGradient: "from-teal-50 via-cyan-50 to-emerald-50",
+      buttonBg: "bg-teal-600 hover:bg-teal-700",
+      titleColor: "text-teal-900",
+      url: "https://example.com/urban"
+    },
+    {
+      sponsor: "FixIt Fast",
+      category: "Repairs",
+      title: "Same day appliance repair services",
+      discount: "Book Now",
+      bgGradient: "from-indigo-50 via-purple-50 to-pink-50",
+      buttonBg: "bg-indigo-600 hover:bg-indigo-700",
+      titleColor: "text-indigo-900",
+      url: "https://example.com/fixit"
+    }
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveAdIndex((prev) => (prev + 1) % SIDEBAR_ADS.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [SIDEBAR_ADS.length]);
 
   // Fetch Cities on Mount
   useEffect(() => {
@@ -171,7 +239,8 @@ export default function ExplorePage() {
           categorySlug: selectedCategory,
           searchQuery: debouncedQuery, 
           page: reset ? 1 : page, 
-          limit: 10 
+          limit: 10,
+          verifiedOnly
         }
       });
       
@@ -189,11 +258,15 @@ export default function ExplorePage() {
   // Refetch when filters change
   useEffect(() => {
     fetchItems(true);
-  }, [selectedCity, selectedCategory, debouncedQuery, fetchItems]);
+  }, [selectedCity, selectedCategory, debouncedQuery, verifiedOnly, fetchItems]);
 
-  // Load more pagination
+  // Load page
   useEffect(() => {
-    if (page > 1) fetchItems(false);
+    if (page > 1) {
+      fetchItems(true);
+      const grid = document.getElementById('explore-grid');
+      if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [page, fetchItems]);
 
   const handleNotifySubmit = (e: React.FormEvent) => {
@@ -244,14 +317,16 @@ export default function ExplorePage() {
         if (grid) grid.scrollIntoView({ behavior: 'smooth' });
       }
     },
-    {
-      title: language === 'hi' ? 'प्रो प्लान में अपग्रेड करें' : 'Upgrade to Pro Tier Mode',
+    ...(!isVendorContext ? [{
+      title: isDualProfile
+        ? (language === 'hi' ? 'अपने वेंडर डैशबोर्ड पर जाएं' : 'Switch to Your Pro Dashboard')
+        : (language === 'hi' ? 'प्रो प्लान में अपग्रेड करें' : 'Upgrade to Pro Tier Mode'),
       desc: t('proDesc'),
-      badge: language === 'hi' ? 'पार्टनर ऑफर' : 'Partner Offer',
+      badge: isDualProfile ? (language === 'hi' ? 'डुअल अकाउंट' : 'Dual Account') : (language === 'hi' ? 'पार्टनर ऑफर' : 'Partner Offer'),
       gradient: "from-amber-600 via-orange-700 to-rose-800",
-      cta: t('joinProToday'),
-      action: () => router.push('/vendor/register')
-    },
+      cta: isDualProfile ? (language === 'hi' ? 'डैशबोर्ड खोलें' : 'Open Dashboard') : t('joinProToday'),
+      action: handleProCta
+    }] : []),
     {
       title: t('value3Title'),
       desc: t('value3Desc'),
@@ -261,6 +336,13 @@ export default function ExplorePage() {
       action: () => toast.info("All pros carry official verification badges on their profiles.")
     }
   ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % slides.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
 
   // Helper to determine if the selected city has active catalog items at all
   const isCityEmpty = items.length === 0 && !loading && selectedCategory === '' && debouncedQuery === '';
@@ -358,66 +440,76 @@ export default function ExplorePage() {
       
       {/* ─── STICKY HEADER ─── */}
       <header className="sticky top-0 z-40 bg-white border-b border-zinc-200/80 px-4 py-3 shadow-xs">
-        <div className="max-w-7xl mx-auto flex flex-col gap-3">
+        <div className="max-w-7xl mx-auto flex items-center gap-3">
           
-          <div className="flex items-center justify-between gap-4">
-            {/* Location Selector Trigger */}
+          {/* Unified Search Bar */}
+          <div className="flex-1 flex items-center bg-white border border-zinc-300 rounded-full shadow-sm overflow-hidden h-12 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+            
+            {/* Location Section */}
             <button 
               onClick={() => setIsLocationModalOpen(true)}
-              className="flex items-center gap-1.5 text-zinc-800 hover:text-primary transition-colors font-bold text-sm bg-zinc-150/40 hover:bg-zinc-150/60 px-3.5 py-1.5 rounded-xl border border-zinc-200/40 shadow-2xs group"
+              className="flex items-center gap-2 px-4 md:px-5 h-full bg-zinc-50 hover:bg-zinc-100 transition-colors border-r border-zinc-200 shrink-0"
             >
-              <MapPin className="w-4.5 h-4.5 text-primary group-hover:scale-105 transition-transform" />
-              <span>{getCityNameBySlug(selectedCity)}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+              <MapPin className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold text-zinc-800 truncate max-w-[80px] md:max-w-[120px]">{getCityNameBySlug(selectedCity) || 'Location'}</span>
+              <ChevronDown className="w-4 h-4 text-zinc-400 hidden sm:block" />
             </button>
 
-            {/* Mobile Filter Button */}
-            <Drawer open={isMobileFilterOpen} onOpenChange={setIsMobileFilterOpen}>
-              <DrawerTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="lg:hidden h-9 px-3 rounded-xl border-zinc-250 text-zinc-600 gap-1.5 font-bold text-xs"
+            {/* Search Input Section */}
+            <div className="flex-1 relative h-full flex items-center">
+              <input 
+                type="text"
+                placeholder={t('searchPlaceholder')}
+                className="w-full h-full pl-4 pr-10 text-sm outline-none bg-transparent text-zinc-800 placeholder-zinc-400"
+                value={localQuery}
+                onChange={(e) => setLocalQuery(e.target.value)}
+              />
+              {localQuery && (
+                <button 
+                  className="absolute right-3 text-zinc-400 hover:text-zinc-700 bg-zinc-100 hover:bg-zinc-200 p-1 rounded-full transition-colors"
+                  onClick={() => setLocalQuery('')}
                 >
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                  {language === 'hi' ? 'श्रेणियां' : 'Categories'}
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent className="p-5 max-h-[80vh] flex flex-col">
-                <DrawerHeader className="px-0 pt-0 text-left border-b border-zinc-100 pb-2.5 mb-4">
-                  <DrawerTitle className="text-base font-bold text-zinc-900">
-                    {language === 'hi' ? 'श्रेणी से फ़िल्टर करें' : 'Filter by Category'}
-                  </DrawerTitle>
-                  <DrawerDescription className="text-xs">
-                    {language === 'hi' ? 'मार्केटप्लेस में सेवाओं को देखने के लिए श्रेणी चुनें।' : 'Select a business vertical below to filter services.'}
-                  </DrawerDescription>
-                </DrawerHeader>
-                <div className="flex-1 overflow-y-auto pb-4">
-                  {renderCategoryNavigation()}
-                </div>
-              </DrawerContent>
-            </Drawer>
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Search Button (Desktop) */}
+            <button className="hidden sm:flex h-full px-8 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 text-sm font-bold transition-colors items-center justify-center">
+              {language === 'hi' ? 'खोजें' : 'Search'}
+            </button>
+
+            {/* Search Button (Mobile Icon) */}
+            <button className="sm:hidden h-full px-4 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 flex items-center justify-center transition-colors">
+              <Search className="w-4 h-4" />
+            </button>
           </div>
 
-          {/* Search Input Box */}
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
-            <Input 
-              type="text"
-              placeholder={t('searchPlaceholder')}
-              className="h-11 pl-10 pr-10 text-xs sm:text-sm rounded-xl bg-zinc-50 border-zinc-200 focus-visible:ring-1 focus-visible:ring-primary focus-visible:bg-white transition-all shadow-2xs"
-              value={localQuery}
-              onChange={(e) => setLocalQuery(e.target.value)}
-            />
-            {localQuery && (
-              <button 
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 p-1"
-                onClick={() => setLocalQuery('')}
+          {/* Mobile Filter Button */}
+          <Drawer open={isMobileFilterOpen} onOpenChange={setIsMobileFilterOpen}>
+            <DrawerTrigger asChild>
+              <Button 
+                variant="outline" 
+                className="md:hidden shrink-0 rounded-full w-12 h-12 p-0 border-zinc-300 text-zinc-700 bg-white shadow-sm"
               >
-                <X className="w-4.5 h-4.5" />
-              </button>
-            )}
-          </div>
+                <SlidersHorizontal className="w-5 h-5 text-zinc-700" />
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent className="p-5 max-h-[80vh] flex flex-col">
+              <DrawerHeader className="px-0 pt-0 text-left border-b border-zinc-100 pb-2.5 mb-4">
+                <DrawerTitle className="text-base font-bold text-zinc-900">
+                  {language === 'hi' ? 'श्रेणी से फ़िल्टर करें' : 'Filter by Category'}
+                </DrawerTitle>
+                <DrawerDescription className="text-xs">
+                  {language === 'hi' ? 'मार्केटप्लेस में सेवाओं को देखने के लिए श्रेणी चुनें।' : 'Select a business vertical below to filter services.'}
+                </DrawerDescription>
+              </DrawerHeader>
+              <div className="flex-1 overflow-y-auto pb-4">
+                {renderCategoryNavigation()}
+              </div>
+            </DrawerContent>
+          </Drawer>
+
         </div>
       </header>
 
@@ -440,44 +532,50 @@ export default function ExplorePage() {
           
           {/* Dynamic Promotional Ads Carousel */}
           {!isCityEmpty && (
-            <div className="relative w-full aspect-[21/9] sm:aspect-[24/8] lg:aspect-[24/7] rounded-2xl overflow-hidden shadow-md select-none group border border-zinc-200/50">
+            <div className="relative w-full aspect-[21/9] sm:aspect-[24/8] lg:aspect-[24/7] rounded-3xl overflow-hidden shadow-xl select-none group bg-zinc-900 border border-zinc-800">
               {slides.map((slide, index) => {
                 const isActive = index === activeSlide;
                 return (
                   <div
                     key={index}
-                    className={`absolute inset-0 w-full h-full bg-gradient-to-r ${slide.gradient} p-5 sm:p-7 flex flex-col justify-center items-start text-white transition-all duration-700 ease-in-out transform ${
+                    className={`absolute inset-0 w-full h-full bg-gradient-to-r ${slide.gradient} p-6 sm:p-10 flex flex-col justify-center items-start text-white transition-all duration-700 ease-in-out transform ${
                       isActive ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 translate-x-4 scale-98 pointer-events-none'
                     }`}
                   >
-                    <span className="inline-flex bg-white/25 backdrop-blur-md text-[9px] uppercase tracking-widest font-black px-2 py-0.5 rounded-md mb-2">
-                      {slide.badge}
-                    </span>
-                    <h2 className="text-base sm:text-lg lg:text-xl font-black tracking-tight leading-tight max-w-sm sm:max-w-md">
-                      {slide.title}
-                    </h2>
-                    <p className="text-[11px] sm:text-xs text-white/85 font-medium leading-relaxed max-w-xs sm:max-w-sm mt-1">
-                      {slide.desc}
-                    </p>
-                    <button
-                      onClick={slide.action}
-                      className="mt-3.5 sm:mt-4 px-3.5 py-1.5 bg-white text-zinc-950 text-[10px] font-extrabold rounded-lg shadow-sm hover:scale-103 active:scale-97 transition-all flex items-center gap-1"
-                    >
-                      {slide.cta}
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
+                    {/* Ambient glow effects */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none transform translate-x-1/2 -translate-y-1/2" />
+                    <div className="absolute bottom-0 right-1/4 w-48 h-48 bg-black/20 rounded-full blur-3xl pointer-events-none" />
+
+                    <div className="relative z-10 space-y-3">
+                      <span className="inline-flex bg-white/20 backdrop-blur-md text-[10px] uppercase tracking-widest font-black px-3 py-1 rounded-full text-white shadow-sm border border-white/10">
+                        {slide.badge}
+                      </span>
+                      <h2 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight leading-tight max-w-sm sm:max-w-lg text-white drop-shadow-sm">
+                        {slide.title}
+                      </h2>
+                      <p className="text-xs sm:text-sm text-white/90 font-medium leading-relaxed max-w-sm sm:max-w-md">
+                        {slide.desc}
+                      </p>
+                      <button
+                        onClick={slide.action}
+                        className="mt-6 px-6 py-2.5 bg-white text-zinc-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 group/btn"
+                      >
+                        {slide.cta}
+                        <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
 
               {/* Dots Indicators */}
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20 bg-black/20 backdrop-blur-md px-3 py-2 rounded-full border border-white/10">
                 {slides.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setActiveSlide(index)}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      index === activeSlide ? 'w-5 bg-white' : 'w-1.5 bg-white/50 hover:bg-white/80'
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      index === activeSlide ? 'w-6 bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]' : 'w-2 bg-white/40 hover:bg-white/80'
                     }`}
                     aria-label={`Slide ${index + 1}`}
                   />
@@ -491,15 +589,58 @@ export default function ExplorePage() {
             
             {/* Show search count header */}
             {!loading && items.length > 0 && (
-              <div className="flex items-center justify-between text-xs text-zinc-400 font-bold border-b border-zinc-200/50 pb-2">
-                <span>
-                  {t('showingResults', { count: items.length, city: getCityNameBySlug(selectedCity).toUpperCase() })}
-                </span>
-                {selectedCategory && (
-                  <span className="bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-md capitalize">
-                    {getCategoryName(selectedCategory)}
+              <div className="flex items-center justify-between text-xs text-zinc-500 font-bold border-b border-zinc-200/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-zinc-900 text-sm font-extrabold">
+                    {items.length} Results
                   </span>
-                )}
+                  {selectedCategory && (
+                    <span className="bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-md capitalize hidden sm:inline-block">
+                      {getCategoryName(selectedCategory)}
+                    </span>
+                  )}
+                </div>
+                
+
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-zinc-700">
+                    <input 
+                      type="checkbox" 
+                      className="rounded border-zinc-300 text-primary focus:ring-primary h-4 w-4"
+                      checked={verifiedOnly}
+                      onChange={(e) => setVerifiedOnly(e.target.checked)}
+                    />
+                    Verified Pros Only
+                  </label>
+                  <div className="h-4 w-px bg-zinc-300 hidden sm:block"></div>
+                  <div className="flex items-center gap-3">
+                    <span className="hidden sm:inline-block">View By</span>
+                    <div className="flex items-center bg-zinc-100 rounded-lg p-1 border border-zinc-200 shadow-2xs">
+                      <button 
+                        onClick={() => setViewMode('grid')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
+                          viewMode === 'grid' 
+                            ? 'bg-zinc-800 text-white shadow-sm' 
+                            : 'text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50'
+                        }`}
+                      >
+                        <span className="hidden sm:inline">Grid</span>
+                        <LayoutGrid className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => setViewMode('list')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
+                          viewMode === 'list' 
+                            ? 'bg-zinc-800 text-white shadow-sm' 
+                            : 'text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50'
+                        }`}
+                      >
+                        <span className="hidden sm:inline">List</span>
+                        <List className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -576,30 +717,34 @@ export default function ExplorePage() {
                   )}
                 </div>
 
-                {/* High Contrast "Register as a Pro" CTA */}
-                <div 
-                  onClick={() => router.push('/vendor/register')}
-                  className="group w-full bg-gradient-to-br from-primary to-primary-dark hover:from-primary/95 hover:to-primary-dark/95 text-white p-6 rounded-2xl shadow-xl border border-primary-dark/20 text-left space-y-4 transition-all duration-300 cursor-pointer hover:shadow-2xl hover:scale-[1.01] relative overflow-hidden"
-                >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-xl pointer-events-none" />
-                  
-                  <div className="space-y-1.5 relative z-10">
-                    <span className="inline-flex bg-white/20 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-white/15">
-                      {t('forPros')}
-                    </span>
-                    <h3 className="text-base sm:text-lg font-black tracking-tight leading-tight">
-                      {t('areYouPro')}
-                    </h3>
-                    <p className="text-[11px] sm:text-xs text-white/80 leading-relaxed max-w-sm">
-                      {t('proDesc')}
-                    </p>
-                  </div>
+                {/* High Contrast \"Register as a Pro\" CTA — hidden for vendor-context users */}
+                {!isVendorContext && (
+                  <div 
+                    onClick={handleProCta}
+                    className="group w-full bg-gradient-to-br from-primary to-primary-dark hover:from-primary/95 hover:to-primary-dark/95 text-white p-6 rounded-2xl shadow-xl border border-primary-dark/20 text-left space-y-4 transition-all duration-300 cursor-pointer hover:shadow-2xl hover:scale-[1.01] relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-xl pointer-events-none" />
+                    
+                    <div className="space-y-1.5 relative z-10">
+                      <span className="inline-flex bg-white/20 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-white/15">
+                        {isDualProfile ? (language === 'hi' ? 'डुअल अकाउंट' : 'Dual Account') : t('forPros')}
+                      </span>
+                      <h3 className="text-base sm:text-lg font-black tracking-tight leading-tight">
+                        {isDualProfile
+                          ? (language === 'hi' ? 'अपने वेंडर डैशबोर्ड पर जाएं' : 'Switch to Your Pro Dashboard')
+                          : t('areYouPro')}
+                      </h3>
+                      <p className="text-[11px] sm:text-xs text-white/80 leading-relaxed max-w-sm">
+                        {t('proDesc')}
+                      </p>
+                    </div>
 
-                  <span className="inline-flex items-center gap-1.5 bg-white text-zinc-950 font-black px-4.5 py-2.5 rounded-xl text-xs transition-all shadow-md group-hover:bg-zinc-50 group-hover:translate-x-1 select-none">
-                    {t('joinProToday')}
-                    <ArrowRight className="w-4 h-4 text-zinc-950" />
-                  </span>
-                </div>
+                    <span className="inline-flex items-center gap-1.5 bg-white text-zinc-950 font-black px-4.5 py-2.5 rounded-xl text-xs transition-all shadow-md group-hover:bg-zinc-50 group-hover:translate-x-1 select-none">
+                      {isDualProfile ? (language === 'hi' ? 'डैशबोर्ड खोलें' : 'Open Dashboard') : t('joinProToday')}
+                      <ArrowRight className="w-4 h-4 text-zinc-950" />
+                    </span>
+                  </div>
+                )}
 
               </div>
             ) : items.length === 0 ? (
@@ -630,87 +775,175 @@ export default function ExplorePage() {
               </div>
             ) : (
               // Product Grid Layout
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {items.map((item, i) => (
-                    <div 
-                      key={`${item.id}-${i}`} 
-                      className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-zinc-355 transition-all flex flex-col h-[340px]"
-                    >
-                      {/* Item Image */}
-                      <div className="relative h-44 bg-zinc-100 flex-shrink-0 border-b border-zinc-100">
-                        {item.mediaUrl ? (
-                          <img 
-                            src={item.mediaUrl} 
-                            alt={item.title} 
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-zinc-50">
-                            <ImageIcon className="w-8 h-8 text-zinc-300" />
-                          </div>
-                        )}
-                        {item.price && (
-                          <div className="absolute bottom-2.5 left-2.5 bg-zinc-950/85 backdrop-blur-xs text-white px-2.5 py-1 rounded-lg font-black text-xs shadow-sm border border-zinc-800/40">
-                            ₹{item.price}
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Item Details */}
-                      <div className="p-4 flex flex-col flex-1 justify-between min-w-0">
-                        <div className="space-y-1.5">
-                          <h3 className="font-extrabold text-zinc-900 text-sm sm:text-base leading-tight truncate">
-                            {item.title}
-                          </h3>
-                          
-                          {/* Vendor Details */}
-                          <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-450">
-                            <span className="truncate max-w-[120px] text-zinc-800 font-bold">{item.vendor?.businessName}</span>
-                            {item.vendor?.idVerified && (
-                              <BadgeCheck className="w-4 h-4 text-emerald-500 fill-emerald-500/10 flex-shrink-0" />
-                            )}
-                            {item.vendor?.rating > 0 && (
-                              <div className="flex items-center gap-0.5 ml-auto text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-extrabold border border-amber-100/50">
-                                <Star className="w-3 h-3 fill-current" />
-                                <span>{item.vendor.rating.toFixed(1)}</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Description */}
-                          {item.description && (
-                            <p className="text-zinc-550 text-xs line-clamp-2 leading-relaxed font-medium">
-                              {item.description}
-                            </p>
+              <div className="flex flex-col xl:flex-row gap-6 items-start">
+                <div className="flex-1 w-full min-w-0">
+                  <div className={
+                    viewMode === 'list'
+                      ? "flex flex-col gap-4"
+                      : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4"
+                  }>
+                    {items.map((item, i) => (
+                      <div 
+                        key={`${item.id}-${i}`} 
+                        className={`bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-zinc-355 transition-all flex ${
+                          viewMode === 'list' ? 'flex-col sm:flex-row h-auto sm:h-56' : 'flex-col h-[350px]'
+                        }`}
+                      >
+                        {/* Item Image */}
+                        <div className={`relative bg-zinc-100 flex-shrink-0 border-zinc-100 ${
+                          viewMode === 'list' ? 'h-48 sm:h-full w-full sm:w-56 border-b sm:border-b-0 sm:border-r' : 'h-44 w-full border-b'
+                        }`}>
+                          {item.mediaUrl ? (
+                            <img 
+                              src={item.mediaUrl} 
+                              alt={item.title} 
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-zinc-50">
+                              <ImageIcon className="w-8 h-8 text-zinc-300" />
+                            </div>
+                          )}
+                          {item.price && (
+                            <div className="absolute bottom-2.5 left-2.5 bg-zinc-950/85 backdrop-blur-xs text-white px-2.5 py-1 rounded-lg font-black text-xs shadow-sm border border-zinc-800/40">
+                              ₹{item.price}
+                            </div>
                           )}
                         </div>
+                        
+                        {/* Item Details */}
+                        <div className={`p-4 flex flex-col flex-1 justify-between min-w-0 ${
+                           viewMode === 'list' ? 'sm:p-5' : ''
+                        }`}>
+                          <div className="space-y-1.5">
+                            <h3 className="font-extrabold text-zinc-900 text-base sm:text-lg leading-tight truncate">
+                              {item.title}
+                            </h3>
+                            
+                            {/* Vendor Details */}
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-450">
+                              <span className="truncate max-w-[150px] text-zinc-800 font-bold">{item.vendor?.businessName}</span>
+                              {item.vendor?.idVerified && (
+                                <BadgeCheck className="w-4 h-4 text-emerald-500 fill-emerald-500/10 flex-shrink-0" />
+                              )}
+                              {item.vendor?.isFeatured && (
+                                <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[9px] font-black tracking-wider uppercase bg-blue-100 text-blue-700 border border-blue-200">
+                                  Featured
+                               </span>
+                              )}
+                              {item.vendor?.rating > 0 && (
+                                <div className="flex items-center gap-0.5 ml-auto sm:ml-2 text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-extrabold border border-amber-100/50">
+                                  <Star className="w-3 h-3 fill-current" />
+                                  <span>{item.vendor.rating.toFixed(1)}</span>
+                                </div>
+                              )}
+                            </div>
 
-                        <div className="pt-2">
-                          <EnquiryDrawer item={item} vendorName={item.vendor?.businessName || 'the provider'} />
+                            {/* Description */}
+                            {item.description && (
+                              <p className={`text-zinc-550 text-xs leading-relaxed font-medium ${
+                                viewMode === 'list' ? 'line-clamp-3 mt-2' : 'line-clamp-2'
+                              }`}>
+                                {item.description}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className={`pt-3 flex ${
+                            viewMode === 'list' ? 'sm:justify-between sm:items-center mt-auto' : 'flex-col mt-2'
+                          }`}>
+                            {viewMode === 'list' && (
+                              <button className="hidden sm:block text-zinc-500 hover:text-zinc-800 text-xs font-bold px-3 py-1.5 bg-zinc-100 rounded-lg transition-colors border border-zinc-200">
+                                View Profile
+                              </button>
+                            )}
+                            <div className={viewMode === 'list' ? 'w-full sm:w-auto' : ''}>
+                              <ServiceSidebar item={item} vendorName={item.vendor?.businessName || 'the provider'} />
+                            </div>
+                          </div>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                  
+                  {/* Numbered Pagination */}
+                  {(page > 1 || hasMore) && (
+                    <div className="flex items-center justify-center gap-2 mt-8">
+                      <button 
+                        onClick={() => page > 1 && setPage(page - 1)}
+                        disabled={page === 1 || loading}
+                        className="w-10 h-10 rounded-xl border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-50 disabled:hover:bg-transparent transition-all"
+                      >
+                        <ChevronRight className="w-5 h-5 rotate-180" />
+                      </button>
+                      
+                      <div className="flex items-center gap-1">
+                        {[Math.max(1, page - 1), page, page + 1].map((p, idx) => {
+                          if (p > page && !hasMore) return null;
+                          if (p === Math.max(1, page - 1) && page === 1 && idx === 0) return null;
+                          
+                          return (
+                            <button 
+                              key={p}
+                              onClick={() => setPage(p)}
+                              className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
+                                page === p 
+                                  ? 'bg-primary text-white shadow-md' 
+                                  : 'text-zinc-600 hover:bg-zinc-100'
+                              }`}
+                            >
+                              {p}
+                            </button>
+                          )
+                        })}
+                      </div>
+
+                      <button 
+                        onClick={() => hasMore && setPage(page + 1)}
+                        disabled={!hasMore || loading}
+                        className="w-10 h-10 rounded-xl border border-zinc-200 flex items-center justify-center text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-50 disabled:hover:bg-transparent transition-all"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
                     </div>
-                  ))}
+                  )}
                 </div>
-                
-                {/* Pagination Load More Button */}
-                {hasMore && (
-                  <Button 
-                    variant="outline" 
-                    className="w-full h-11 mt-4 font-bold bg-white border-zinc-250 text-xs rounded-xl shadow-xs" 
-                    onClick={() => setPage(page + 1)}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <span className="flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> {language === 'hi' ? 'लोड हो रहा है...' : 'Loading...'}</span>
-                    ) : (
-                      t('loadMore')
-                    )}
-                  </Button>
-                )}
-              </>
+
+                {/* Vertical Banner Ad (Right Sidebar) */}
+                <div className="hidden xl:block w-[300px] shrink-0 sticky top-28 h-[550px]">
+                  {(() => {
+                    const ad = SIDEBAR_ADS[activeAdIndex];
+                    return (
+                      <div 
+                        onClick={() => window.open(ad.url, '_blank')}
+                        className="bg-zinc-100 border border-zinc-200 rounded-2xl overflow-hidden shadow-sm flex flex-col items-center justify-center relative h-full group cursor-pointer transition-all hover:shadow-md"
+                      >
+                        <div className={`absolute inset-0 bg-gradient-to-br ${ad.bgGradient} transition-colors duration-700`} />
+                        
+                        {/* Dynamic Ad Content */}
+                        <div className="relative z-10 w-full h-full flex flex-col p-6 items-center justify-between text-center animate-in fade-in duration-500" key={ad.sponsor}>
+                          <div className="flex flex-col items-center gap-2">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500 bg-white/60 px-2 py-0.5 rounded-full shadow-2xs">Sponsored</span>
+                            <h3 className={`font-extrabold text-[28px] ${ad.titleColor} mt-6 leading-none tracking-tight`}>{ad.sponsor}</h3>
+                            <span className={`text-[10px] ${ad.titleColor} opacity-60 uppercase tracking-widest font-bold`}>{ad.category}</span>
+                            
+                            <div className={`h-px w-16 bg-current opacity-20 my-4 ${ad.titleColor}`} />
+                            
+                            <p className="text-zinc-700 font-medium text-sm leading-snug px-4">
+                              {ad.title}
+                            </p>
+                          </div>
+                          
+                          <div className={`w-full text-white font-black text-xl py-4 rounded-xl shadow-lg transition-colors mt-8 ${ad.buttonBg}`}>
+                              {ad.discount}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
             )}
           </div>
         </main>

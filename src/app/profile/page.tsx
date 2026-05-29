@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuthStore } from '@/store/authStore';
-import { User, Package, Heart, Bell, Shield, MapPin, CreditCard, ChevronRight, Zap, LayoutDashboard } from 'lucide-react';
+import { User, Package, Heart, Bell, Shield, MapPin, CreditCard, ChevronRight, Zap, LayoutDashboard, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -9,8 +9,8 @@ export default function ProfilePage() {
   const isVendor = user?.role === 'vendor' || user?.role === 'admin';
 
   const menuItems = [
-    { icon: Package, title: 'My Bookings', desc: 'View past and upcoming service requests', href: '/profile/bookings' },
     { icon: Heart, title: 'Saved Pros', desc: 'View your favorite professionals', href: '/profile/saved' },
+    { icon: MessageSquare, title: 'My Enquiries', desc: 'Track services you have requested', href: '/profile/enquiries' },
     { icon: MapPin, title: 'Addresses', desc: 'Manage your saved locations', href: '/profile/addresses' },
     { icon: CreditCard, title: 'Payments', desc: 'Manage payment methods', href: '/profile/payments' },
     { icon: Bell, title: 'Notifications', desc: 'Configure alerts and updates', href: '/profile/notifications' },

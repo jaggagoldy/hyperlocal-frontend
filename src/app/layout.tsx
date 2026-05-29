@@ -6,6 +6,7 @@ import { AuthGuard } from "@/components/shared/AuthGuard";
 import { Footer } from "@/components/shared/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import ErrorDiagnosticsModal from "@/components/shared/ErrorDiagnosticsModal";
+import { TutorialModal } from '@/components/shared/TutorialModal';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -34,9 +35,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} min-h-screen bg-background text-foreground pb-16`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} min-h-screen bg-background text-foreground`} suppressHydrationWarning>
         <AuthGuard>
+          <TutorialModal />
           <Navbar />
           <main className="flex-1">
             {children}

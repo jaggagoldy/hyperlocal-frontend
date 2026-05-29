@@ -26,8 +26,10 @@ export default function VendorDashboardLayout({
     if (isMounted) {
       if (!user) {
         router.replace('/login');
-      } else if (user.role !== 'vendor') {
+      } else if (!user.hasVendorProfile && user.activeContext !== 'vendor') {
         router.replace('/vendor/register');
+      } else if (user.hasVendorProfile && user.activeContext !== 'vendor') {
+        router.replace('/explore');
       } else {
         setIsAuthorizing(false);
       }

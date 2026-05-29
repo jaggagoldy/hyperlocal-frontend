@@ -38,7 +38,11 @@ export default function LoginPage() {
       const { token, user } = response.data?.data || response.data;
       setAuth(token, user);
       toast.success('Successfully logged in!');
-      router.push('/profile');
+      if (user?.role === 'vendor') {
+        router.push('/vendor-dashboard');
+      } else {
+        router.push('/');
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Invalid email or password.');
     } finally {
@@ -87,8 +91,10 @@ export default function LoginPage() {
       // New phone users have no name yet → send to onboarding
       if (!user?.name) {
         router.push('/onboarding');
+      } else if (user?.role === 'vendor') {
+        router.push('/vendor-dashboard');
       } else {
-        router.push('/profile');
+        router.push('/');
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Invalid OTP. Please try again.');
@@ -104,6 +110,20 @@ export default function LoginPage() {
 
   return (
     <div className="w-full flex flex-col">
+      <div className="flex bg-muted/50 p-1 rounded-xl mb-8 w-full">
+        <button 
+          className="flex-1 py-2.5 text-sm font-bold rounded-lg bg-background shadow-sm text-foreground transition-all"
+        >
+          User
+        </button>
+        <button 
+          onClick={() => router.push('/vendor/login')} 
+          className="flex-1 py-2.5 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground transition-all"
+        >
+          Pro
+        </button>
+      </div>
+
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">
           {mode === 'otp' ? 'Verify your number' : 'Welcome back'}
