@@ -157,7 +157,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
       return;
     }
 
-    if (user.role !== 'vendor') {
+    if (!user.hasVendorProfile && user.activeContext !== 'vendor') {
       router.replace('/vendor/register');
       return;
     }

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import apiClient from '@/lib/api-client';
 
 export default function SuperadminLogin() {
   const [identifier, setIdentifier] = useState('');
@@ -18,18 +19,10 @@ export default function SuperadminLogin() {
     setIsLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5001/api/v1/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password, context: 'admin' })
-      });
-      const data = await res.json();
+      const res = await apiClient.post('/auth/login', { identifier, password, context: 'admin' });
+      const data = res.data;
 
-      if (!res.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-
-      if (data.data?.user?.role !== 'admin') {
+      if (!data.data?.user || data.data?.user?.role !== 'admin') {
         throw new Error('Access denied: You are not a superadmin.');
       }
 

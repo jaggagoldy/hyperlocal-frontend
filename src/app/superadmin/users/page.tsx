@@ -1,19 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import apiClient from '@/lib/api-client';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
 
   const fetchUsers = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
 
     try {
-      const res = await fetch('http://localhost:5001/api/v1/superadmin/users', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const res = await apiClient.get('/superadmin/users');
+      const data = res.data;
       if (data.status === 'success') {
         setUsers(data.data);
       }
@@ -27,18 +24,9 @@ export default function UsersPage() {
   }, []);
 
   const handleBanToggle = async (id: string, currentBanStatus: boolean) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
 
     try {
-      await fetch(`http://localhost:5001/api/v1/superadmin/users/${id}/ban`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ isBanned: !currentBanStatus })
-      });
+      await apiClient.patch(`/superadmin/users/${id}/ban`, { isBanned: !currentBanStatus });
       fetchUsers();
     } catch (err) {
       console.error(err);

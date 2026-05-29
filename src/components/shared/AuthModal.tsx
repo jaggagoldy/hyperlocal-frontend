@@ -9,6 +9,8 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { auth } from '@/lib/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import {
   Dialog,
@@ -55,14 +57,16 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   // OTP state
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
-  const [sessionToken, setSessionToken] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   // Onboarding state
+  const [onboardingToken, setOnboardingToken] = useState('');
+  const [isOnboardingFromGoogle, setIsOnboardingFromGoogle] = useState(false);
   const [name, setName] = useState('');
   const [onboardingEmail, setOnboardingEmail] = useState('');
   const [onboardingPassword, setOnboardingPassword] = useState('');
+  const [onboardingPhone, setOnboardingPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [onboardingToken, setOnboardingToken] = useState('');
 
   const resetState = () => {
     setMode('email');
@@ -71,7 +75,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     setShowPassword(false);
     setPhoneNumber('');
     setOtp('');
-    setSessionToken('');
+    setConfirmationResult(null);
     setName('');
     setOnboardingEmail('');
     setOnboardingPassword('');
@@ -111,13 +115,19 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     if (phoneNumber.length !== 10) return toast.error('Please enter a valid 10-digit mobile number.');
     setLoading(true);
     try {
-      const response = await apiClient.post('/auth/otp/request', { phoneNumber });
-      const token = response.data?.data?.sessionToken || response.data?.sessionToken;
-      if (token) setSessionToken(token);
-      toast.success('OTP sent! Use 111111 in dev mode.');
+      if (!(window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+        });
+      }
+      const formattedPhone = `+91${phoneNumber}`;
+      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, (window as any).recaptchaVerifier);
+      setConfirmationResult(confirmation);
+      toast.success('OTP sent successfully!');
       setMode('otp');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to send OTP.');
+      console.error(error);
+      toast.error('Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -126,20 +136,23 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (otp.length !== 6) return toast.error('Please enter a 6-digit OTP.');
+    if (!confirmationResult) return toast.error('OTP session expired. Please request again.');
     setLoading(true);
     try {
+      const result = await confirmationResult.confirm(otp);
+      const idToken = await result.user.getIdToken();
+
       const response = await apiClient.post('/auth/otp/verify', {
-        phoneNumber,
-        otpCode: otp,
-        sessionToken,
+        idToken,
         context: 'customer',
       });
       const { token, user, isNewUser, onboardingToken: newToken } = response.data?.data || response.data;
 
       if (isNewUser) {
         setOnboardingToken(newToken);
+        setIsOnboardingFromGoogle(false);
         setMode('onboard');
-        toast.success('Number verified! Please complete your profile.');
+        toast.success('Phone verified. Please complete your profile.');
       } else if (!user?.name) {
         toast.success('Successfully logged in! Redirecting to setup...');
         handleClose();
@@ -159,18 +172,31 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
   const handleOnboard = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !onboardingEmail || !onboardingPassword || !address) {
-      return toast.error('Please fill in all required fields.');
+    if (isOnboardingFromGoogle) {
+      if (!onboardingPhone || !address) {
+        return toast.error('Please fill in your phone number and address.');
+      }
+    } else {
+      if (!name || !onboardingEmail || !onboardingPassword || !address) {
+        return toast.error('Please fill in all required fields.');
+      }
     }
+    
     setLoading(true);
     try {
-      const response = await apiClient.post('/auth/onboard', {
+      const payload: any = {
         onboardingToken,
-        name,
-        email: onboardingEmail,
-        password: onboardingPassword,
         address,
-      });
+      };
+      if (isOnboardingFromGoogle) {
+        payload.phoneNumber = onboardingPhone;
+      } else {
+        payload.name = name;
+        payload.email = onboardingEmail;
+        payload.password = onboardingPassword;
+      }
+
+      const response = await apiClient.post('/auth/onboard', payload);
       const { token, user } = response.data?.data || response.data;
       setAuth(token, user);
       toast.success('Account created successfully!');
@@ -184,20 +210,24 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   };
 
   const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
+    flow: 'auth-code',
+    onSuccess: async (codeResponse) => {
       setLoading(true);
       try {
         const response = await apiClient.post('/auth/google', {
-          accessToken: tokenResponse.access_token,
+          code: codeResponse.code,
           context: 'customer'
         });
-        const { token, user } = response.data;
-        setAuth(token, user);
-        toast.success('Successfully logged in with Google!');
         
-        if (!user?.name) {
+        if (response.data.isNewUser) {
+          setOnboardingToken(response.data.onboardingToken);
+          setIsOnboardingFromGoogle(true);
           setMode('onboard');
+          toast.success(response.data.message);
         } else {
+          const { token, user } = response.data;
+          setAuth(token, user);
+          toast.success('Successfully logged in with Google!');
           handleClose();
           if (onSuccess) onSuccess();
         }
@@ -216,6 +246,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
   const content = (
     <div className="flex flex-col w-full">
+      <div id="recaptcha-container"></div>
       {/* Google + Divider — hidden in OTP & Onboard modes */}
       {(mode === 'email' || mode === 'phone') && (
         <div className="space-y-4 mb-6">
@@ -367,18 +398,30 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
       {/* Onboard Mode */}
       {mode === 'onboard' && (
         <form onSubmit={handleOnboard} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Full Name *</label>
-            <Input className="h-10 bg-muted/30 rounded-xl" value={name} onChange={e => setName(e.target.value)} required />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Email *</label>
-            <Input className="h-10 bg-muted/30 rounded-xl" type="email" value={onboardingEmail} onChange={e => setOnboardingEmail(e.target.value)} required />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Set Password *</label>
-            <Input className="h-10 bg-muted/30 rounded-xl" type="password" value={onboardingPassword} onChange={e => setOnboardingPassword(e.target.value)} required minLength={6} />
-          </div>
+          {!isOnboardingFromGoogle && (
+            <>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Full Name *</label>
+                <Input className="h-10 bg-muted/30 rounded-xl" value={name} onChange={e => setName(e.target.value)} required />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Email *</label>
+                <Input className="h-10 bg-muted/30 rounded-xl" type="email" value={onboardingEmail} onChange={e => setOnboardingEmail(e.target.value)} required />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Set Password *</label>
+                <Input className="h-10 bg-muted/30 rounded-xl" type="password" value={onboardingPassword} onChange={e => setOnboardingPassword(e.target.value)} required minLength={6} />
+              </div>
+            </>
+          )}
+
+          {isOnboardingFromGoogle && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Phone Number *</label>
+              <Input className="h-10 bg-muted/30 rounded-xl" type="tel" placeholder="+91" value={onboardingPhone} onChange={e => setOnboardingPhone(e.target.value)} required pattern="^[6-9]\d{9}$" title="Enter a valid 10-digit Indian phone number" />
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Complete Address *</label>
             <Input className="h-10 bg-muted/30 rounded-xl" value={address} onChange={e => setAddress(e.target.value)} required />

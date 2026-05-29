@@ -22,6 +22,13 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // Onboarding state
+  const [mode, setMode] = useState<'register' | 'onboard'>('register');
+  const [onboardingToken, setOnboardingToken] = useState('');
+  const [isOnboardingFromGoogle, setIsOnboardingFromGoogle] = useState(false);
+  const [onboardingPhone, setOnboardingPhone] = useState('');
+  const [address, setAddress] = useState('');
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !password) return toast.error('Please fill in all fields');
@@ -42,22 +49,60 @@ export default function RegisterPage() {
     }
   };
 
+  const handleOnboard = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isOnboardingFromGoogle) {
+      if (!onboardingPhone || !address) {
+        return toast.error('Please fill in your phone number and address.');
+      }
+    } else {
+      return toast.error('Invalid onboarding state');
+    }
+    
+    setLoading(true);
+    try {
+      const payload: any = { onboardingToken, address };
+      if (isOnboardingFromGoogle) {
+        payload.phoneNumber = onboardingPhone;
+      }
+
+      const response = await apiClient.post('/auth/onboard', payload);
+      const { token, user } = response.data?.data || response.data;
+      setAuth(token, user);
+      toast.success('Account created successfully!');
+      router.push('/');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create account.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
+    flow: 'auth-code',
+    onSuccess: async (codeResponse) => {
       setLoading(true);
       try {
         const response = await apiClient.post('/auth/google', {
-          accessToken: tokenResponse.access_token,
+          code: codeResponse.code,
           context: 'customer'
         });
-        const { token, user } = response.data;
-        useAuthStore.getState().setAuth(token, user);
-        toast.success('Account created successfully!');
         
-        if (!user?.name) {
-          router.push('/onboarding');
+        if (response.data.isNewUser) {
+          setOnboardingToken(response.data.onboardingToken);
+          setIsOnboardingFromGoogle(true);
+          setMode('onboard');
+          toast.success(response.data.message);
         } else {
-          router.push('/');
+          const { token, user } = response.data;
+          useAuthStore.getState().setAuth(token, user);
+          toast.success('Account created successfully!');
+          
+          if (!user?.name) {
+            router.push('/onboarding');
+          } else {
+            router.push('/');
+          }
         }
       } catch (error: any) {
         toast.error(error.response?.data?.message || 'Google Registration failed');
@@ -109,70 +154,111 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <form onSubmit={handleRegister} className="space-y-5">
-        <div className="space-y-1">
-          <label className="text-sm font-medium">Full Name</label>
-          <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="John Doe"
-              className="h-12 pl-10 bg-muted/30 focus-visible:bg-background"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
+      {mode === 'register' && (
+        <form onSubmit={handleRegister} className="space-y-5">
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Full Name</label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="John Doe"
+                className="h-12 pl-10 bg-muted/30 focus-visible:bg-background"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-1">
-          <label className="text-sm font-medium">Email address</label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              type="email"
-              placeholder="you@example.com"
-              className="h-12 pl-10 bg-muted/30 focus-visible:bg-background"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Email address</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                className="h-12 pl-10 bg-muted/30 focus-visible:bg-background"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
           </div>
-        </div>
-        
-        <div className="space-y-1">
-          <label className="text-sm font-medium">Password</label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Create a strong password"
-              className="h-12 pl-10 pr-10 bg-muted/30 focus-visible:bg-background"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <button
-              type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
+          
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Create a strong password"
+                className="h-12 pl-10 pr-10 bg-muted/30 focus-visible:bg-background"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
+
+          <Button type="submit" className="w-full h-12 text-base font-medium mt-2" disabled={loading}>
+            {loading ? 'Creating account...' : 'Create account'}
+          </Button>
+        </form>
+      )}
+
+      {/* Onboard Mode */}
+      {mode === 'onboard' && (
+        <form onSubmit={handleOnboard} className="space-y-4">
+          {!isOnboardingFromGoogle && (
+            <>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Full Name *</label>
+                <Input className="h-12 bg-muted/30 focus-visible:bg-background" value={name} onChange={e => setName(e.target.value)} required />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Email *</label>
+                <Input className="h-12 bg-muted/30 focus-visible:bg-background" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Set Password *</label>
+                <Input className="h-12 bg-muted/30 focus-visible:bg-background" type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+              </div>
+            </>
+          )}
+
+          {isOnboardingFromGoogle && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Phone Number *</label>
+              <Input className="h-12 bg-muted/30 focus-visible:bg-background" type="tel" placeholder="+91" value={onboardingPhone} onChange={e => setOnboardingPhone(e.target.value)} required pattern="^[6-9]\d{9}$" title="Enter a valid 10-digit Indian phone number" />
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Complete Address *</label>
+            <Input className="h-12 bg-muted/30 focus-visible:bg-background" value={address} onChange={e => setAddress(e.target.value)} required />
+          </div>
+          <Button type="submit" className="w-full h-12 text-base font-medium mt-2" disabled={loading}>
+            {loading ? 'Creating Account...' : 'Complete Profile'}
+          </Button>
+        </form>
+      )}
+
+      {mode === 'register' && (
+        <div className="mt-8 text-center text-sm text-muted-foreground">
+          Already have an account?{' '}
+          <Link href="/login" className="font-semibold text-primary hover:underline">
+            Log in
+          </Link>
         </div>
-
-        <Button type="submit" className="w-full h-12 text-base font-medium mt-2" disabled={loading}>
-          {loading ? 'Creating account...' : 'Create account'}
-        </Button>
-      </form>
-
-      <div className="mt-8 text-center text-sm text-muted-foreground">
-        Already have an account?{' '}
-        <Link href="/login" className="font-semibold text-primary hover:underline">
-          Log in
-        </Link>
-      </div>
+      )}
     </div>
   );
 }

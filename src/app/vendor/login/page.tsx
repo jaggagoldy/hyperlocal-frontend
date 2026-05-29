@@ -11,6 +11,8 @@ import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { auth } from '@/lib/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 
 type LoginMode = 'email' | 'phone' | 'otp';
 
@@ -29,7 +31,7 @@ export default function VendorLoginPage() {
   // OTP state
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
-  const [sessionToken, setSessionToken] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,13 +67,19 @@ export default function VendorLoginPage() {
     if (phoneNumber.length !== 10) return toast.error('Please enter a valid 10-digit mobile number.');
     setLoading(true);
     try {
-      const response = await apiClient.post('/auth/otp/request', { phoneNumber });
-      const token = response.data?.data?.sessionToken || response.data?.sessionToken;
-      if (token) setSessionToken(token);
-      toast.success('OTP sent! Use 111111 in dev mode.');
+      if (!(window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+        });
+      }
+      const formattedPhone = `+91${phoneNumber}`;
+      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, (window as any).recaptchaVerifier);
+      setConfirmationResult(confirmation);
+      toast.success('OTP sent successfully!');
       setMode('otp');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to send OTP.');
+      console.error(error);
+      toast.error('Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -80,12 +88,14 @@ export default function VendorLoginPage() {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (otp.length !== 6) return toast.error('Please enter a 6-digit OTP.');
+    if (!confirmationResult) return toast.error('OTP session expired. Please request again.');
     setLoading(true);
     try {
+      const result = await confirmationResult.confirm(otp);
+      const idToken = await result.user.getIdToken();
+
       const response = await apiClient.post('/auth/otp/verify', {
-        phoneNumber,
-        otpCode: otp,
-        sessionToken,
+        idToken,
         context: 'vendor',
       });
       const { token, user, isNewUser, onboardingToken } = response.data?.data || response.data;
@@ -115,18 +125,24 @@ export default function VendorLoginPage() {
   };
 
   const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
+    flow: 'auth-code',
+    onSuccess: async (codeResponse) => {
       setLoading(true);
       try {
         const response = await apiClient.post('/auth/google', {
-          accessToken: tokenResponse.access_token,
+          code: codeResponse.code,
           context: 'vendor'
         });
-        const { token, user } = response.data;
-        useAuthStore.getState().setAuth(token, user);
-        toast.success('Successfully logged into Pro Dashboard with Google!');
         
-        router.push('/vendor-dashboard');
+        if (response.data.isNewUser) {
+          toast.success('Google verified! Complete your vendor registration.');
+          router.push(`/vendor/register?onboardingToken=${response.data.onboardingToken}&isGoogle=true`);
+        } else {
+          const { token, user } = response.data;
+          useAuthStore.getState().setAuth(token, user);
+          toast.success('Successfully logged into Pro Dashboard with Google!');
+          router.push('/vendor-dashboard');
+        }
       } catch (error: any) {
         toast.error(error.response?.data?.message || 'Google Login failed');
       } finally {
@@ -207,6 +223,8 @@ export default function VendorLoginPage() {
               Pro
             </button>
           </div>
+          
+          <div id="recaptcha-container"></div>
 
           {/* Heading */}
           <div className="text-center mb-8">

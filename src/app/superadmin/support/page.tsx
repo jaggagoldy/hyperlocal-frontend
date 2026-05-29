@@ -1,20 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import apiClient from '@/lib/api-client';
 import Link from 'next/link';
 
 export default function SupportPage() {
   const [tickets, setTickets] = useState<any[]>([]);
 
   const fetchTickets = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
 
     try {
-      const res = await fetch('http://localhost:5001/api/v1/superadmin/tickets', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const res = await apiClient.get('/superadmin/tickets');
+      const data = res.data;
       if (data.status === 'success') {
         setTickets(data.data);
       }
@@ -28,14 +25,9 @@ export default function SupportPage() {
   }, []);
 
   const handleResolve = async (id: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
 
     try {
-      await fetch(`http://localhost:5001/api/v1/superadmin/tickets/${id}/resolve`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiClient.patch(`/superadmin/tickets/${id}/resolve`);
       fetchTickets();
     } catch (err) {
       console.error(err);

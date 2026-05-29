@@ -1,19 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import apiClient from '@/lib/api-client';
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<any[]>([]);
 
   const fetchLeads = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
 
     try {
-      const res = await fetch('http://localhost:5001/api/v1/superadmin/leads', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const res = await apiClient.get('/superadmin/leads');
+      const data = res.data;
       if (data.status === 'success') {
         setLeads(data.data);
       }

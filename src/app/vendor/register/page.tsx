@@ -36,6 +36,27 @@ export default function VendorRegisterPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [cities, setCities] = useState<City[]>([]);
 
+  // Onboarding URL params parsing
+  const [onboardingToken, setOnboardingToken] = useState<string | null>(null);
+  const [isGoogle, setIsGoogle] = useState(false);
+  
+  // Onboarding user details
+  const [personalName, setPersonalName] = useState('');
+  const [personalEmail, setPersonalEmail] = useState('');
+  const [personalPassword, setPersonalPassword] = useState('');
+  const [personalPhone, setPersonalPhone] = useState('');
+
+  // Extract query params safely on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('onboardingToken');
+      const google = urlParams.get('isGoogle') === 'true';
+      if (token) setOnboardingToken(token);
+      setIsGoogle(google);
+    }
+  }, []);
+
   // Load categories & cities on mount
   useEffect(() => {
     const load = async () => {
@@ -70,13 +91,46 @@ export default function VendorRegisterPage() {
   const progress = (step / 3) * 100;
 
   // ── Validation ──
-  const step1Valid = form.businessName.trim() && form.categoryId && (form.categoryId !== 'other' || customCategory.trim()) && form.locationType;
+  const isPersonalValid = onboardingToken 
+    ? (isGoogle ? !!personalPhone : (!!personalName && !!personalEmail && !!personalPassword))
+    : true;
+
+  const step1Valid = form.businessName.trim() && form.categoryId && (form.categoryId !== 'other' || customCategory.trim()) && form.locationType && isPersonalValid;
   const step2Valid = form.cityName && form.localityName.trim() && form.pincode.length === 6;
 
   // ── Submit ──
   const handleSubmit = async (withVerification: boolean) => {
     setLoading(true);
     try {
+      let currentToken = token;
+      let currentUser = user;
+
+      // 1. If we have an onboardingToken, register the user FIRST
+      if (onboardingToken && !token) {
+        const onboardPayload: any = {
+          onboardingToken,
+          address: `${form.localityName}, ${form.cityName}, ${form.pincode}`,
+        };
+        
+        if (isGoogle) {
+          onboardPayload.phoneNumber = personalPhone;
+        } else {
+          onboardPayload.name = personalName;
+          onboardPayload.email = personalEmail;
+          onboardPayload.password = personalPassword;
+        }
+
+        const onboardRes = await apiClient.post('/auth/onboard', onboardPayload);
+        currentToken = onboardRes.data?.data?.token || onboardRes.data?.token;
+        currentUser = onboardRes.data?.data?.user || onboardRes.data?.user;
+        
+        // Temporarily set auth so the next API call includes the JWT
+        if (currentToken && currentUser) {
+          setAuth(currentToken, currentUser);
+          apiClient.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
+        }
+      }
+
       // Build a unique registration number (business + timestamp)
       const registrationNumber = `${form.businessName.replace(/\s+/g, '').toUpperCase().slice(0, 6)}-${Date.now()}`;
 
@@ -99,8 +153,8 @@ export default function VendorRegisterPage() {
       await apiClient.post('/vendors/register', payload);
 
       // Update user role in store so Navbar reacts immediately
-      if (token && user) {
-        setAuth(token, { ...user, role: 'vendor' });
+      if (currentToken && currentUser) {
+        setAuth(currentToken, { ...currentUser, role: 'vendor' });
       }
 
       toast.success('Welcome to HyperLocal Pro! 🎉', {
@@ -175,6 +229,37 @@ export default function VendorRegisterPage() {
               </div>
 
               <div className="space-y-5">
+                {/* Conditionally ask for Personal Details if onboarding new user */}
+                {onboardingToken && (
+                  <div className="p-4 bg-muted/30 rounded-xl space-y-4 mb-4 border border-zinc-100">
+                    <h3 className="text-sm font-bold text-zinc-900">Personal Details</h3>
+                    
+                    {!isGoogle && (
+                      <>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-zinc-600 uppercase">Your Full Name</label>
+                          <Input className="h-11 bg-white" value={personalName} onChange={e => setPersonalName(e.target.value)} required />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-zinc-600 uppercase">Email Address</label>
+                          <Input className="h-11 bg-white" type="email" value={personalEmail} onChange={e => setPersonalEmail(e.target.value)} required />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-zinc-600 uppercase">Set Password</label>
+                          <Input className="h-11 bg-white" type="password" value={personalPassword} onChange={e => setPersonalPassword(e.target.value)} required minLength={6} />
+                        </div>
+                      </>
+                    )}
+
+                    {isGoogle && (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-zinc-600 uppercase">Phone Number</label>
+                        <Input className="h-11 bg-white" type="tel" value={personalPhone} onChange={e => setPersonalPhone(e.target.value)} placeholder="+91" required pattern="^[6-9]\d{9}$" />
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Business Name */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-zinc-700">Business / Professional Name</label>

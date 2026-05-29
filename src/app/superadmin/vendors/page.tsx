@@ -1,19 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import apiClient from '@/lib/api-client';
 
 export default function VendorsPage() {
   const [vendors, setVendors] = useState<any[]>([]);
 
   const fetchVendors = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
 
     try {
-      const res = await fetch('http://localhost:5001/api/v1/superadmin/vendors', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const res = await apiClient.get('/superadmin/vendors');
+      const data = res.data;
       if (data.status === 'success') {
         setVendors(data.data);
       }
@@ -27,18 +24,9 @@ export default function VendorsPage() {
   }, []);
 
   const handleToggleVerified = async (id: string, currentStatus: boolean) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
 
     try {
-      await fetch(`http://localhost:5001/api/v1/superadmin/vendors/${id}/verify`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ idVerified: !currentStatus })
-      });
+      await apiClient.patch(`/superadmin/vendors/${id}/verify`, { idVerified: !currentStatus });
       fetchVendors();
     } catch (err) {
       console.error(err);
@@ -46,18 +34,9 @@ export default function VendorsPage() {
   };
 
   const handleToggleFeatured = async (id: string, currentStatus: boolean) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
 
     try {
-      await fetch(`http://localhost:5001/api/v1/superadmin/vendors/${id}/feature`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ isFeatured: !currentStatus })
-      });
+      await apiClient.patch(`/superadmin/vendors/${id}/feature`, { isFeatured: !currentStatus });
       fetchVendors();
     } catch (err) {
       console.error(err);
@@ -65,20 +44,11 @@ export default function VendorsPage() {
   };
 
   const handleSuspend = async (id: string, currentStatus: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
 
     const newStatus = currentStatus === 'suspended' ? 'available' : 'suspended';
 
     try {
-      await fetch(`http://localhost:5001/api/v1/superadmin/vendors/${id}/suspend`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
+      await apiClient.patch(`/superadmin/vendors/${id}/suspend`, { status: newStatus });
       fetchVendors();
     } catch (err) {
       console.error(err);
