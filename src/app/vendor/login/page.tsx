@@ -149,12 +149,13 @@ export default function VendorLoginPage() {
           context: 'vendor'
         });
         
-        if (response.data.isNewUser) {
+        const responseData = response.data?.data || response.data;
+        if (responseData.isNewUser) {
           toast.success('Google verified! Complete your vendor registration.');
-          router.push(`/vendor/register?onboardingToken=${response.data.onboardingToken}&isGoogle=true`);
+          router.push(`/vendor/register?onboardingToken=${responseData.onboardingToken}&isGoogle=true`);
         } else {
-          const { token, user } = response.data;
-          useAuthStore.getState().setAuth(token, user);
+          const { token, user } = responseData;
+          useAuthStore.getState().setAuth(token, user, 'vendor');
           toast.success('Successfully logged into Pro Dashboard with Google!');
           router.push('/vendor-dashboard');
         }

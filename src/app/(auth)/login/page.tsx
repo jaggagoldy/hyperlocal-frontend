@@ -186,14 +186,14 @@ export default function LoginPage() {
           code: codeResponse.code,
           context: 'customer'
         });
-        
-        if (response.data.isNewUser) {
-          setOnboardingToken(response.data.onboardingToken);
+        const responseData = response.data?.data || response.data;
+        if (responseData.isNewUser) {
+          setOnboardingToken(responseData.onboardingToken);
           setIsOnboardingFromGoogle(true);
           setMode('onboard');
-          toast.success(response.data.message);
+          toast.success(responseData.message);
         } else {
-          const { token, user } = response.data;
+          const { token, user } = responseData;
           useAuthStore.getState().setAuth(token, user);
           toast.success('Successfully logged in with Google!');
           
