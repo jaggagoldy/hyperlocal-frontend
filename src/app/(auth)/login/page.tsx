@@ -82,7 +82,7 @@ export default function LoginPage() {
       setMode('otp');
     } catch (error: any) {
       console.error(error);
-      toast.error('Failed to send OTP. Please try again.');
+      toast.error(error.message || 'Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
     }
