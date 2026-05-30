@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useRouter } from 'next/navigation';
 import apiClient from '@/lib/api-client';
 import { CatalogItem } from '@/types/models';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ interface EnquiryDrawerProps {
 
 export function EnquiryDrawer({ item, vendorName }: EnquiryDrawerProps) {
   const { user } = useAuthStore();
+  const router = useRouter();
   
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,7 +59,21 @@ export function EnquiryDrawer({ item, vendorName }: EnquiryDrawerProps) {
       setRequirement('');
     } catch (error: any) {
       console.error(error);
-      toast.error(error.response?.data?.message || 'Failed to send inquiry');
+      const errData = error.response?.data;
+      if (errData?.code === 'PHONE_NOT_VERIFIED') {
+        toast.error('Verification Required: Please verify your phone number to continue.', {
+          action: {
+            label: 'Verify Now',
+            onClick: () => router.push('/profile/edit')
+          },
+          duration: 10000
+        });
+        setIsOpen(false);
+      } else if (error.response?.status === 401) {
+        toast.error('Please log in to send an inquiry.');
+      } else {
+        toast.error(errData?.message || 'Failed to send inquiry');
+      }
     } finally {
       setIsSubmitting(false);
     }

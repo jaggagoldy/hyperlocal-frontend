@@ -7,6 +7,7 @@ interface User {
   context: 'customer' | 'vendor' | 'admin';
   hasCustomerProfile: boolean;
   hasVendorProfile: boolean;
+  isPhoneVerified: boolean;
   name?: string;
   email?: string;
   phoneNumber?: string;

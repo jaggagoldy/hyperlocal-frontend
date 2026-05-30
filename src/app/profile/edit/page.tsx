@@ -8,6 +8,10 @@ import { useAuthStore } from '@/store/authStore';
 import apiClient from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { auth } from '@/lib/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -17,13 +21,87 @@ export default function EditProfilePage() {
   const [gender, setGender] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Phone Verification States
+  const [phoneToVerify, setPhoneToVerify] = useState(user?.phoneNumber || '');
+  const [verifyMode, setVerifyMode] = useState<'idle' | 'otp'>('idle');
+  const [otp, setOtp] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const recaptchaRef = React.useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (user?.name) setName(user.name);
     if (user?.dateOfBirth) {
       setDateOfBirth(user.dateOfBirth.split('T')[0]);
     }
     if (user?.gender) setGender(user.gender);
+    if (user?.phoneNumber && !phoneToVerify) setPhoneToVerify(user.phoneNumber);
   }, [user]);
+
+  // Recaptcha for inline verify
+  useEffect(() => {
+    if (user?.isPhoneVerified) return; // Only init if needed
+    if (!recaptchaRef.current) return;
+    try {
+      (window as any).recaptchaVerifierProfile = new RecaptchaVerifier(auth, recaptchaRef.current, {
+        size: 'invisible',
+      });
+    } catch (e) {
+      console.error('Failed to init recaptcha', e);
+    }
+    return () => {
+      if ((window as any).recaptchaVerifierProfile) {
+        try {
+          (window as any).recaptchaVerifierProfile.clear();
+        } catch (e) {}
+        (window as any).recaptchaVerifierProfile = null;
+      }
+    };
+  }, [user?.isPhoneVerified]);
+
+  const handleRequestOtp = async () => {
+    if (phoneToVerify.length !== 10) {
+      return toast.error('Please enter a valid 10-digit mobile number.');
+    }
+    setIsVerifying(true);
+    try {
+      const formattedPhone = `+91${phoneToVerify}`;
+      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, (window as any).recaptchaVerifierProfile);
+      setConfirmationResult(confirmation);
+      toast.success('OTP sent successfully!');
+      setVerifyMode('otp');
+    } catch (error: any) {
+      console.error(error);
+      toast.error('Failed to send OTP. Please try again.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) return toast.error('Please enter a 6-digit OTP.');
+    if (!confirmationResult) return toast.error('OTP session expired. Please request again.');
+    
+    setIsVerifying(true);
+    try {
+      const result = await confirmationResult.confirm(otp);
+      const idToken = await result.user.getIdToken();
+      
+      const res = await apiClient.post('/auth/verify-profile-phone', { idToken });
+      const updatedUser = res.data?.data?.user;
+      
+      if (token && updatedUser) {
+        setAuth(token, updatedUser);
+      }
+      toast.success('Phone number verified successfully!');
+      setVerifyMode('idle');
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.response?.data?.message || 'Invalid OTP. Please try again.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,21 +203,101 @@ export default function EditProfilePage() {
               </div>
             </div>
 
-            {/* Phone (read-only) */}
+            {/* Phone (read-only if verified, editable if unverified) */}
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-zinc-700">
-                Phone Number
-                <span className="ml-2 text-xs font-normal text-zinc-400">(cannot be changed)</span>
+              <label className="text-sm font-semibold text-zinc-700 flex justify-between">
+                <span>Phone Number</span>
+                {user?.isPhoneVerified ? (
+                  <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                    <CheckCircle2 className="w-3 h-3" /> Verified
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-xs text-amber-600 font-medium">
+                    <AlertCircle className="w-3 h-3" /> Verification Required
+                  </span>
+                )}
               </label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="tel"
-                  className="h-12 pl-10 bg-zinc-100 text-zinc-500 cursor-not-allowed"
-                  value={user?.phoneNumber || 'Not set'}
-                  disabled
-                />
-              </div>
+
+              {user?.isPhoneVerified ? (
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="tel"
+                    className="h-12 pl-10 bg-zinc-100 text-zinc-500 cursor-not-allowed border-zinc-200"
+                    value={user?.phoneNumber || 'Not set'}
+                    disabled
+                  />
+                </div>
+              ) : (
+                <div className="space-y-4 p-4 border border-amber-200 bg-amber-50/50 rounded-xl">
+                  {verifyMode === 'idle' ? (
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <span className="absolute left-9 top-1/2 -translate-y-1/2 text-sm text-zinc-500 font-medium border-r pr-2 border-zinc-200">
+                          +91
+                        </span>
+                        <Input
+                          type="tel"
+                          maxLength={10}
+                          placeholder="10-digit mobile number"
+                          className="h-12 pl-[4.5rem] bg-white"
+                          value={phoneToVerify}
+                          onChange={(e) => setPhoneToVerify(e.target.value.replace(/\D/g, ''))}
+                        />
+                      </div>
+                      <Button 
+                        type="button" 
+                        onClick={handleRequestOtp} 
+                        disabled={isVerifying || phoneToVerify.length !== 10}
+                        className="h-12"
+                      >
+                        {isVerifying ? 'Wait...' : 'Verify'}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <p className="text-sm text-zinc-600">Enter the 6-digit OTP sent to +91 {phoneToVerify}</p>
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <InputOTP
+                            maxLength={6}
+                            value={otp}
+                            onChange={setOtp}
+                            containerClassName="justify-center gap-2"
+                          >
+                            <InputOTPGroup className="gap-2">
+                              {[...Array(6)].map((_, i) => (
+                                <InputOTPSlot 
+                                  key={i} 
+                                  index={i} 
+                                  className="w-10 h-12 text-lg rounded-md border-zinc-200 bg-white" 
+                                />
+                              ))}
+                            </InputOTPGroup>
+                          </InputOTP>
+                        </div>
+                        <Button 
+                          type="button" 
+                          onClick={handleVerifyOtp} 
+                          disabled={isVerifying || otp.length !== 6}
+                          className="h-12"
+                        >
+                          {isVerifying ? 'Verifying...' : 'Submit'}
+                        </Button>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => { setVerifyMode('idle'); setOtp(''); }}
+                        className="text-xs font-medium text-muted-foreground hover:text-zinc-800"
+                      >
+                        Change Number
+                      </button>
+                    </div>
+                  )}
+                  <div ref={recaptchaRef}></div>
+                </div>
+              )}
             </div>
 
             <Button
