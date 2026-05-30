@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, User, Mail, Phone, Save, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
@@ -27,7 +27,7 @@ export default function EditProfilePage() {
   const [otp, setOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-  const recaptchaRef = React.useRef<HTMLDivElement>(null);
+  const recaptchaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (user?.name) setName(user.name);

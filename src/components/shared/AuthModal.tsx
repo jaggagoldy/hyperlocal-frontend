@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, ChevronLeft, Phone } from 'lucide-react';
 import { toast } from 'sonner';
@@ -43,7 +43,7 @@ type AuthMode = 'identifier' | 'login' | 'verify' | 'onboard';
 export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const { setAuth } = useAuthStore();
-  const recaptchaRef = React.useRef<HTMLDivElement>(null);
+  const recaptchaRef = useRef<HTMLDivElement>(null);
   
   // State
   const [mode, setMode] = useState<'email' | 'phone' | 'otp' | 'onboard'>('email');
@@ -69,7 +69,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const [onboardingPhone, setOnboardingPhone] = useState('');
   const [address, setAddress] = useState('');
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isOpen || !recaptchaRef.current) return;
     try {
       (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaRef.current, {

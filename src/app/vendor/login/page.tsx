@@ -22,7 +22,7 @@ export default function VendorLoginPage() {
 
   const [mode, setMode] = useState<LoginMode>('email');
   const [loading, setLoading] = useState(false);
-  const recaptchaRef = React.useRef<HTMLDivElement>(null);
+  const recaptchaRef = useRef<HTMLDivElement>(null);
 
   // Email/password state
   const [email, setEmail] = useState('');
@@ -34,7 +34,7 @@ export default function VendorLoginPage() {
   const [otp, setOtp] = useState('');
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!recaptchaRef.current) return;
     try {
       (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaRef.current, {
