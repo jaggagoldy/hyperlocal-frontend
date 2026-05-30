@@ -67,11 +67,15 @@ export default function VendorLoginPage() {
     if (phoneNumber.length !== 10) return toast.error('Please enter a valid 10-digit mobile number.');
     setLoading(true);
     try {
-      if (!(window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          size: 'invisible',
-        });
+      // Always clear existing recaptcha to prevent stale DOM crashes
+      if ((window as any).recaptchaVerifier) {
+        try {
+          (window as any).recaptchaVerifier.clear();
+        } catch (e) {}
       }
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+      });
       const formattedPhone = `+91${phoneNumber}`;
       const confirmation = await signInWithPhoneNumber(auth, formattedPhone, (window as any).recaptchaVerifier);
       setConfirmationResult(confirmation);
