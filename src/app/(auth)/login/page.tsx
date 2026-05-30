@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
@@ -22,6 +22,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { setAuth } = useAuthStore();
+  const recaptchaRef = React.useRef<HTMLDivElement>(null);
 
   // Form states
   const [email, setEmail] = useState('');
@@ -39,6 +40,25 @@ export default function LoginPage() {
   const [onboardingPassword, setOnboardingPassword] = useState('');
   const [onboardingPhone, setOnboardingPhone] = useState('');
   const [address, setAddress] = useState('');
+
+  React.useEffect(() => {
+    if (!recaptchaRef.current) return;
+    try {
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaRef.current, {
+        size: 'invisible',
+      });
+    } catch (e) {
+      console.error('Failed to init recaptcha', e);
+    }
+    return () => {
+      if ((window as any).recaptchaVerifier) {
+        try {
+          (window as any).recaptchaVerifier.clear();
+        } catch (e) {}
+        (window as any).recaptchaVerifier = null;
+      }
+    };
+  }, []);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,15 +90,6 @@ export default function LoginPage() {
     
     setLoading(true);
     try {
-      // Always clear existing recaptcha to prevent stale DOM crashes (the "null style" error)
-      if ((window as any).recaptchaVerifier) {
-        try {
-          (window as any).recaptchaVerifier.clear();
-        } catch (e) {}
-      }
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-      });
       const formattedPhone = `+91${phoneNumber}`;
       const confirmation = await signInWithPhoneNumber(auth, formattedPhone, (window as any).recaptchaVerifier);
       setConfirmationResult(confirmation);
@@ -220,7 +231,7 @@ export default function LoginPage() {
           Pro
         </button>
       </div>
-      <div id="recaptcha-container"></div>
+      <div ref={recaptchaRef}></div>
 
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">

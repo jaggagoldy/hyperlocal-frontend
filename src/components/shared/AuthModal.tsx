@@ -43,6 +43,7 @@ type AuthMode = 'identifier' | 'login' | 'verify' | 'onboard';
 export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const { setAuth } = useAuthStore();
+  const recaptchaRef = React.useRef<HTMLDivElement>(null);
   
   // State
   const [mode, setMode] = useState<'email' | 'phone' | 'otp' | 'onboard'>('email');
@@ -67,6 +68,25 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const [onboardingPassword, setOnboardingPassword] = useState('');
   const [onboardingPhone, setOnboardingPhone] = useState('');
   const [address, setAddress] = useState('');
+
+  React.useEffect(() => {
+    if (!isOpen || !recaptchaRef.current) return;
+    try {
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaRef.current, {
+        size: 'invisible',
+      });
+    } catch (e) {
+      console.error('Failed to init recaptcha', e);
+    }
+    return () => {
+      if ((window as any).recaptchaVerifier) {
+        try {
+          (window as any).recaptchaVerifier.clear();
+        } catch (e) {}
+        (window as any).recaptchaVerifier = null;
+      }
+    };
+  }, [isOpen]);
 
   const resetState = () => {
     setMode('email');
@@ -115,15 +135,6 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     if (phoneNumber.length !== 10) return toast.error('Please enter a valid 10-digit mobile number.');
     setLoading(true);
     try {
-      // Always clear existing recaptcha to prevent stale DOM crashes
-      if ((window as any).recaptchaVerifier) {
-        try {
-          (window as any).recaptchaVerifier.clear();
-        } catch (e) {}
-      }
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-      });
       const formattedPhone = `+91${phoneNumber}`;
       const confirmation = await signInWithPhoneNumber(auth, formattedPhone, (window as any).recaptchaVerifier);
       setConfirmationResult(confirmation);
@@ -250,7 +261,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
   const content = (
     <div className="flex flex-col w-full">
-      <div id="recaptcha-container"></div>
+      <div ref={recaptchaRef}></div>
       {/* Google + Divider — hidden in OTP & Onboard modes */}
       {(mode === 'email' || mode === 'phone') && (
         <div className="space-y-4 mb-6">

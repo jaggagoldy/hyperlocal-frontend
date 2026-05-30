@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Phone, Lock, Eye, EyeOff, Sparkles, ArrowLeft } from 'lucide-react';
@@ -22,6 +22,7 @@ export default function VendorLoginPage() {
 
   const [mode, setMode] = useState<LoginMode>('email');
   const [loading, setLoading] = useState(false);
+  const recaptchaRef = React.useRef<HTMLDivElement>(null);
 
   // Email/password state
   const [email, setEmail] = useState('');
@@ -32,6 +33,25 @@ export default function VendorLoginPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+
+  React.useEffect(() => {
+    if (!recaptchaRef.current) return;
+    try {
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaRef.current, {
+        size: 'invisible',
+      });
+    } catch (e) {
+      console.error('Failed to init recaptcha', e);
+    }
+    return () => {
+      if ((window as any).recaptchaVerifier) {
+        try {
+          (window as any).recaptchaVerifier.clear();
+        } catch (e) {}
+        (window as any).recaptchaVerifier = null;
+      }
+    };
+  }, []);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,15 +87,6 @@ export default function VendorLoginPage() {
     if (phoneNumber.length !== 10) return toast.error('Please enter a valid 10-digit mobile number.');
     setLoading(true);
     try {
-      // Always clear existing recaptcha to prevent stale DOM crashes
-      if ((window as any).recaptchaVerifier) {
-        try {
-          (window as any).recaptchaVerifier.clear();
-        } catch (e) {}
-      }
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-      });
       const formattedPhone = `+91${phoneNumber}`;
       const confirmation = await signInWithPhoneNumber(auth, formattedPhone, (window as any).recaptchaVerifier);
       setConfirmationResult(confirmation);
@@ -228,7 +239,7 @@ export default function VendorLoginPage() {
             </button>
           </div>
           
-          <div id="recaptcha-container"></div>
+          <div ref={recaptchaRef}></div>
 
           {/* Heading */}
           <div className="text-center mb-8">
