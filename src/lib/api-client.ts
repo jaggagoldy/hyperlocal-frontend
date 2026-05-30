@@ -91,25 +91,28 @@ apiClient.interceptors.response.use(
     }
     console.groupEnd();
 
-    // Import store dynamically to set the diagnostic error state
-    import('@/store/errorStore').then(({ useErrorStore }) => {
-      useErrorStore.getState().setError(debugDetails);
-    }).catch(err => {
-      console.error('Failed to import useErrorStore inside interceptor:', err);
-    });
-
-    // Display a Sonner toast with a debug button
-    import('sonner').then(({ toast }) => {
-      toast.error(`API Error: ${message}`, {
-        action: {
-          label: 'Debug Info',
-          onClick: () => {} // Modal automatically pops open when activeError in store is set
-        },
-        duration: 10000,
+    // Only show dev diagnostics if we are NOT in production
+    if (process.env.NODE_ENV !== 'production') {
+      // Import store dynamically to set the diagnostic error state
+      import('@/store/errorStore').then(({ useErrorStore }) => {
+        useErrorStore.getState().setError(debugDetails);
+      }).catch(err => {
+        console.error('Failed to import useErrorStore inside interceptor:', err);
       });
-    }).catch(err => {
-      console.error('Failed to trigger toast inside interceptor:', err);
-    });
+
+      // Display a Sonner toast with a debug button
+      import('sonner').then(({ toast }) => {
+        toast.error(`API Error: ${message}`, {
+          action: {
+            label: 'Debug Info',
+            onClick: () => {} // Modal automatically pops open when activeError in store is set
+          },
+          duration: 10000,
+        });
+      }).catch(err => {
+        console.error('Failed to trigger toast inside interceptor:', err);
+      });
+    }
 
     return Promise.reject(error);
   }
