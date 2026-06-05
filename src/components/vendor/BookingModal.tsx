@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/useCartStore';
-import { Vendor } from '@/types/models';
+import { BusinessProfile, CatalogItem } from '@/types/models';
 import { useAuthStore } from '@/store/authStore';
 import { AuthModal } from '@/components/shared/AuthModal';
 import apiClient from '@/lib/api-client';
@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { X, Calendar as CalendarIcon, Clock } from 'lucide-react';
 
 interface BookingModalProps {
-  vendor: Vendor;
+  vendor: BusinessProfile;
   theme: any;
   onClose: () => void;
 }

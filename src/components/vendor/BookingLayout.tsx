@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { useCartStore } from '@/store/useCartStore';
-import { Vendor, CatalogItem } from '@/types/models';
+import { BusinessProfile, CatalogItem } from '@/types/models';
 import BookingModal from './BookingModal';
 import { toast } from 'sonner';
 import { Sparkles, Check, ChevronRight } from 'lucide-react';
 
 interface BookingLayoutProps {
-  vendor: Vendor;
+  vendor: BusinessProfile;
   theme: any;
 }
 
