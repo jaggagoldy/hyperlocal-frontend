@@ -48,46 +48,16 @@ import {
 import { toast } from 'sonner';
 
 // Define client-side grouping of flat database categories into Verticals with Translation keys
-const VERTICALS = [
-  {
-    id: 'home-maintenance',
-    nameKey: 'homeMaintenance' as const,
-    icon: '🔧',
-    categorySlugs: ['electrician', 'plumber', 'carpenter', 'painter'],
-  },
-  {
-    id: 'appliance-repair',
-    nameKey: 'applianceRepair' as const,
-    icon: '🔌',
-    categorySlugs: ['ac-repair', 'ro-repair'],
-  },
-  {
-    id: 'car-rental',
-    nameKey: 'carRental' as const,
-    icon: '🚗',
-    categorySlugs: ['car-rental'],
-  },
-  {
-    id: 'salon-booking',
-    nameKey: 'salonBooking' as const,
-    icon: '✂️',
-    categorySlugs: ['salon-booking'],
-  },
-  {
-    id: 'real-estate',
-    nameKey: 'realEstate' as const,
-    icon: '🏢',
-    categorySlugs: ['real-estate'],
-  },
+const FOOD_VERTICALS = [
   {
     id: 'food-dining',
     nameKey: 'foodAndDining' as const,
     icon: '🍔',
-    categorySlugs: ['restaurant', 'cloud-kitchen'],
+    categorySlugs: ['restaurant', 'cloud-kitchen', 'street-food'],
   }
 ];
 
-export default function ExplorePage() {
+export default function FoodPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t, language } = useTranslation();
@@ -121,13 +91,10 @@ export default function ExplorePage() {
     }
   }, [searchParams, setFilters]);
 
-  // Sync state to URL params
+  // Sync state to URL params (ignoring businessType as it's hardcoded to food)
   useEffect(() => {
     if (isInitialized.current) {
       const params = new URLSearchParams(searchParams.toString());
-      if (businessType) params.set('businessType', businessType);
-      else params.delete('businessType');
-      
       if (minRating) params.set('minRating', minRating);
       else params.delete('minRating');
       
@@ -136,7 +103,7 @@ export default function ExplorePage() {
       
       router.replace(`?${params.toString()}`, { scroll: false });
     }
-  }, [businessType, minRating, openNow, router, searchParams]);
+  }, [minRating, openNow, router, searchParams]);
 
   // Smart Pro CTA: dual-profile users switch context instead of being sent to register
   const isDualProfile = user?.hasCustomerProfile && user?.hasVendorProfile;
@@ -177,11 +144,6 @@ export default function ExplorePage() {
 
   // Expanded Verticals state
   const [expandedVerticals, setExpandedVerticals] = useState<Record<string, boolean>>({
-    'home-maintenance': true,
-    'appliance-repair': true,
-    'car-rental': true,
-    'salon-booking': true,
-    'real-estate': true,
     'food-dining': true,
   });
 
@@ -198,34 +160,34 @@ export default function ExplorePage() {
 
   const SIDEBAR_ADS = [
     {
-      sponsor: "Sheluxe",
-      category: "Lingerie",
-      title: "Revamp your intimate wear collection",
-      discount: "at 50% off",
+      sponsor: "Swad Express",
+      category: "Restaurant",
+      title: "50% Off Your First Thali Order!",
+      discount: "Use code SWAD50",
       bgGradient: "from-orange-50 via-rose-50 to-orange-100",
       buttonBg: "bg-[#826953] hover:bg-[#6c5541]",
       titleColor: "text-rose-900",
-      url: "https://example.com/sheluxe"
+      url: "#"
     },
     {
-      sponsor: "Urban Cleaners",
-      category: "Home Services",
-      title: "Professional deep cleaning for your home",
+      sponsor: "Hisar Street Bites",
+      category: "Street Food",
+      title: "Craving Golgappas? We deliver them crisp!",
       discount: "Flat 20% Off",
       bgGradient: "from-teal-50 via-cyan-50 to-emerald-50",
       buttonBg: "bg-teal-600 hover:bg-teal-700",
       titleColor: "text-teal-900",
-      url: "https://example.com/urban"
+      url: "#"
     },
     {
-      sponsor: "FixIt Fast",
-      category: "Repairs",
-      title: "Same day appliance repair services",
-      discount: "Book Now",
+      sponsor: "Midnight Kitchen",
+      category: "Cloud Kitchen",
+      title: "Late night cravings? Open till 3 AM.",
+      discount: "Order Now",
       bgGradient: "from-indigo-50 via-purple-50 to-pink-50",
       buttonBg: "bg-indigo-600 hover:bg-indigo-700",
       titleColor: "text-indigo-900",
-      url: "https://example.com/fixit"
+      url: "#"
     }
   ];
 
@@ -284,7 +246,7 @@ export default function ExplorePage() {
           page: reset ? 1 : page, 
           limit: 10,
           verifiedOnly,
-          businessType,
+          businessType: businessType || 'RESTAURANT,STREET_VENDOR', // ALWAYS FILTER FOR FOOD
           minRating,
           openNow
         }
@@ -433,7 +395,7 @@ export default function ExplorePage() {
         </button>
 
         {/* Grouped Verticals */}
-        {VERTICALS.map(vertical => {
+        {FOOD_VERTICALS.map(vertical => {
           const isExpanded = expandedVerticals[vertical.id];
           return (
             <div key={vertical.id} className="border border-zinc-150 rounded-xl overflow-hidden bg-white shadow-xs">

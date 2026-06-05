@@ -18,9 +18,11 @@ interface AuthState {
   token: string | null;
   user: User | null;
   activeContext: 'customer' | 'vendor' | 'admin' | null;
+  activeBusinessId: string | null;
   isAuthenticated: boolean;
   _hasHydrated: boolean;
   setHasHydrated: (state: boolean) => void;
+  setActiveBusiness: (id: string | null) => void;
   setAuth: (token: string, user: User, context?: 'customer' | 'vendor' | 'admin') => void;
   updateToken: (token: string, user: User) => void; // for context switches
   logout: () => void;
@@ -34,7 +36,9 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       user: null,
       activeContext: null,
+      activeBusinessId: null,
       isAuthenticated: false,
+      setActiveBusiness: (id) => set({ activeBusinessId: id }),
       setAuth: (token, user, context) => set({
         token,
         user,
@@ -46,7 +50,7 @@ export const useAuthStore = create<AuthState>()(
         user,
         activeContext: user.context,
       }),
-      logout: () => set({ token: null, user: null, activeContext: null, isAuthenticated: false }),
+      logout: () => set({ token: null, user: null, activeContext: null, activeBusinessId: null, isAuthenticated: false }),
     }),
     {
       name: 'auth-storage',

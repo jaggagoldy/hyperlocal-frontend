@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home, Search, Moon, Target, User, LogOut, LayoutDashboard,
-  Briefcase, ChevronDown, ArrowLeftRight, UserPlus
+  Briefcase, ChevronDown, ArrowLeftRight, UserPlus, Coffee
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
@@ -44,6 +44,10 @@ export function Navbar() {
     router.push('/login');
   };
 
+  if (pathname.startsWith('/vendor-dashboard') || pathname.startsWith('/admin')) {
+    return null;
+  }
+
   const handleContextSwitch = async () => {
     const targetContext = isProMode ? 'customer' : 'vendor';
     setIsSwitching(true);
@@ -75,7 +79,7 @@ export function Navbar() {
             <Target className="w-5 h-5" />
           </div>
           <span className="font-extrabold text-xl tracking-tight text-zinc-900" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            HyperLocal <span className="text-primary">Go</span>
+            NearByBazar
           </span>
         </Link>
 
@@ -85,6 +89,12 @@ export function Navbar() {
             <Button variant="ghost" className="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary font-bold h-10 px-4 rounded-xl gap-2">
               <Home className="w-4 h-4" />
               Home
+            </Button>
+          </Link>
+          <Link href="/food">
+            <Button variant="ghost" className="text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 font-bold h-10 px-4 rounded-xl gap-2">
+              <Coffee className="w-4 h-4" />
+              Food
             </Button>
           </Link>
           <Link href="/explore">

@@ -12,10 +12,18 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().token;
+    const state = useAuthStore.getState();
+    const token = state.token;
+    const activeBusinessId = state.activeBusinessId;
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    if (activeBusinessId) {
+      config.headers['x-business-id'] = activeBusinessId;
+    }
+    
     return config;
   },
   (error) => Promise.reject(error)
@@ -24,7 +32,7 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    if (error.response && error.response.status === 401 && !error.config.url?.includes('/auth/')) {
       useAuthStore.getState().logout();
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
@@ -80,7 +88,7 @@ apiClient.interceptors.response.use(
     };
 
     // Log clearly in developer console
-    console.group('%c🚨 Hyperlocal API Error Diagnostics', 'color: #ff3333; font-weight: bold; font-size: 14px;');
+    console.group('%c🚨 NearByBazar API Error Diagnostics', 'color: #ff3333; font-weight: bold; font-size: 14px;');
     console.log('%cMethod & URL:', 'font-weight: bold; color: #ff8800;', `${method} ${url}`);
     console.log('%cStatus Code:', 'font-weight: bold; color: #ff8800;', `${status || 'Network Error'}`);
     console.log('%cMessage:', 'font-weight: bold; color: #ff8800;', message);

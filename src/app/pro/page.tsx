@@ -14,7 +14,7 @@ export default function ProLandingPage() {
           <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-focus rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
-          <span className="text-xl font-black tracking-tight">HyperLocal <span className="text-primary">Pro</span></span>
+          <span className="text-xl font-black tracking-tight">NearByBazar <span className="text-primary">Pro</span></span>
         </div>
         <div className="flex items-center gap-4">
           <Link href="/vendor/login">
@@ -68,7 +68,7 @@ export default function ProLandingPage() {
       <section className="py-24 px-6 lg:px-12 bg-zinc-900/50 border-t border-zinc-800/50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-black mb-4">Why Pros choose HyperLocal</h2>
+            <h2 className="text-3xl lg:text-4xl font-black mb-4">Why Pros choose NearBy Bazar</h2>
             <p className="text-zinc-400">Everything you need to manage and scale your local services.</p>
           </div>
 

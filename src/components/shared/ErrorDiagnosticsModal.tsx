@@ -64,7 +64,7 @@ export default function ErrorDiagnosticsModal() {
 
   const handleCopy = async () => {
     try {
-      const logString = `--- HYPERLOCAL DIAGNOSTIC ERROR LOG ---
+      const logString = `--- NEARBYBAZAR DIAGNOSTIC ERROR LOG ---
 Timestamp: ${new Date().toISOString()}
 Error Type: ${activeError.type || 'api'}
 Message: ${activeError.message}

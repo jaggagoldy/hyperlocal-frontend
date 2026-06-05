@@ -346,7 +346,18 @@ export function AuthenticatedHomeView() {
                           )}
                         </div>
                         <div>
-                          <div className="text-sm font-bold text-zinc-900">{item.title}</div>
+                          <div className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                            {item.title}
+                            {item.vendor?.businessType === 'FOOD_BEVERAGE' && (
+                              <span className="bg-orange-100 text-orange-700 border-orange-200 border px-1.5 py-0.5 rounded text-[10px] font-bold">Food</span>
+                            )}
+                            {item.vendor?.businessType === 'CAB_TRANSPORT' && (
+                              <span className="bg-blue-100 text-blue-700 border-blue-200 border px-1.5 py-0.5 rounded text-[10px] font-bold">Cab</span>
+                            )}
+                            {(item.vendor?.businessType === 'HOME_SERVICES' || item.vendor?.businessType === 'SALON_BEAUTY' || item.vendor?.businessType === 'HOME_ESSENTIALS') && (
+                              <span className="bg-purple-100 text-purple-700 border-purple-200 border px-1.5 py-0.5 rounded text-[10px] font-bold">Service</span>
+                            )}
+                          </div>
                           <div className="text-xs text-zinc-500">{item.vendor?.businessName}</div>
                         </div>
                       </div>

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star } from 'lucide-react';
+import { Star, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
@@ -39,8 +39,28 @@ export function ReviewSection({ vendorId, ratingAvg, reviewCount, reviews }: Rev
   const [rating, setRating] = useState(0);
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isEligible, setIsEligible] = useState(false);
+  const [checkingEligibility, setCheckingEligibility] = useState(true);
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
+
+  useEffect(() => {
+    const checkEligibility = async () => {
+      if (!isAuthenticated) {
+        setCheckingEligibility(false);
+        return;
+      }
+      try {
+        const res = await apiClient.get(`/orders/eligibility?vendorId=${vendorId}`);
+        setIsEligible(res.data.data.eligible);
+      } catch (e) {
+        setIsEligible(false);
+      } finally {
+        setCheckingEligibility(false);
+      }
+    };
+    checkEligibility();
+  }, [vendorId, isAuthenticated]);
 
   const handleOpenChange = (open: boolean) => {
     if (open && !isAuthenticated) {
@@ -87,51 +107,60 @@ export function ReviewSection({ vendorId, ratingAvg, reviewCount, reviews }: Rev
           </div>
         </div>
 
-        <Drawer open={isOpen} onOpenChange={handleOpenChange}>
-          <DrawerTrigger asChild>
-            <Button variant="outline" className="h-10 font-semibold rounded-lg">Write Review</Button>
-          </DrawerTrigger>
-          <DrawerContent>
-            <form onSubmit={handleSubmit} className="mx-auto w-full max-w-sm">
-              <DrawerHeader>
-                <DrawerTitle>Rate & Review</DrawerTitle>
-                <DrawerDescription>Share your experience with this vendor.</DrawerDescription>
-              </DrawerHeader>
-              <div className="p-4 pb-0 flex flex-col gap-4">
-                <div className="flex justify-center gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRating(star)}
-                      className="focus:outline-none"
-                    >
-                      <Star 
-                        className={`w-10 h-10 transition-colors ${
-                          star <= rating ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'
-                        }`}
-                      />
-                    </button>
-                  ))}
+        {checkingEligibility ? (
+          <Button variant="outline" className="h-10 font-semibold rounded-lg" disabled>Checking...</Button>
+        ) : !isEligible ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-lg">
+            <Lock className="w-4 h-4" />
+            <span>You can only review restaurants you have ordered from.</span>
+          </div>
+        ) : (
+          <Drawer open={isOpen} onOpenChange={handleOpenChange}>
+            <DrawerTrigger asChild>
+              <Button variant="outline" className="h-10 font-semibold rounded-lg">Write Review</Button>
+            </DrawerTrigger>
+            <DrawerContent>
+              <form onSubmit={handleSubmit} className="mx-auto w-full max-w-sm">
+                <DrawerHeader>
+                  <DrawerTitle>Rate & Review</DrawerTitle>
+                  <DrawerDescription>Share your experience with this vendor.</DrawerDescription>
+                </DrawerHeader>
+                <div className="p-4 pb-0 flex flex-col gap-4">
+                  <div className="flex justify-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRating(star)}
+                        className="focus:outline-none"
+                      >
+                        <Star 
+                          className={`w-10 h-10 transition-colors ${
+                            star <= rating ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <Textarea 
+                    placeholder="Tell us more about your experience (optional)"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    className="min-h-[100px] text-base rounded-xl"
+                  />
                 </div>
-                <Textarea 
-                  placeholder="Tell us more about your experience (optional)"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="min-h-[100px] text-base rounded-xl"
-                />
-              </div>
-              <DrawerFooter>
-                <Button type="submit" disabled={submitting} className="h-12 text-lg rounded-xl">
-                  {submitting ? 'Submitting...' : 'Submit Review'}
-                </Button>
-                <DrawerClose asChild>
-                  <Button variant="outline" className="h-12 text-lg rounded-xl">Cancel</Button>
-                </DrawerClose>
-              </DrawerFooter>
-            </form>
-          </DrawerContent>
-        </Drawer>
+                <DrawerFooter>
+                  <Button type="submit" disabled={submitting} className="h-12 text-lg rounded-xl">
+                    {submitting ? 'Submitting...' : 'Submit Review'}
+                  </Button>
+                  <DrawerClose asChild>
+                    <Button variant="outline" className="h-12 text-lg rounded-xl">Cancel</Button>
+                  </DrawerClose>
+                </DrawerFooter>
+              </form>
+            </DrawerContent>
+          </Drawer>
+        )}
       </div>
 
       <div className="space-y-4">

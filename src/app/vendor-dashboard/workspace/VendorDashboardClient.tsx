@@ -19,6 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { VendorTutorialModal } from '@/components/vendor-dashboard/VendorTutorialModal';
 import {
   Drawer,
   DrawerClose,
@@ -57,10 +58,12 @@ import {
   Building,
   ShieldCheck,
   Award,
-  Copy
+  Copy,
+  AlertTriangle
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { VendorProfilePreview } from '@/components/vendor/VendorProfilePreview';
+import DeleteAccountModal from '@/components/shared/DeleteAccountModal';
 
 const STATUS_COLORS: Record<string, string> = {
   NEW: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-400 dark:border-indigo-900',
@@ -83,6 +86,7 @@ interface CatalogForm {
   description: string;
   categoryId: string;
   isActive: boolean;
+  variants?: any;
 }
 
 interface VendorDashboardClientProps {
@@ -92,7 +96,7 @@ interface VendorDashboardClientProps {
 export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDashboardClientProps) {
   const router = useRouter();
   const { t } = useTranslation();
-  const { user, token, setAuth } = useAuthStore();
+  const { user, token, setAuth, activeContext } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'leads' | 'services' | 'analytics' | 'settings'>(defaultTab);
   const [leadFilter, setLeadFilter] = useState<string>('ALL');
 
@@ -115,6 +119,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
     description: '',
     categoryId: '',
     isActive: true,
+    variants: [],
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
@@ -143,6 +148,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
     idNumber: '',
   });
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Synchronize route tab changes
   useEffect(() => {
@@ -157,7 +163,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
       return;
     }
 
-    if (!user.hasVendorProfile && user.activeContext !== 'vendor') {
+    if (!user.hasVendorProfile || activeContext !== 'vendor') {
       router.replace('/vendor/register');
       return;
     }
@@ -187,40 +193,33 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
   const fetchVendorData = async () => {
     try {
       setIsLoading(true);
-      const profileRes = await apiClient.get('/vendors/my-profile');
+      
+      // apiClient will automatically inject x-business-id from authStore activeBusinessId
+      const profileRes = await apiClient.get('/business/me/dashboard');
       const profileData = profileRes.data?.data;
       
-      if (!profileData || !profileData.vendor) {
-        toast.error('No vendor profile found. Redirecting...');
-        router.replace('/vendor/register');
+      if (!profileData || !profileData.business) {
+        toast.error('No business profile found. Redirecting...');
+        router.replace('/vendor-dashboard');
         return;
       }
 
-      setVendor(profileData.vendor);
+      setVendor(profileData.business);
       setAnalytics(profileData.analytics);
-
-      if (token && user && (!user.vendorId || user.vendorId !== profileData.vendor.id)) {
-        setAuth(token, { ...user, vendorId: profileData.vendor.id, vendor: profileData.vendor });
-      }
-
-      const vendorId = profileData.vendor.id;
-
-      const [leadsRes, catalogRes, categoriesRes] = await Promise.all([
-        apiClient.get('/leads', { params: { vendorId } }),
-        apiClient.get(`/catalog/vendor/${vendorId}`),
-        apiClient.get('/search/categories')
-      ]);
-
-      setLeads(leadsRes.data?.data || []);
+      setLeads(profileData.leads || []);
+      
+      const catalogRes = await apiClient.get(`/catalog/business/${profileData.business.id}`);
       setCatalogItems(catalogRes.data?.data || []);
+      
+      const categoriesRes = await apiClient.get('/search/categories');
       setCategories(categoriesRes.data?.data || []);
 
     } catch (error: any) {
       console.error(error);
       const status = error.response?.status;
       if (status === 403 || status === 404) {
-        toast.error('Access denied. Redirecting to onboarding...');
-        router.replace('/vendor/register');
+        toast.error('Access denied. Redirecting to Hub...');
+        router.replace('/vendor-dashboard');
       } else {
         toast.error('Failed to load dashboard data. Please try again.');
       }
@@ -256,7 +255,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
     if (!vendor) return;
     setIsUpdatingProfileStatus(true);
     try {
-      await apiClient.patch(`/vendors/${vendor.id}`, {
+      await apiClient.patch('/business/update', {
         status: newStatus
       });
       setVendor((prev: any) => ({ ...prev, status: newStatus }));
@@ -282,7 +281,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
 
     setIsSavingSettings(true);
     try {
-      const res = await apiClient.patch(`/vendors/${vendor.id}`, settingsForm);
+      const res = await apiClient.patch('/business/update', settingsForm);
       setVendor(res.data?.data);
       toast.success('Business settings updated successfully!');
     } catch (error: any) {
@@ -334,6 +333,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
       description: '',
       categoryId: categories[0]?.id || '',
       isActive: true,
+      variants: [],
     });
     setSelectedFile(null);
     setFilePreview(null);
@@ -349,6 +349,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
       description: item.description || '',
       categoryId: item.categoryId,
       isActive: item.isActive,
+      variants: item.variants || [],
     });
     setSelectedFile(null);
     setFilePreview(item.mediaUrl || null);
@@ -393,6 +394,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
       formData.append('categoryId', catalogForm.categoryId);
       formData.append('isActive', catalogForm.isActive.toString());
       formData.append('vendorId', vendor.id);
+      formData.append('variants', JSON.stringify(catalogForm.variants || []));
       
       if (catalogForm.price) {
         formData.append('price', catalogForm.price);
@@ -452,15 +454,14 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
     }
   };
 
-  // Page URL Syncing for tab toggles
   const handleTabChange = (tab: 'leads' | 'services' | 'analytics' | 'settings') => {
     setActiveTab(tab);
     if (tab === 'leads' || tab === 'analytics') {
-      router.push('/vendor-dashboard');
+      router.push('/vendor-dashboard/workspace');
     } else if (tab === 'services') {
-      router.push('/vendor-dashboard/catalog');
+      router.push('/vendor-dashboard/workspace/catalog');
     } else if (tab === 'settings') {
-      router.push('/vendor-dashboard/settings');
+      router.push('/vendor-dashboard/workspace/settings');
     }
   };
 
@@ -509,8 +510,11 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
       </div>
     );
   }
+  const isMenuBuilderMode = ['RESTAURANT', 'CLOUD_KITCHEN', 'SALON'].includes(vendor?.businessType || '');
+
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col xl:flex-row font-sans">
+      <VendorTutorialModal />
       
       {/* ─── SIDEBAR (PRO LAYOUT) ─── */}
       <aside className="w-full xl:w-72 bg-zinc-950 border-r border-zinc-800 flex-shrink-0 flex flex-col xl:min-h-screen z-40 sticky top-0">
@@ -691,68 +695,187 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
             </div>
           )}
 
-          {/* ─── SERVICES TABLE ─── */}
+          {/* ─── SERVICES TABLE / MENU BUILDER ─── */}
           {activeTab === 'services' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-black text-zinc-900 tracking-tight">Service Catalog</h2>
+                  <h2 className="text-xl font-black text-zinc-900 tracking-tight">{isMenuBuilderMode ? 'Menu & Services Builder' : 'Service Catalog'}</h2>
                   <p className="text-sm text-zinc-500 font-medium mt-1">Manage your offerings</p>
                 </div>
-                <Button onClick={handleOpenAddCatalog} className="font-bold rounded-xl h-11 px-6 shadow-sm">
-                  <Plus className="w-4 h-4 mr-2" /> Add Service
-                </Button>
+                {!isMenuBuilderMode && (
+                  <Button onClick={handleOpenAddCatalog} className="font-bold rounded-xl h-11 px-6 shadow-sm">
+                    <Plus className="w-4 h-4 mr-2" /> Add Service
+                  </Button>
+                )}
               </div>
 
-              <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 font-bold uppercase tracking-wider text-[10px]">
-                    <tr>
-                      <th className="px-6 py-4">Service Details</th>
-                      <th className="px-6 py-4">Category</th>
-                      <th className="px-6 py-4">Price</th>
-                      <th className="px-6 py-4">Status</th>
-                      <th className="px-6 py-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-100">
-                    {catalogItems.map(item => (
-                      <tr key={item.id} className={`transition-colors hover:bg-zinc-50/50 ${!item.isActive ? 'opacity-70' : ''}`}>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-zinc-100 overflow-hidden border border-zinc-200 flex-shrink-0 flex items-center justify-center">
-                              {item.mediaUrl ? <img src={item.mediaUrl} className="w-full h-full object-cover" /> : <ImageIcon className="w-4 h-4 text-zinc-400" />}
-                            </div>
-                            <div>
-                              <p className="font-bold text-zinc-900">{item.title}</p>
-                              <p className="text-xs text-zinc-500 line-clamp-1 max-w-[200px]">{item.description || 'No description'}</p>
-                            </div>
+              {isMenuBuilderMode ? (
+                <div className="flex flex-col lg:flex-row gap-8">
+                  {/* Left: Items List */}
+                  <div className="flex-1 bg-white rounded-2xl border border-zinc-200 shadow-sm p-5">
+                     <div className="flex justify-between items-center mb-6">
+                       <h3 className="font-bold text-lg">Your Catalog</h3>
+                       <Button size="sm" onClick={handleOpenAddCatalog} className="font-bold rounded-lg shadow-sm"><Plus className="w-4 h-4 mr-1"/> Add Item</Button>
+                     </div>
+                     <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                        {catalogItems.map(item => (
+                          <div key={item.id} className="p-4 border rounded-xl flex items-center justify-between hover:border-primary transition-colors cursor-pointer bg-zinc-50/30" onClick={() => handleOpenEditCatalog(item)}>
+                             <div>
+                               <div className="flex items-center gap-1.5 mb-1">
+                                 {(item.variants as any)?.includes('veg') ? <span className="w-3.5 h-3.5 border border-green-600 flex items-center justify-center p-[1px]"><span className="w-2 h-2 bg-green-600 rounded-full"></span></span> : null}
+                                 {(item.variants as any)?.includes('non-veg') ? <span className="w-3.5 h-3.5 border border-rose-600 flex items-center justify-center p-[1px]"><span className="w-2 h-2 bg-rose-600 rounded-full"></span></span> : null}
+                                 <p className="font-bold text-zinc-900">{item.title}</p>
+                               </div>
+                               <p className="text-xs text-zinc-500 font-medium">₹{item.price} • <span className="capitalize">{item.category?.name}</span></p>
+                             </div>
+                             <div className="flex items-center gap-3">
+                               <div onClick={(e) => e.stopPropagation()}>
+                                 <Switch checked={item.isActive} onCheckedChange={() => handleToggleItemActive(item.id, item.isActive)} />
+                               </div>
+                               <button className="text-zinc-400 hover:text-rose-500 p-2 hover:bg-rose-50 rounded-lg transition-colors" onClick={(e) => { e.stopPropagation(); setDeleteTarget(item); }}><Trash2 className="w-4 h-4"/></button>
+                             </div>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 font-medium text-zinc-600 capitalize">{item.category?.name || 'N/A'}</td>
-                        <td className="px-6 py-4 font-black text-primary">₹{item.price || '-'}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <Switch checked={item.isActive} onCheckedChange={() => handleToggleItemActive(item.id, item.isActive)} />
-                            <span className={`text-[10px] font-bold uppercase tracking-wide ${item.isActive ? 'text-emerald-600' : 'text-zinc-400'}`}>{item.isActive ? 'Active' : 'Paused'}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button onClick={() => handleOpenEditCatalog(item)} className="p-2 text-zinc-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"><Pencil className="w-4 h-4" /></button>
-                            <button onClick={() => setDeleteTarget(item)} className="p-2 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {catalogItems.length === 0 && (
+                        ))}
+                        {catalogItems.length === 0 && <div className="text-center p-8 text-zinc-400 font-medium border-2 border-dashed border-zinc-200 rounded-xl">No items added yet.</div>}
+                     </div>
+                  </div>
+                  {/* Right: Live Preview */}
+                  <div className="w-[320px] shrink-0 mx-auto lg:mx-0 sticky top-4">
+                     <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2 text-center">Live Mobile Preview</p>
+                     <div className="mockup-phone border-zinc-800 border-[8px] rounded-[2.5rem] h-[650px] w-[320px] overflow-hidden bg-zinc-50 relative shadow-2xl">
+                        <div className="h-6 w-full absolute top-0 z-50 flex justify-center pt-1">
+                           <div className="w-28 h-5 bg-zinc-800 rounded-b-xl absolute top-0"></div>
+                        </div>
+                        <div className="w-full h-full overflow-y-auto pb-20 scrollbar-hide">
+                           {/* Vendor Hero Mock */}
+                           <div className="relative h-[200px] bg-zinc-900 flex items-end p-4 pb-6">
+                             {vendor?.media?.filter((m:any) => m.type==='shop_photo')[0]?.secureUrl && (
+                               <img src={vendor?.media?.filter((m:any) => m.type==='shop_photo')[0]?.secureUrl} className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                             )}
+                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent"></div>
+                             <div className="relative z-10 text-white w-full">
+                               <h3 className="font-black text-2xl truncate">{vendor?.businessName}</h3>
+                               <p className="text-xs font-medium opacity-90 truncate">{vendor?.localityName}</p>
+                             </div>
+                           </div>
+                           
+                           {/* Active Form Preview (if open) */}
+                           {isCatalogOpen && (
+                             <div className="m-3 p-3 bg-amber-50 rounded-xl border border-amber-200 relative overflow-hidden">
+                               <div className="absolute top-0 right-0 bg-amber-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-bl-lg uppercase tracking-wider animate-pulse">Editing Now</div>
+                               <div className="flex justify-between items-start gap-2 mt-2">
+                                 <div className="flex-1">
+                                   <div className="flex items-start gap-1.5">
+                                     <div className="mt-1 shrink-0">
+                                       {catalogForm.variants?.includes('veg') ? <span className="w-3 h-3 border border-green-600 flex items-center justify-center p-[1px]"><span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span></span> : null}
+                                       {catalogForm.variants?.includes('non-veg') ? <span className="w-3 h-3 border border-rose-600 flex items-center justify-center p-[1px]"><span className="w-1.5 h-1.5 bg-rose-600 rounded-full"></span></span> : null}
+                                     </div>
+                                     <h4 className="font-bold text-sm text-zinc-900 leading-tight">{catalogForm.title || 'Item Name'}</h4>
+                                   </div>
+                                   <p className="text-xs font-black text-zinc-900 mt-1">₹{catalogForm.price || '0'}</p>
+                                   <p className="text-[10px] text-zinc-500 mt-1.5 line-clamp-2 leading-relaxed">{catalogForm.description || 'Description will appear here'}</p>
+                                 </div>
+                                 <div className="w-20 h-20 bg-zinc-100 rounded-xl overflow-hidden shrink-0 border border-zinc-200 relative">
+                                    {filePreview ? <img src={filePreview} className="w-full h-full object-cover"/> : <div className="absolute inset-0 flex items-center justify-center text-[10px] text-zinc-400 font-medium">No Image</div>}
+                                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
+                                       <button className="bg-white text-rose-600 text-[10px] font-black px-4 py-1 rounded-lg border shadow-sm">ADD</button>
+                                    </div>
+                                 </div>
+                               </div>
+                             </div>
+                           )}
+                           
+                           {/* Rest of items mocked */}
+                           <div className="p-4 space-y-6">
+                             {categories.map(cat => {
+                               const items = catalogItems.filter(i => i.categoryId === cat.id && i.isActive && i.id !== catalogForm.id);
+                               if (items.length === 0) return null;
+                               return (
+                                 <div key={cat.id}>
+                                   <h4 className="font-bold text-lg mb-3 text-zinc-900 capitalize">{cat.name}</h4>
+                                   <div className="space-y-4">
+                                     {items.map(item => (
+                                        <div key={item.id} className="flex justify-between items-start gap-3 border-b border-dashed border-zinc-200 pb-4 last:border-0 last:pb-0">
+                                          <div className="flex-1">
+                                            <div className="flex items-start gap-1.5">
+                                              <div className="mt-1 shrink-0">
+                                                {(item.variants as any)?.includes('veg') ? <span className="w-3 h-3 border border-green-600 flex items-center justify-center p-[1px]"><span className="w-2 h-2 bg-green-600 rounded-full"></span></span> : null}
+                                                {(item.variants as any)?.includes('non-veg') ? <span className="w-3 h-3 border border-rose-600 flex items-center justify-center p-[1px]"><span className="w-2 h-2 bg-rose-600 rounded-full"></span></span> : null}
+                                              </div>
+                                              <p className="font-bold text-sm text-zinc-900 leading-tight">{item.title}</p>
+                                            </div>
+                                            <p className="font-semibold text-xs text-zinc-900 mt-1">₹{item.price}</p>
+                                            {item.description && <p className="text-[10px] text-zinc-500 mt-1.5 line-clamp-2 leading-relaxed">{item.description}</p>}
+                                          </div>
+                                          <div className="w-24 h-24 bg-zinc-100 rounded-xl overflow-hidden shrink-0 relative">
+                                            {item.mediaUrl && <img src={item.mediaUrl} className="w-full h-full object-cover"/>}
+                                            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
+                                              <button className="bg-white text-rose-600 text-[10px] font-black px-5 py-1.5 rounded-lg border border-zinc-200 shadow-sm uppercase">Add</button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                     ))}
+                                   </div>
+                                 </div>
+                               );
+                             })}
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 font-bold uppercase tracking-wider text-[10px]">
                       <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center text-zinc-400 font-medium">No services added yet. Create one to get started!</td>
+                        <th className="px-6 py-4">Service Details</th>
+                        <th className="px-6 py-4">Category</th>
+                        <th className="px-6 py-4">Price</th>
+                        <th className="px-6 py-4">Status</th>
+                        <th className="px-6 py-4 text-right">Actions</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100">
+                      {catalogItems.map(item => (
+                        <tr key={item.id} className={`transition-colors hover:bg-zinc-50/50 ${!item.isActive ? 'opacity-70' : ''}`}>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-zinc-100 overflow-hidden border border-zinc-200 flex-shrink-0 flex items-center justify-center">
+                                {item.mediaUrl ? <img src={item.mediaUrl} className="w-full h-full object-cover" /> : <ImageIcon className="w-4 h-4 text-zinc-400" />}
+                              </div>
+                              <div>
+                                <p className="font-bold text-zinc-900">{item.title}</p>
+                                <p className="text-xs text-zinc-500 line-clamp-1 max-w-[200px]">{item.description || 'No description'}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 font-medium text-zinc-600 capitalize">{item.category?.name || 'N/A'}</td>
+                          <td className="px-6 py-4 font-black text-primary">₹{item.price || '-'}</td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <Switch checked={item.isActive} onCheckedChange={() => handleToggleItemActive(item.id, item.isActive)} />
+                              <span className={`text-[10px] font-bold uppercase tracking-wide ${item.isActive ? 'text-emerald-600' : 'text-zinc-400'}`}>{item.isActive ? 'Active' : 'Paused'}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button onClick={() => handleOpenEditCatalog(item)} className="p-2 text-zinc-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"><Pencil className="w-4 h-4" /></button>
+                              <button onClick={() => setDeleteTarget(item)} className="p-2 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {catalogItems.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-12 text-center text-zinc-400 font-medium">No services added yet. Create one to get started!</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
@@ -766,9 +889,33 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
           )}
 
           {activeTab === 'settings' && (
-            <div className="p-10 text-center text-zinc-500 font-medium border-2 border-dashed border-zinc-200 rounded-2xl">
-              <SettingsIcon className="w-10 h-10 mx-auto text-zinc-300 mb-4" />
-              <p>Settings panel moved to Vendor Profile.</p>
+            <div className="space-y-6">
+              <div className="p-10 text-center text-zinc-500 font-medium border-2 border-dashed border-zinc-200 rounded-2xl">
+                <SettingsIcon className="w-10 h-10 mx-auto text-zinc-300 mb-4" />
+                <p>General settings panel moved to Vendor Profile.</p>
+              </div>
+
+              {/* Danger Zone */}
+              <div className="mt-8 border-t border-destructive/20 pt-8 pb-4">
+                <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-destructive flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5" /> Danger Zone
+                      </h3>
+                      <p className="text-zinc-600 text-sm mt-1">
+                        Once you delete your account, there is no going back. Please be certain.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setIsDeleteModalOpen(true)}
+                      className="flex-shrink-0 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-colors px-4 py-2 rounded-xl text-sm font-bold border border-destructive/20"
+                    >
+                      Delete Account
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -800,9 +947,42 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
                   </select>
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-zinc-700">Variants (Optional)</Label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={catalogForm.variants?.includes('veg') || false} onChange={e => {
+                      const newVars = e.target.checked 
+                        ? [...(catalogForm.variants || []), 'veg'] 
+                        : (catalogForm.variants || []).filter((v: string) => v !== 'veg');
+                      setCatalogForm(prev => ({ ...prev, variants: newVars }));
+                    }} className="rounded border-zinc-300 text-green-600 focus:ring-green-600" />
+                    <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 border border-green-600 flex items-center justify-center p-[1px]"><span className="w-2 h-2 bg-green-600 rounded-full"></span></span> Veg</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={catalogForm.variants?.includes('non-veg') || false} onChange={e => {
+                      const newVars = e.target.checked 
+                        ? [...(catalogForm.variants || []), 'non-veg'] 
+                        : (catalogForm.variants || []).filter((v: string) => v !== 'non-veg');
+                      setCatalogForm(prev => ({ ...prev, variants: newVars }));
+                    }} className="rounded border-zinc-300 text-rose-600 focus:ring-rose-600" />
+                    <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 border border-rose-600 flex items-center justify-center p-[1px]"><span className="w-2 h-2 bg-rose-600 rounded-full"></span></span> Non-Veg</span>
+                  </label>
+                </div>
+              </div>
               <div className="space-y-1.5">
                 <Label htmlFor="description" className="text-xs font-bold text-zinc-700">Description</Label>
                 <Textarea id="description" value={catalogForm.description} onChange={e => setCatalogForm(prev => ({ ...prev, description: e.target.value }))} rows={2} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="service-image" className="text-xs font-bold text-zinc-700">Service Picture (Optional)</Label>
+                <input
+                  id="service-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
               </div>
               <div className="flex gap-3 pt-4 border-t border-zinc-100">
                 <DrawerClose asChild><Button type="button" variant="outline" className="flex-1">Cancel</Button></DrawerClose>
@@ -825,6 +1005,11 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
           </div>
         </div>
       )}
+
+      <DeleteAccountModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+      />
 
     </div>
   );

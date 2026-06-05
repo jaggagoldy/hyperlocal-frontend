@@ -1,12 +1,32 @@
 'use client';
 
-import { useEnquiryStore } from '@/store/useEnquiryStore';
 import Link from 'next/link';
 import { ArrowLeft, MessageSquare, Clock, MapPin, Building, ShieldCheck, Zap } from 'lucide-react';
 import Image from 'next/image';
 
+import { useEffect, useState } from 'react';
+import apiClient from '@/lib/api-client';
+import { useAuthStore } from '@/store/authStore';
+
 export default function MyEnquiriesPage() {
-  const { enquiries } = useEnquiryStore();
+  const [enquiries, setEnquiries] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await apiClient.get('/orders/my-orders');
+        setEnquiries(res.data.data);
+      } catch (err) {
+        console.error('Failed to fetch orders', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (user) fetchOrders();
+    else setIsLoading(false);
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-muted/20 pb-12">
@@ -36,7 +56,11 @@ export default function MyEnquiriesPage() {
           </div>
         </div>
 
-        {enquiries.length === 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : enquiries.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center border border-zinc-200 shadow-sm flex flex-col items-center">
             <div className="w-20 h-20 bg-zinc-50 rounded-full flex items-center justify-center mb-4">
               <MessageSquare className="w-8 h-8 text-zinc-300" />
@@ -54,17 +78,21 @@ export default function MyEnquiriesPage() {
           </div>
         ) : (
           <div className="grid gap-4">
-            {enquiries.sort((a, b) => b.timestamp - a.timestamp).map((enquiry) => (
+            {enquiries.map((enquiry) => {
+              const vendor = enquiry.vendor || {};
+              const firstItem = enquiry.items?.[0]?.catalogItem || {};
+              
+              return (
               <div 
-                key={`${enquiry.catalogItemId}-${enquiry.timestamp}`}
+                key={enquiry.id}
                 className="bg-white rounded-2xl p-4 sm:p-6 border border-zinc-200 shadow-sm flex flex-col sm:flex-row gap-6 hover:border-primary/20 transition-colors"
               >
                 {/* Media */}
                 <div className="w-full sm:w-48 h-32 relative rounded-xl bg-zinc-100 overflow-hidden flex-shrink-0">
-                  {enquiry.mediaUrl ? (
+                  {firstItem.mediaUrl || vendor.media?.[0]?.url ? (
                     <Image 
-                      src={enquiry.mediaUrl} 
-                      alt={enquiry.title || 'Service'} 
+                      src={firstItem.mediaUrl || vendor.media?.[0]?.url} 
+                      alt={firstItem.title || vendor.businessName || 'Service'} 
                       fill 
                       className="object-cover"
                     />
@@ -79,20 +107,30 @@ export default function MyEnquiriesPage() {
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between gap-4 mb-2">
-                      <h3 className="font-bold text-lg text-zinc-900">{enquiry.title || 'Unknown Service'}</h3>
-                      <span className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-black uppercase tracking-wider border border-amber-200/50">
+                      <h3 className="font-bold text-lg text-zinc-900">
+                        {enquiry.orderType === 'TRANSACTIONAL' ? `Order from ${vendor.businessName}` : (firstItem.title || 'Booking Request')}
+                      </h3>
+                      <span className={`flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                        enquiry.status === 'PENDING' ? 'bg-amber-50 text-amber-700 border-amber-200/50' :
+                        enquiry.status === 'ACCEPTED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/50' :
+                        enquiry.status === 'COMPLETED' ? 'bg-blue-50 text-blue-700 border-blue-200/50' :
+                        'bg-rose-50 text-rose-700 border-rose-200/50'
+                      }`}>
                         <Clock className="w-3 h-3" />
-                        Pending
+                        {enquiry.status}
                       </span>
                     </div>
                     
                     <div className="flex items-center gap-2 text-sm font-semibold text-zinc-700 mb-1">
                       <Building className="w-4 h-4 text-zinc-400" />
-                      {enquiry.vendorName || 'Unknown Vendor'}
+                      {vendor.businessName || 'Unknown Vendor'}
                     </div>
                     
                     <div className="text-xs text-zinc-500 font-medium flex items-center gap-1.5 mt-3">
-                      Requested on {new Date(enquiry.timestamp).toLocaleDateString()} at {new Date(enquiry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      Requested on {new Date(enquiry.createdAt).toLocaleDateString()} at {new Date(enquiry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <div className="text-sm font-bold mt-2">
+                      Total: ₹{enquiry.totalValue} ({enquiry.items?.length || 0} items)
                     </div>
                   </div>
 
@@ -110,7 +148,7 @@ export default function MyEnquiriesPage() {
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>

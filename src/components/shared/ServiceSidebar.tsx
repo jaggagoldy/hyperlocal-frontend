@@ -13,7 +13,6 @@ import { toast } from 'sonner';
 import { Loader2, X, ShieldCheck, MapPin, Star, BadgeCheck, Phone, CheckCircle2, Flag, Ban, Clock } from 'lucide-react';
 import Image from 'next/image';
 import { SaveProButton } from '@/components/shared/SaveProButton';
-import { useEnquiryStore } from '@/store/useEnquiryStore';
 import { AuthModal } from '@/components/shared/AuthModal';
 
 interface ServiceSidebarProps {
@@ -23,7 +22,6 @@ interface ServiceSidebarProps {
 
 export function ServiceSidebar({ item, vendorName }: ServiceSidebarProps) {
   const { user } = useAuthStore();
-  const { recordEnquiry, canEnquire } = useEnquiryStore();
   
   const [isOpen, setIsOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -37,7 +35,8 @@ export function ServiceSidebar({ item, vendorName }: ServiceSidebarProps) {
   const [phone, setPhone] = useState(user?.phoneNumber || '');
   const [requirement, setRequirement] = useState('');
 
-  const hasEnquiredRecently = !canEnquire(item.id);
+  const hasEnquiredRecently = false;
+  const canEnquire = (id: string) => true;
 
   const handleOpen = () => {
     if (!user) {
@@ -69,11 +68,6 @@ export function ServiceSidebar({ item, vendorName }: ServiceSidebarProps) {
         customerRequirement: requirement,
       });
 
-      recordEnquiry(item.id, {
-        title: item.title,
-        vendorName: vendorName,
-        mediaUrl: item.mediaUrl,
-      });
       setIsSuccess(true);
     } catch (error: any) {
       console.error(error);

@@ -124,7 +124,7 @@ export default function RegisterPage() {
           Create an account
         </h1>
         <p className="text-muted-foreground text-sm">
-          Join thousands of users on HyperLocal Go
+          Join thousands of users on NearByBazar
         </p>
       </div>
 

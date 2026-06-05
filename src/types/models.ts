@@ -24,24 +24,48 @@ export interface Media {
   secureUrl: string;
 }
 
-export interface Vendor {
+export type BusinessType =
+  | 'FOOD_BEVERAGE'
+  | 'SALON_BEAUTY'
+  | 'HOME_ESSENTIALS'
+  | 'CAB_TRANSPORT';
+
+export interface BusinessProfile {
   id: string;
   businessName: string;
   slug: string;
+  businessType: BusinessType;
   localityName: string;
   chowkLandmark?: string;
+  landmark?: string;
   pincode: string;
   status: string;
   membershipTier: string;
   rating: number;
+  isOnline: boolean;
+  isStreetVendor: boolean;
+  isFeatured?: boolean;
+  idVerified?: boolean;
+  themeFlavor?: string;
   phoneNumber?: string;
   description?: string;
   openingTime?: string;
   closingTime?: string;
+  timeAvailability?: string;
+  workingDays?: string;
+  operatingHours?: Record<string, { open: string; close: string }> | null;
+  latitude?: number;
+  longitude?: number;
+  metaData?: Record<string, any>; // Flexible configuration store
   city?: City;
   media?: Media[];
   reviews?: Review[];
+  categories?: { category: Category }[];
+  catalogItems?: CatalogItem[];
+  user?: { phoneNumber?: string };
 }
+
+
 
 export interface DashboardMetrics {
   totalVendors: number;
@@ -64,12 +88,15 @@ export interface CatalogItem {
   title: string;
   description?: string;
   price?: number;
+  unit?: string;
   mediaUrl?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
   category?: Category;
   vendor?: any;
+  variants?: { id: string; name: string; priceAdd: number }[] | null;
+  metaData?: Record<string, any>;
 }
 
 export interface Lead {

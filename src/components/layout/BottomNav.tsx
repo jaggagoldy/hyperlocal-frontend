@@ -2,17 +2,20 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, Bookmark, User } from 'lucide-react';
+import { Home, Search, Bookmark, User, Coffee } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/translations';
 
 export function BottomNav() {
   const pathname = usePathname();
 
+  const { t } = useTranslation();
+
   const navItems = [
-    { name: 'Home', href: '/', icon: Home },
-    { name: 'Explore', href: '/explore', icon: Search },
-    { name: 'Saved', href: '/saved', icon: Bookmark },
-    { name: 'Profile', href: '/profile', icon: User },
+    { name: t('home') || 'Home', href: '/', icon: Home },
+    { name: t('food') || 'Food', href: '/food', icon: Coffee },
+    { name: t('explore') || 'Explore', href: '/explore', icon: Search },
+    { name: t('profile') || 'Profile', href: '/profile', icon: User },
   ];
 
   const isVendorProfile = pathname.startsWith('/vendor/');

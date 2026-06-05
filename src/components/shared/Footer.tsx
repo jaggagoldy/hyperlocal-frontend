@@ -1,7 +1,16 @@
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { usePathname } from 'next/navigation';
 
 export function Footer() {
+  const pathname = usePathname();
+
+  if (pathname.startsWith('/vendor-dashboard') || pathname.startsWith('/admin')) {
+    return null;
+  }
+
   return (
     <footer className="bg-[#0A0A0A] text-white pt-16 pb-8 px-6 md:px-12 lg:px-24">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
@@ -11,7 +20,7 @@ export function Footer() {
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center font-bold text-white">
               H
             </div>
-            <span className="text-2xl font-bold tracking-tight">Hyperlocal</span>
+            <span className="text-2xl font-bold tracking-tight">NearByBazar</span>
           </div>
           
           <div className="flex items-center gap-3">
@@ -70,14 +79,14 @@ export function Footer() {
           
           <div className="text-sm text-zinc-400 space-y-1">
             <p className="font-medium text-white mb-1">Headquarters:</p>
-            <p>Hyperlocal Technologies Inc.</p>
+            <p>NearByBazar Technologies</p>
             <p>Tech Park, City Center</p>
           </div>
 
           <div className="text-sm text-zinc-400 space-y-1">
             <p className="font-medium text-white mb-1">Email:</p>
-            <a href="mailto:support@hyperlocal.app" className="hover:text-white transition-colors">
-              support@hyperlocal.app
+            <a href="mailto:support@nearbybazar.in" className="hover:text-white transition-colors">
+              support@nearbybazar.in
             </a>
           </div>
 
@@ -90,8 +99,8 @@ export function Footer() {
 
       {/* Bottom Bar */}
       <div className="max-w-7xl mx-auto mt-16 pt-6 border-t border-zinc-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
-        <p>© 2026, Hyperlocal Platform. All rights reserved.</p>
-        <p>Powered by: Hyperlocal Technologies</p>
+        <p>© 2026, NearByBazar. All rights reserved.</p>
+        <p>Powered by: NearByBazar Technologies</p>
       </div>
     </footer>
   );

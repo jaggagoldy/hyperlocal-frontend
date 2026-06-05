@@ -23,7 +23,7 @@ export default function AuthLayout({
         <div className="relative z-10">
           <Link href="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
-            <span className="font-semibold text-lg tracking-tight">HyperLocal Go</span>
+            <span className="font-semibold text-lg tracking-tight">NearByBazar</span>
           </Link>
         </div>
 
@@ -48,13 +48,16 @@ export default function AuthLayout({
             </div>
           </div>
         </div>
+
+        {/* Bottom Spacer for vertical center alignment */}
+        <div className="relative z-10 h-6" />
       </div>
 
       {/* Right Pane - Auth Form */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 lg:p-24 relative">
         <Link href="/" className="lg:hidden absolute top-6 left-6 inline-flex items-center gap-2 text-foreground/80 hover:text-foreground transition-colors">
           <ArrowLeft className="w-5 h-5" />
-          <span className="font-semibold tracking-tight">HyperLocal Go</span>
+          <span className="font-semibold tracking-tight">NearByBazar</span>
         </Link>
         
         <div className="w-full max-w-sm mx-auto">

@@ -1,6 +1,6 @@
 {
-  "name": "Hyperlocal Marketplace",
-  "short_name": "Hyperlocal",
+  "name": "NearByBazar Marketplace",
+  "short_name": "NearByBazar",
   "description": "Find local vendors near you instantly.",
   "start_url": "/",
   "display": "standalone",

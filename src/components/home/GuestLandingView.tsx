@@ -56,18 +56,10 @@ export function GuestLandingView() {
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-blue-500/30">
       
-      {/* ─── NAVBAR (Mock or Minimal for Landing) ─── */}
-      <div className="h-20 w-full bg-white border-b border-slate-100 flex items-center justify-between px-6 lg:px-12 fixed top-0 z-50">
-        <div className="font-black text-2xl tracking-tighter text-slate-900">Hyper<span className="text-blue-600">Local</span></div>
-        <div className="flex gap-4 items-center">
-          <Button variant="ghost" className="font-bold text-slate-600" onClick={() => router.push('/login')}>Log In</Button>
-        </div>
-      </div>
-
-      <main className="pt-20">
+      <main>
         {/* ─── HERO SECTION (Clean & Corporate) ─── */}
         <section className="bg-slate-50 border-b border-slate-200">
-          <div className="max-w-6xl mx-auto px-6 py-20 lg:py-32 flex flex-col items-center text-center space-y-8">
+          <div className="max-w-6xl mx-auto px-6 pt-12 pb-20 lg:pt-16 lg:pb-32 flex flex-col items-center text-center space-y-8">
             <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-700 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide">
               <Shield className="w-4 h-4" /> 100% Govt. ID Verified Pros
             </div>
@@ -114,7 +106,7 @@ export function GuestLandingView() {
         <section className="py-24 bg-white">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center space-y-4 mb-16">
-              <h2 className="text-3xl font-black text-slate-900">How HyperLocal Works</h2>
+              <h2 className="text-3xl font-black text-slate-900">How NearBy Bazar Works</h2>
               <p className="text-slate-500 font-medium">Three simple steps to get your job done right.</p>
             </div>
 
@@ -230,7 +222,7 @@ export function GuestLandingView() {
           <div className="max-w-4xl mx-auto px-6 text-center space-y-8">
             <h2 className="text-4xl md:text-5xl font-black text-white">Ready to simplify your life?</h2>
             <p className="text-blue-100 font-medium text-lg max-w-2xl mx-auto">
-              Join thousands of locals who trust HyperLocal to find the best professionals in the city.
+              Join thousands of locals who trust NearBy Bazar to find the best professionals in the city.
             </p>
             <Button 
               onClick={() => router.push('/login')}

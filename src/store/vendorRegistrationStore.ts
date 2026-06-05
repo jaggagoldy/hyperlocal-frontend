@@ -4,6 +4,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 export interface VendorRegistrationFormData {
   businessName: string;
   categoryId: string;
+  businessType: 'RESTAURANT' | 'STREET_VENDOR' | 'CLOUD_KITCHEN' | 'CHEF' | 'SALON' | 'EVENT_SERVICE' | 'HOME_MAINTENANCE' | '';
   locationType: 'Shop' | 'Freelancer' | '';
   cityName: string;
   localityName: string;
@@ -28,6 +29,7 @@ const initialState = {
   form: {
     businessName: '',
     categoryId: '',
+    businessType: '' as const,
     locationType: '' as const,
     cityName: '',
     localityName: '',

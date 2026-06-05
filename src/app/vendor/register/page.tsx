@@ -45,6 +45,8 @@ export default function VendorRegisterPage() {
   const [personalEmail, setPersonalEmail] = useState('');
   const [personalPassword, setPersonalPassword] = useState('');
   const [personalPhone, setPersonalPhone] = useState('');
+  const [personalGender, setPersonalGender] = useState('');
+  const [personalDob, setPersonalDob] = useState('');
 
   // Extract query params safely on mount
   useEffect(() => {
@@ -92,10 +94,10 @@ export default function VendorRegisterPage() {
 
   // ── Validation ──
   const isPersonalValid = onboardingToken 
-    ? (isGoogle ? !!personalPhone : (!!personalName && !!personalEmail && !!personalPassword))
+    ? (isGoogle ? (!!personalPhone && !!personalGender && !!personalDob) : (!!personalName && !!personalEmail && !!personalPassword && !!personalGender && !!personalDob))
     : true;
 
-  const step1Valid = form.businessName.trim() && form.categoryId && (form.categoryId !== 'other' || customCategory.trim()) && form.locationType && isPersonalValid;
+  const step1Valid = form.businessName.trim() && form.categoryId && form.businessType && (form.categoryId !== 'other' || customCategory.trim()) && form.locationType && isPersonalValid;
   const step2Valid = form.cityName && form.localityName.trim() && form.pincode.length === 6;
 
   // ── Submit ──
@@ -110,6 +112,8 @@ export default function VendorRegisterPage() {
         const onboardPayload: any = {
           onboardingToken,
           address: `${form.localityName}, ${form.cityName}, ${form.pincode}`,
+          gender: personalGender,
+          dateOfBirth: personalDob,
         };
         
         if (isGoogle) {
@@ -141,6 +145,7 @@ export default function VendorRegisterPage() {
         pincode: form.pincode,
         cityName: form.cityName,
         locationType: form.locationType,
+        businessType: form.businessType,
         categoryIds: form.categoryId === 'other' ? [] : [form.categoryId],
         requestedCategory: form.categoryId === 'other' ? customCategory.trim() : null,
       };
@@ -157,7 +162,7 @@ export default function VendorRegisterPage() {
         setAuth(currentToken, { ...currentUser, role: 'vendor' });
       }
 
-      toast.success('Welcome to HyperLocal Pro! 🎉', {
+      toast.success('Welcome to NearByBazar Pro! 🎉', {
         description: 'Your vendor profile is now live.',
         duration: 5000,
       });
@@ -257,6 +262,38 @@ export default function VendorRegisterPage() {
                         <Input className="h-11 bg-white" type="tel" value={personalPhone} onChange={e => setPersonalPhone(e.target.value)} placeholder="+91" required pattern="^[6-9]\d{9}$" />
                       </div>
                     )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-zinc-600 uppercase">Gender</label>
+                        <div className="relative">
+                          <select 
+                            className="w-full h-11 px-3 rounded-lg border border-zinc-200 bg-white text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary appearance-none"
+                            value={personalGender}
+                            onChange={(e) => setPersonalGender(e.target.value)}
+                            required
+                          >
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                          </select>
+                          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-zinc-600 uppercase">Date of Birth</label>
+                        <Input 
+                          className="h-11 bg-white" 
+                          type="date" 
+                          value={personalDob} 
+                          onChange={e => setPersonalDob(e.target.value)} 
+                          max={new Date().toISOString().split('T')[0]}
+                          required 
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -285,6 +322,28 @@ export default function VendorRegisterPage() {
                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                       ))}
                       <option value="other">Other (Custom Category)</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Business Type */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-zinc-700">Business Model</label>
+                  <div className="relative">
+                    <select
+                      className="w-full h-12 px-4 pr-10 rounded-xl border border-zinc-200 text-sm bg-white text-zinc-800 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary appearance-none font-medium"
+                      value={form.businessType}
+                      onChange={(e) => set('businessType', e.target.value)}
+                    >
+                      <option value="">Select how you operate...</option>
+                      <option value="RESTAURANT">Restaurant</option>
+                      <option value="CLOUD_KITCHEN">Cloud Kitchen</option>
+                      <option value="STREET_VENDOR">Street Food / Kiosk</option>
+                      <option value="CHEF">Personal Chef / Catering</option>
+                      <option value="SALON">Salon / Spa</option>
+                      <option value="EVENT_SERVICE">Event Service</option>
+                      <option value="HOME_MAINTENANCE">Home Maintenance (Electrician, Plumber)</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
                   </div>

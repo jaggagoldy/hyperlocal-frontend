@@ -68,6 +68,8 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const [onboardingPassword, setOnboardingPassword] = useState('');
   const [onboardingPhone, setOnboardingPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [gender, setGender] = useState('Male');
+  const [dateOfBirth, setDateOfBirth] = useState('');
 
   useEffect(() => {
     if (!isOpen || !recaptchaRef.current) return;
@@ -99,7 +101,10 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     setName('');
     setOnboardingEmail('');
     setOnboardingPassword('');
+    setOnboardingPassword('');
     setAddress('');
+    setGender('Male');
+    setDateOfBirth('');
     setOnboardingToken('');
   };
 
@@ -192,9 +197,12 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         return toast.error('Please fill in your phone number and address.');
       }
     } else {
-      if (!name || !onboardingEmail || !onboardingPassword || !address) {
+      if (!name || !onboardingEmail || !onboardingPassword || !address || !dateOfBirth) {
         return toast.error('Please fill in all required fields.');
       }
+    }
+    if (!dateOfBirth) {
+      return toast.error('Please select your Date of Birth.');
     }
     
     setLoading(true);
@@ -202,6 +210,8 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
       const payload: any = {
         onboardingToken,
         address,
+        gender,
+        dateOfBirth
       };
       if (isOnboardingFromGoogle) {
         payload.phoneNumber = onboardingPhone;
@@ -437,6 +447,21 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             </div>
           )}
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Gender</label>
+              <select className="flex h-10 w-full rounded-xl border border-input bg-muted/30 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" value={gender} onChange={e => setGender(e.target.value)}>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Date of Birth *</label>
+              <Input className="h-10 bg-muted/30 rounded-xl" type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} required max={new Date().toISOString().split('T')[0]} />
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Complete Address *</label>
             <Input className="h-10 bg-muted/30 rounded-xl" value={address} onChange={e => setAddress(e.target.value)} required />
@@ -459,7 +484,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   );
 
   const title = 
-    mode === 'email' || mode === 'phone' ? 'Welcome to HyperLocal' : 
+    mode === 'email' || mode === 'phone' ? 'Welcome to NearByBazar' : 
     mode === 'otp' ? 'Verify your number' : 
     'Complete your profile';
     

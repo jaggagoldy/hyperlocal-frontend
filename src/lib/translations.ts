@@ -3,6 +3,7 @@ import { useLanguageStore } from '@/store/languageStore';
 export const TRANSLATIONS = {
   en: {
     // Navbar
+    home: 'Home',
     explore: 'Explore',
     profile: 'Profile',
     logout: 'Logout',
@@ -20,11 +21,13 @@ export const TRANSLATIONS = {
     // Verticals
     verticalsTitle: 'Browse Marketplace Categories',
     verticalsSubtitle: 'Choose from daily services, rentals, salons, or real estate',
+    food: 'Food',
     homeMaintenance: 'Home Maintenance',
     applianceRepair: 'Appliance Repair',
     carRental: 'Car & Travel',
     salonBooking: 'Salon & Beauty',
     realEstate: 'Real Estate',
+    foodAndDining: 'Food & Dining',
     allServices: 'All Services',
     moreServices: 'More Categories',
 
@@ -38,6 +41,9 @@ export const TRANSLATIONS = {
     'car-rental-sub': 'Car Rental',
     'salon-booking-sub': 'Salon Booking',
     'real-estate-sub': 'Real Estate',
+    'restaurant': 'Restaurant',
+    'cloud-kitchen': 'Cloud Kitchen',
+    'street-food': 'Street Food',
 
     // RFQ Form
     rfqTitle: 'What are you looking for?',
@@ -57,7 +63,7 @@ export const TRANSLATIONS = {
     bookPro: 'Direct Enquiry',
 
     // Value Prop Card
-    valueTitle: 'Why Choose HyperLocal?',
+    valueTitle: 'Why Choose NearBy Bazar?',
     value1Title: 'Direct Connection',
     value1Desc: 'Connect with local vendors directly via WhatsApp or Phone Call.',
     value2Title: 'Zero Commission Fees',
@@ -70,11 +76,11 @@ export const TRANSLATIONS = {
     noResults: 'No Items Found',
     noResultsDesc: "We couldn't find any results matching your search criteria.",
     comingSoonTitle: 'We are Coming Soon to {city}! 🚀',
-    comingSoonDesc: 'HyperLocal is currently expanding. We are onboarding verified professionals in your area. We will be live here very soon!',
+    comingSoonDesc: 'NearBy Bazar is currently expanding. We are onboarding verified professionals in your area. We will be live here very soon!',
     getNotified: 'Get Notified When Live',
     getNotifiedDesc: 'Leave your contact info and be the first to know.',
     notifyMe: 'Notify Me',
-    forPros: 'Earn with HyperLocal',
+    forPros: 'Earn with NearByBazar',
     areYouPro: 'Are you a Local Service Pro?',
     proDesc: 'Get leads directly from customers. Create your catalog, verify identity, and boost business.',
     joinProToday: 'Join as a Pro Today',
@@ -90,6 +96,7 @@ export const TRANSLATIONS = {
   },
   hi: {
     // Navbar
+    home: 'होम',
     explore: 'खोजें',
     profile: 'प्रोफ़ाइल',
     logout: 'लॉगआउट',
@@ -107,13 +114,15 @@ export const TRANSLATIONS = {
     // Verticals
     verticalsTitle: 'मार्केटप्लेस श्रेणियों को देखें',
     verticalsSubtitle: 'दैनिक सेवाओं, किराये, सैलून या रियल एस्टेट में से चुनें',
+    food: 'खाना-पीना',
     homeMaintenance: 'घर की मरम्मत',
     applianceRepair: 'बिजली के उपकरण',
-    carRental: 'कार और यात्रा',
-    salonBooking: 'सैलून और सौंदर्य',
-    realEstate: 'संपत्ति और डीलर',
-    allServices: 'सभी सेवाएँ',
-    moreServices: 'अन्य श्रेणियां',
+    carRental: 'किराये की कार',
+    salonBooking: 'सैलून और ब्यूटी',
+    realEstate: 'रियल एस्टेट',
+    foodAndDining: 'खाना-पीना और रेस्टोरेंट',
+    allServices: 'सभी सेवाएं',
+    moreServices: 'अधिक श्रेणियां',
 
     // Category Translations
     electrician: 'बिजली मिस्त्री (इलेक्ट्रीशियन)',
@@ -122,9 +131,12 @@ export const TRANSLATIONS = {
     painter: 'चित्रकार (पेंटर)',
     'ac-repair': 'एसी रिपेयर',
     'ro-repair': 'आर ओ रिपेयर',
-    'car-rental-sub': 'कार किराये पर',
+    'car-rental-sub': 'किराये की कार',
     'salon-booking-sub': 'सैलून बुकिंग',
-    'real-estate-sub': 'संपत्ति / दुकान रेंट',
+    'real-estate-sub': 'रियल एस्टेट',
+    'restaurant': 'रेस्टोरेंट',
+    'cloud-kitchen': 'क्लाउड किचन',
+    'street-food': 'स्ट्रीट फूड',
 
     // RFQ Form
     rfqTitle: 'आपको क्या चाहिए?',
@@ -144,7 +156,7 @@ export const TRANSLATIONS = {
     bookPro: 'सीधी पूछताछ',
 
     // Value Prop Card
-    valueTitle: 'हाइपरलोकल क्यों चुनें?',
+    valueTitle: 'NearByBazar क्यों चुनें?',
     value1Title: 'सीधा संपर्क',
     value1Desc: 'व्हाट्सएप या फोन कॉल के जरिए सीधे स्थानीय वेंडर्स से संपर्क करें।',
     value2Title: 'कोई कमीशन फीस नहीं',
@@ -157,11 +169,11 @@ export const TRANSLATIONS = {
     noResults: 'कोई परिणाम नहीं मिला',
     noResultsDesc: 'हमें आपकी खोज के मानदंडों से मेल खाता कोई परिणाम नहीं मिला।',
     comingSoonTitle: 'हम जल्द ही {city} आ रहे हैं! 🚀',
-    comingSoonDesc: 'हाइपरलोकल वर्तमान में विस्तार कर रहा है। हम आपके क्षेत्र में सत्यापित पेशेवरों को जोड़ रहे हैं। हम जल्द ही यहां लाइव होंगे!',
+    comingSoonDesc: 'NearByBazar वर्तमान में विस्तार कर रहा है। हम आपके क्षेत्र में सत्यापित पेशेवरों को जोड़ रहे हैं। हम जल्द ही यहां लाइव होंगे!',
     getNotified: 'लाइव होने पर सूचना प्राप्त करें',
     getNotifiedDesc: 'अपनी संपर्क जानकारी छोड़ें और सबसे पहले जानें।',
     notifyMe: 'मुझे सूचित करें',
-    forPros: 'हाइपरलोकल से कमाएं',
+    forPros: 'NearByBazar से कमाएं',
     areYouPro: 'क्या आप एक स्थानीय सर्विस प्रो हैं?',
     proDesc: 'ग्राहकों से सीधे लीड प्राप्त करें। अपनी कैटलॉग बनाएं, पहचान सत्यापित करें और व्यवसाय बढ़ाएं।',
     joinProToday: 'आज ही प्रो के रूप में जुड़ें',

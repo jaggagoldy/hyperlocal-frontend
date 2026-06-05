@@ -1,11 +1,14 @@
 'use client';
 
 import { useAuthStore } from '@/store/authStore';
-import { User, Package, Heart, Bell, Shield, MapPin, CreditCard, ChevronRight, Zap, LayoutDashboard, MessageSquare } from 'lucide-react';
+import { User, Package, Heart, Bell, Shield, MapPin, CreditCard, ChevronRight, Zap, LayoutDashboard, MessageSquare, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
+import DeleteAccountModal from '@/components/shared/DeleteAccountModal';
 
 export default function ProfilePage() {
   const { user } = useAuthStore();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const isVendor = user?.role === 'vendor' || user?.role === 'admin';
 
   const menuItems = [
@@ -36,7 +39,7 @@ export default function ProfilePage() {
               </p>
               {isVendor && (
                 <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 mt-2">
-                  <Zap className="w-3 h-3" /> HyperLocal Pro
+                  <Zap className="w-3 h-3" /> NearByBazar Pro
                 </span>
               )}
             </div>
@@ -108,7 +111,7 @@ export default function ProfilePage() {
                   <span className="text-xs font-bold text-white/60 uppercase tracking-wider">For Professionals</span>
                 </div>
                 <h3 className="text-2xl font-bold mb-2 leading-tight">
-                  Grow your business<br />with HyperLocal Go
+                  Grow your business<br />with NearByBazar
                 </h3>
                 <p className="text-zinc-400 text-sm max-w-sm leading-relaxed">
                   List your services, get verified leads from local customers, and manage everything from a dedicated pro dashboard.
@@ -131,8 +134,34 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
+        {/* Danger Zone */}
+        <div className="mt-8 border-t border-destructive/20 pt-8 pb-4">
+          <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-destructive flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" /> Danger Zone
+                </h3>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Once you delete your account, there is no going back. Please be certain.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsDeleteModalOpen(true)}
+                className="flex-shrink-0 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-colors px-4 py-2 rounded-xl text-sm font-bold border border-destructive/20"
+              >
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
 
       </div>
+
+      <DeleteAccountModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+      />
     </div>
   );
 }

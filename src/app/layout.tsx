@@ -20,13 +20,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Hyperlocal Platform",
+  title: "NearByBazar",
   description: "Find the best local vendors near you.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Hyperlocal",
+    title: "NearByBazar",
   },
 };
 
