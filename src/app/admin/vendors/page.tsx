@@ -6,10 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import apiClient from '@/lib/api-client';
 
-import { Vendor } from '@/types/models';
+import { BusinessProfile } from '@/types/models';
 
 export default function VendorModerationPage() {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendors, setVendors] = useState<BusinessProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchVendors = async () => {
