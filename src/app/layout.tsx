@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+import PwaManifestInjector from '@/components/PwaManifestInjector';
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -38,6 +40,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} min-h-screen bg-background text-foreground`} suppressHydrationWarning>
+        <Suspense fallback={null}>
+          <PwaManifestInjector />
+        </Suspense>
         <GoogleAuthProvider>
           <AuthGuard>
             <TutorialModal />

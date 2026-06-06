@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, MessageSquare, Clock, MapPin, Building, ShieldCheck, Zap } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Clock, MapPin, Building, ShieldCheck, Phone, X } from 'lucide-react';
 import Image from 'next/image';
 
 import { useEffect, useState } from 'react';
@@ -27,6 +27,12 @@ export default function MyEnquiriesPage() {
     if (user) fetchOrders();
     else setIsLoading(false);
   }, [user]);
+
+  const openWhatsApp = (phone: string, businessName: string) => {
+    const formattedPhone = phone.startsWith('+') ? phone.replace('+', '') : (phone.length === 10 ? `91${phone}` : phone);
+    const text = `Hi ${businessName}, I'm following up on my booking request from NearByBazar. Could you please share further details?`;
+    window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(text)}`, '_blank');
+  };
 
   return (
     <div className="min-h-screen bg-muted/20 pb-12">
@@ -79,8 +85,10 @@ export default function MyEnquiriesPage() {
         ) : (
           <div className="grid gap-4">
             {enquiries.map((enquiry) => {
-              const vendor = enquiry.vendor || {};
+              // FIX F5: was `enquiry.vendor` — correct relation name is `businessProfile`
+              const vendor = enquiry.businessProfile || {};
               const firstItem = enquiry.items?.[0]?.catalogItem || {};
+              const vendorPhone = vendor.user?.phoneNumber;
               
               return (
               <div 
@@ -89,9 +97,9 @@ export default function MyEnquiriesPage() {
               >
                 {/* Media */}
                 <div className="w-full sm:w-48 h-32 relative rounded-xl bg-zinc-100 overflow-hidden flex-shrink-0">
-                  {firstItem.mediaUrl || vendor.media?.[0]?.url ? (
+                  {firstItem.mediaUrl || vendor.media?.[0]?.secureUrl ? (
                     <Image 
-                      src={firstItem.mediaUrl || vendor.media?.[0]?.url} 
+                      src={firstItem.mediaUrl || vendor.media?.[0]?.secureUrl} 
                       alt={firstItem.title || vendor.businessName || 'Service'} 
                       fill 
                       className="object-cover"
@@ -112,12 +120,12 @@ export default function MyEnquiriesPage() {
                       </h3>
                       <span className={`flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
                         enquiry.status === 'PENDING' ? 'bg-amber-50 text-amber-700 border-amber-200/50' :
-                        enquiry.status === 'ACCEPTED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/50' :
+                        enquiry.status === 'CONFIRMED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/50' :
                         enquiry.status === 'COMPLETED' ? 'bg-blue-50 text-blue-700 border-blue-200/50' :
                         'bg-rose-50 text-rose-700 border-rose-200/50'
                       }`}>
                         <Clock className="w-3 h-3" />
-                        {enquiry.status}
+                        {enquiry.status === 'CONFIRMED' ? 'ACCEPTED' : enquiry.status}
                       </span>
                     </div>
                     
@@ -132,19 +140,50 @@ export default function MyEnquiriesPage() {
                     <div className="text-sm font-bold mt-2">
                       Total: ₹{enquiry.totalValue} ({enquiry.items?.length || 0} items)
                     </div>
+
+                    {/* FIX F6: Show rejection reason clearly */}
+                    {enquiry.status === 'REJECTED' && enquiry.rejectionReason && (
+                      <div className="mt-3 flex items-start gap-2 p-3 bg-rose-50 border border-rose-200 rounded-xl">
+                        <X className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-bold text-rose-700 uppercase tracking-wider mb-0.5">Request Declined</p>
+                          <p className="text-sm text-rose-600 font-medium">{enquiry.rejectionReason}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
+                  {/* FIX: 2-Way Connect UI (Post-Acceptance) — no chat button per Phase 2 deferral */}
                   <div className="mt-4 pt-4 border-t border-zinc-100 flex flex-col sm:flex-row gap-3">
-                    <button className="flex-1 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center justify-center gap-2">
-                      <Zap className="w-3.5 h-3.5" />
-                      Upgrade to unlock WhatsApp
-                    </button>
-                    <Link
-                      href="/explore"
-                      className="flex-1 px-4 py-2 bg-zinc-50 text-zinc-700 rounded-lg text-xs font-bold border border-zinc-200 hover:bg-zinc-100 transition-colors flex items-center justify-center text-center"
-                    >
-                      Browse Services
-                    </Link>
+                    {enquiry.status === 'CONFIRMED' && vendorPhone ? (
+                      <>
+                        <a
+                          href={`tel:${vendorPhone}`}
+                          className="flex-1 px-4 py-2.5 bg-zinc-900 text-white rounded-xl text-sm font-bold border border-zinc-700 hover:bg-zinc-700 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Phone className="w-4 h-4" />
+                          Call Vendor
+                        </a>
+                        <button
+                          onClick={() => openWhatsApp(vendorPhone, vendor.businessName || 'Vendor')}
+                          className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                          WhatsApp Vendor
+                        </button>
+                      </>
+                    ) : enquiry.status === 'PENDING' ? (
+                      <div className="flex-1 px-4 py-2.5 bg-amber-50 text-amber-700 rounded-xl text-sm font-semibold border border-amber-200 text-center">
+                        ⏳ Awaiting vendor response...
+                      </div>
+                    ) : enquiry.status === 'REJECTED' ? (
+                      <Link
+                        href="/explore"
+                        className="flex-1 px-4 py-2.5 bg-zinc-50 text-zinc-700 rounded-xl text-sm font-bold border border-zinc-200 hover:bg-zinc-100 transition-colors flex items-center justify-center text-center"
+                      >
+                        Find Another Vendor
+                      </Link>
+                    ) : null}
                   </div>
                 </div>
               </div>

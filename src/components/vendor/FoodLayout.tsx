@@ -125,18 +125,9 @@ export default function FoodLayout({ business, theme }: FoodLayoutProps) {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-8 mt-6 relative">
-          <div className="hidden md:block w-64 shrink-0 sticky top-48 h-[calc(100vh-12rem)] overflow-y-auto pr-4 border-r border-zinc-100">
-            <ul className="space-y-1 font-semibold text-zinc-500 text-base">
-              {categories.map((cat, idx) => (
-                <li key={cat} className={`px-4 py-3.5 rounded-xl cursor-pointer transition-colors ${idx === 0 ? 'bg-rose-50 text-rose-600 border-r-4 border-rose-500 font-bold' : 'hover:bg-zinc-50'}`}>
-                  {cat}
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div className="flex flex-col gap-8 mt-6 relative">
           
-          <div className="md:hidden flex overflow-x-auto gap-2 pb-4 -mx-4 px-4 sticky top-[120px] bg-white/95 backdrop-blur-md z-20 shadow-sm">
+          <div className="flex overflow-x-auto gap-2 pb-4 -mx-4 px-4 sticky top-[120px] bg-white/95 backdrop-blur-md z-20 shadow-sm">
             {categories.map((cat, idx) => (
               <button key={cat} className={`shrink-0 px-5 py-2.5 rounded-full text-sm font-bold transition-colors ${idx === 0 ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-600'}`}>
                 {cat}
@@ -170,9 +161,22 @@ export default function FoodLayout({ business, theme }: FoodLayoutProps) {
                           
                           <h4 className="font-bold text-zinc-900 text-lg leading-tight mb-1">{item.title}</h4>
                           
-                          <div className="font-bold mt-1 text-[16px] text-zinc-800">
-                            ₹{item.price?.toString()}
-                          </div>
+                          {(() => {
+                            const customPortions = item.variants && Array.isArray(item.variants) && item.variants.length > 0 && typeof item.variants[0] === 'object' ? item.variants : null;
+                            if (customPortions) {
+                              const minPrice = Math.min(...customPortions.map((p: any) => Number(p.price)));
+                              return (
+                                <div className="font-bold mt-1 text-[16px] text-zinc-800">
+                                  Starts at ₹{minPrice}
+                                </div>
+                              );
+                            }
+                            return (
+                              <div className="font-bold mt-1 text-[16px] text-zinc-800">
+                                ₹{item.price?.toString()}
+                              </div>
+                            );
+                          })()}
                           
                           {hasVariants && (
                              <div className="inline-block mt-2 px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-black uppercase tracking-wider rounded-md border border-blue-200">

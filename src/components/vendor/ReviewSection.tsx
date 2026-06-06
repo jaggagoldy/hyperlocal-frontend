@@ -51,8 +51,10 @@ export function ReviewSection({ vendorId, ratingAvg, reviewCount, reviews }: Rev
         return;
       }
       try {
-        const res = await apiClient.get(`/orders/eligibility?vendorId=${vendorId}`);
-        setIsEligible(res.data.data.eligible);
+        const res = await apiClient.get(`/orders/eligibility?businessProfileId=${vendorId}`);
+        if (res.data.status === 'success') {
+          setIsEligible(res.data.data.eligible);
+        }
       } catch (e) {
         setIsEligible(false);
       } finally {

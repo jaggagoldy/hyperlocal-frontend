@@ -104,10 +104,12 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
   const [vendor, setVendor] = useState<any>(null);
   const [analytics, setAnalytics] = useState<any>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null);
+  const [isUpdatingOrderStatus, setIsUpdatingOrderStatus] = useState<string | null>(null);
   const [isUpdatingProfileStatus, setIsUpdatingProfileStatus] = useState(false);
 
   // Catalog Item Creation/Editing state
@@ -208,6 +210,13 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
       setAnalytics(profileData.analytics);
       setLeads(profileData.leads || []);
       
+      try {
+        const ordersRes = await apiClient.get('/orders/vendor');
+        setOrders(ordersRes.data?.data || []);
+      } catch(e) {
+        console.error('Failed to fetch orders', e);
+      }
+      
       const catalogRes = await apiClient.get(`/catalog/business/${profileData.business.id}`);
       setCatalogItems(catalogRes.data?.data || []);
       
@@ -248,6 +257,26 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
       setLeads(leadsRes.data?.data || []);
     } finally {
       setIsUpdatingStatus(null);
+    }
+  };
+
+  const handleOrderStatusChange = async (orderId: string, newStatus: string) => {
+    if (!vendor) return;
+    setIsUpdatingOrderStatus(orderId);
+    try {
+      await apiClient.patch(`/orders/vendor/${orderId}`, {
+        status: newStatus
+      });
+      toast.success(`Order marked as ${newStatus}`);
+      
+      setOrders(prev => prev.map(order => 
+        order.id === orderId ? { ...order, status: newStatus } : order
+      ));
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.response?.data?.message || 'Failed to update order status');
+    } finally {
+      setIsUpdatingOrderStatus(null);
     }
   };
 
@@ -474,6 +503,10 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
   const contactedLeadsCount = leads.filter(l => l.status === 'CONTACTED').length;
   const convertedLeadsCount = leads.filter(l => l.status === 'CONVERTED').length;
 
+  const newOrdersCount = orders.filter(o => o.status === 'PENDING').length;
+  const preparingOrdersCount = orders.filter(o => o.status === 'CONFIRMED').length;
+  const completedOrdersCount = orders.filter(o => o.status === 'COMPLETED').length;
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-zinc-50/50 pb-20">
@@ -551,8 +584,8 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
 
         <nav className="p-3 flex xl:flex-col gap-1 overflow-x-auto xl:overflow-visible scrollbar-none">
           {[
-            { id: 'leads', label: t('leads'), icon: Layers, count: newLeadsCount },
-            { id: 'services', label: t('services'), icon: Package, count: catalogItems.length },
+            { id: 'leads', label: isMenuBuilderMode ? 'Live Orders' : t('leads'), icon: Layers, count: isMenuBuilderMode ? newOrdersCount : newLeadsCount },
+            { id: 'services', label: isMenuBuilderMode ? 'Menu Builder' : t('services'), icon: Package, count: catalogItems.length },
             { id: 'analytics', label: t('analytics'), icon: TrendingUp },
             { id: 'settings', label: t('settings'), icon: SettingsIcon }
           ].map(tab => (
@@ -586,37 +619,92 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
         <div className="bg-white border-b border-zinc-200 px-4 xl:px-8 py-6 sticky top-0 z-30">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-zinc-50 p-4 rounded-xl border border-zinc-100">
-              <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-1">Total Leads</p>
-              <p className="text-2xl font-black text-zinc-900">{leads.length}</p>
+              <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-1">Profile Views</p>
+              <p className="text-2xl font-black text-zinc-900">{analytics?.profileViews || 0}</p>
             </div>
             <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100">
-              <p className="text-amber-600/80 text-[10px] font-bold uppercase tracking-wider mb-1">Pending Action</p>
-              <p className="text-2xl font-black text-amber-600">{newLeadsCount}</p>
+              <p className="text-amber-600/80 text-[10px] font-bold uppercase tracking-wider mb-1">Total Leads</p>
+              <p className="text-2xl font-black text-amber-600">{(analytics?.whatsappClicks || 0) + (analytics?.callClicks || 0)}</p>
             </div>
             <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
-              <p className="text-indigo-600/80 text-[10px] font-bold uppercase tracking-wider mb-1">Active Services</p>
-              <p className="text-2xl font-black text-indigo-600">{catalogItems.filter(i => i.isActive).length}</p>
+              <p className="text-indigo-600/80 text-[10px] font-bold uppercase tracking-wider mb-1">Average Rating</p>
+              <p className="text-2xl font-black text-indigo-600">4.8 <span className="text-sm">★</span></p>
             </div>
             <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
               <p className="text-emerald-600/80 text-[10px] font-bold uppercase tracking-wider mb-1">Total Revenue</p>
-              <p className="text-2xl font-black text-emerald-600">
-                ₹{Object.values(leadRevenues).reduce((acc, curr) => acc + (parseInt(curr) || 0), 0) || '0'}
-              </p>
+              <p className="text-2xl font-black text-emerald-600">₹{analytics?.totalRevenue || 0}</p>
             </div>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 xl:p-8">
           
-          {/* ─── LEADS KANBAN BOARD ─── */}
+          {/* ─── LIVE ORDERS & LEADS KANBAN BOARD ─── */}
           {activeTab === 'leads' && (
             <div className="h-full flex flex-col">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-black text-zinc-900 tracking-tight">Lead Pipeline</h2>
+                <h2 className="text-xl font-black text-zinc-900 tracking-tight">{isMenuBuilderMode ? 'Live Orders' : 'Lead Pipeline'}</h2>
               </div>
               
               <div className="flex flex-col md:flex-row gap-6 items-start h-full pb-10">
-                
+                {isMenuBuilderMode ? (
+                  <>
+                    {/* NEW ORDERS COLUMN */}
+                    <div className="flex-1 w-full bg-zinc-100/50 rounded-2xl p-4 border border-zinc-200">
+                      <div className="flex items-center justify-between mb-4 px-1">
+                        <h3 className="font-bold text-sm text-zinc-700 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-indigo-500"></span> New Orders
+                        </h3>
+                        <span className="bg-zinc-200 text-zinc-600 text-xs font-bold px-2 py-0.5 rounded-full">{newOrdersCount}</span>
+                      </div>
+                      <div className="space-y-3">
+                        {orders.filter(o => o.status === 'PENDING').map(order => (
+                          <OrderCard key={order.id} order={order} handleOrderStatusChange={handleOrderStatusChange} isUpdatingOrderStatus={isUpdatingOrderStatus} />
+                        ))}
+                        {orders.filter(o => o.status === 'PENDING').length === 0 && (
+                          <div className="text-center p-6 text-zinc-400 text-sm font-medium border-2 border-dashed border-zinc-200 rounded-xl">No new orders</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* PREPARING COLUMN */}
+                    <div className="flex-1 w-full bg-zinc-100/50 rounded-2xl p-4 border border-zinc-200">
+                      <div className="flex items-center justify-between mb-4 px-1">
+                        <h3 className="font-bold text-sm text-zinc-700 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-amber-500"></span> Preparing
+                        </h3>
+                        <span className="bg-zinc-200 text-zinc-600 text-xs font-bold px-2 py-0.5 rounded-full">{preparingOrdersCount}</span>
+                      </div>
+                      <div className="space-y-3">
+                        {orders.filter(o => o.status === 'CONFIRMED').map(order => (
+                          <OrderCard key={order.id} order={order} handleOrderStatusChange={handleOrderStatusChange} isUpdatingOrderStatus={isUpdatingOrderStatus} />
+                        ))}
+                        {orders.filter(o => o.status === 'CONFIRMED').length === 0 && (
+                          <div className="text-center p-6 text-zinc-400 text-sm font-medium border-2 border-dashed border-zinc-200 rounded-xl">No orders preparing</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* COMPLETED COLUMN */}
+                    <div className="flex-1 w-full bg-zinc-100/50 rounded-2xl p-4 border border-zinc-200">
+                      <div className="flex items-center justify-between mb-4 px-1">
+                        <h3 className="font-bold text-sm text-zinc-700 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Completed
+                        </h3>
+                        <span className="bg-zinc-200 text-zinc-600 text-xs font-bold px-2 py-0.5 rounded-full">{completedOrdersCount}</span>
+                      </div>
+                      <div className="space-y-3">
+                        {orders.filter(o => o.status === 'COMPLETED').map(order => (
+                          <OrderCard key={order.id} order={order} handleOrderStatusChange={handleOrderStatusChange} isUpdatingOrderStatus={isUpdatingOrderStatus} />
+                        ))}
+                        {orders.filter(o => o.status === 'COMPLETED').length === 0 && (
+                          <div className="text-center p-6 text-zinc-400 text-sm font-medium border-2 border-dashed border-zinc-200 rounded-xl">No completed orders</div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
                 {/* NEW COLUMN */}
                 <div className="flex-1 w-full bg-zinc-100/50 rounded-2xl p-4 border border-zinc-200">
                   <div className="flex items-center justify-between mb-4 px-1">
@@ -691,6 +779,8 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
                   </div>
                 </div>
 
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -879,12 +969,88 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
             </div>
           )}
 
-          {/* ─── ANALYTICS AND SETTINGS PLACEHOLDERS ─── */}
           {activeTab === 'analytics' && (
-            <div className="p-10 text-center text-zinc-500 font-medium border-2 border-dashed border-zinc-200 rounded-2xl">
-              <TrendingUp className="w-10 h-10 mx-auto text-zinc-300 mb-4" />
-              <p>Analytics Dashboard is active via Hero Stats.</p>
-              <p className="text-sm mt-2">More detailed graphs coming soon.</p>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-black text-zinc-900 tracking-tight">Performance Analytics</h2>
+                  <p className="text-sm text-zinc-500 font-medium mt-1">Track your business growth and leads</p>
+                </div>
+                <Select defaultValue="all">
+                  <SelectTrigger className="w-[150px] font-bold">
+                    <SelectValue placeholder="Date Range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="7days">Last 7 Days</SelectItem>
+                    <SelectItem value="1month">Last Month</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm">
+                  <div className="flex items-center gap-2 text-indigo-600 mb-2">
+                    <Eye className="w-5 h-5" />
+                    <h3 className="font-bold text-sm text-zinc-700">Profile Views</h3>
+                  </div>
+                  <p className="text-3xl font-black text-zinc-900">{analytics?.profileViews || 0}</p>
+                  <p className="text-xs text-emerald-600 font-bold mt-2 flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" /> +12% this week
+                  </p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm">
+                  <div className="flex items-center gap-2 text-[#25D366] mb-2">
+                    <MessageSquare className="w-5 h-5" />
+                    <h3 className="font-bold text-sm text-zinc-700">WhatsApp Leads</h3>
+                  </div>
+                  <p className="text-3xl font-black text-zinc-900">{analytics?.whatsappClicks || 0}</p>
+                  <p className="text-xs text-emerald-600 font-bold mt-2 flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" /> +5% this week
+                  </p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm">
+                  <div className="flex items-center gap-2 text-amber-600 mb-2">
+                    <Phone className="w-5 h-5" />
+                    <h3 className="font-bold text-sm text-zinc-700">Call Clicks</h3>
+                  </div>
+                  <p className="text-3xl font-black text-zinc-900">{analytics?.callClicks || 0}</p>
+                  <p className="text-xs text-zinc-500 font-bold mt-2 flex items-center gap-1">
+                    Steady this week
+                  </p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm">
+                  <div className="flex items-center gap-2 text-emerald-600 mb-2">
+                    <Activity className="w-5 h-5" />
+                    <h3 className="font-bold text-sm text-zinc-700">Total Revenue</h3>
+                  </div>
+                  <p className="text-3xl font-black text-zinc-900">₹{analytics?.totalRevenue || 0}</p>
+                  <p className="text-xs text-emerald-600 font-bold mt-2 flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" /> View detailed ledger
+                  </p>
+                </div>
+              </div>
+
+              {/* Charts Placeholder */}
+              <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm mt-6">
+                <h3 className="font-bold text-lg text-zinc-900 mb-4">Traffic Overview</h3>
+                <div className="h-64 flex items-end justify-between gap-2 border-b border-l border-zinc-100 p-4 pb-0 relative">
+                  {[40, 25, 60, 45, 80, 55, 90].map((h, i) => (
+                    <div key={i} className="w-full max-w-[40px] bg-indigo-100 rounded-t-lg relative group">
+                      <div className="absolute bottom-0 w-full bg-indigo-600 rounded-t-lg transition-all duration-500" style={{ height: `${h}%` }}></div>
+                      <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-zinc-800 text-white text-[10px] font-bold px-2 py-1 rounded">
+                        {h} Views
+                      </div>
+                    </div>
+                  ))}
+                  <div className="absolute bottom-0 left-0 w-full flex justify-between text-[10px] text-zinc-400 font-bold mt-2 translate-y-6 px-4">
+                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1050,6 +1216,64 @@ function LeadCard({ lead, openWhatsApp, handleLeadStatusChange, isUpdatingStatus
           </SelectContent>
         </Select>
       </div>
+    </div>
+  );
+}
+
+// Helper Component for Order Cards
+function OrderCard({ order, handleOrderStatusChange, isUpdatingOrderStatus }: any) {
+  const items = (order.items as any[]) || [];
+  
+  return (
+    <div className="bg-white rounded-xl p-4 shadow-sm border border-zinc-200 hover:border-zinc-300 transition-all">
+      <div className="flex justify-between items-start mb-2">
+        <h4 className="font-bold text-zinc-900 text-sm truncate">Order #{order.id.slice(0, 8)}</h4>
+        <span className="text-[9px] font-bold text-zinc-400 bg-zinc-100 px-1.5 py-0.5 rounded">{formatDistanceToNow(new Date(order.createdAt))}</span>
+      </div>
+      <div className="mb-3 space-y-1">
+        {items.map((item, idx) => (
+          <div key={idx} className="flex justify-between text-xs text-zinc-500 font-medium">
+            <span className="line-clamp-1">{item.quantity}x {item.title || item.catalogItem?.title || 'Item'}</span>
+            <span>₹{item.price * item.quantity}</span>
+          </div>
+        ))}
+        <div className="border-t border-zinc-100 mt-2 pt-2 flex justify-between font-bold text-zinc-800 text-sm">
+          <span>Total</span>
+          <span>₹{order.totalAmount}</span>
+        </div>
+      </div>
+      
+      {order.status === 'PENDING' ? (
+        <div className="flex gap-2">
+          <Button 
+            disabled={isUpdatingOrderStatus === order.id}
+            onClick={() => handleOrderStatusChange(order.id, 'CONFIRMED')}
+            className="flex-1 h-8 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white px-2"
+          >
+            Accept
+          </Button>
+          <Button 
+            disabled={isUpdatingOrderStatus === order.id}
+            onClick={() => handleOrderStatusChange(order.id, 'CANCELLED')}
+            variant="outline"
+            className="flex-1 h-8 text-rose-600 border-rose-200 hover:bg-rose-50 text-xs font-bold px-2"
+          >
+            Reject
+          </Button>
+        </div>
+      ) : order.status === 'CONFIRMED' ? (
+        <Button 
+          disabled={isUpdatingOrderStatus === order.id}
+          onClick={() => handleOrderStatusChange(order.id, 'COMPLETED')}
+          className="w-full h-8 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white"
+        >
+          Mark Ready
+        </Button>
+      ) : (
+        <div className="text-center text-[10px] font-bold text-zinc-400 uppercase tracking-wide py-1 bg-zinc-50 rounded-lg border border-zinc-100">
+          {order.status}
+        </div>
+      )}
     </div>
   );
 }

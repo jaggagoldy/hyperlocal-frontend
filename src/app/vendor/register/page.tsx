@@ -2,45 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Briefcase, MapPin, ShieldCheck, Check, ArrowLeft, ArrowRight,
-  Store, User, ChevronDown, AlertCircle
-} from 'lucide-react';
-import { toast } from 'sonner';
-import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/authStore';
-import { useVendorRegistrationStore } from '@/store/vendorRegistrationStore';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import apiClient from '@/lib/api-client';
+import { toast } from 'sonner';
+import { ChevronRight, ArrowLeft, CheckCircle2, Store, Utensils, Car, Scissors, Home, UploadCloud, Smartphone, Plus, Trash2, PartyPopper, Tags } from 'lucide-react';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface Category { id: string; name: string; slug: string; }
-interface City { id: string; name: string; slug: string; }
+// Layout Imports for Live Preview
+import CabTransportLayout from '@/components/vendor/CabTransportLayout';
+import FoodLayout from '@/components/vendor/FoodLayout';
+import HomeServicesLayout from '@/components/vendor/HomeServicesLayout';
 
-// Removed local FormData type as it's defined in the store
+type BusinessType = 'FOOD_BEVERAGE' | 'CAB_TRANSPORT' | 'SALON_BEAUTY' | 'HOME_SERVICES' | '';
 
-const STEPS = [
-  { num: 1, label: 'Business', icon: Briefcase },
-  { num: 2, label: 'Location', icon: MapPin },
-  { num: 3, label: 'Verify', icon: ShieldCheck },
-];
-
-const ID_TYPES = ['Aadhaar', 'PAN', 'GST', 'Driving Licence'];
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 export default function VendorRegisterPage() {
   const router = useRouter();
-  const { user, token, setAuth } = useAuthStore();
-  const { step, setStep, form, setFormField, customCategory, setCustomCategory, reset } = useVendorRegistrationStore();
-  const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
-
-  // Onboarding URL params parsing
-  const [onboardingToken, setOnboardingToken] = useState<string | null>(null);
-  const [isGoogle, setIsGoogle] = useState(false);
+  
+  const { user, setActiveBusiness, setAuth, token } = useAuthStore();
   
   // Onboarding user details
+  const [onboardingToken, setOnboardingToken] = useState<string | null>(null);
+  const [isGoogle, setIsGoogle] = useState(false);
   const [personalName, setPersonalName] = useState('');
   const [personalEmail, setPersonalEmail] = useState('');
   const [personalPassword, setPersonalPassword] = useState('');
@@ -48,7 +29,6 @@ export default function VendorRegisterPage() {
   const [personalGender, setPersonalGender] = useState('');
   const [personalDob, setPersonalDob] = useState('');
 
-  // Extract query params safely on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
@@ -59,59 +39,171 @@ export default function VendorRegisterPage() {
     }
   }, []);
 
-  // Load categories & cities on mount
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [catRes, cityRes] = await Promise.all([
-          apiClient.get('/search/categories'),
-          apiClient.get('/search/cities'),
-        ]);
-        setCategories(catRes.data?.data || []);
-        setCities(cityRes.data?.data || []);
-      } catch {
-        // fallback to defaults if API fails
-        setCategories([
-          { id: 'plumber', name: 'Plumber', slug: 'plumber' },
-          { id: 'electrician', name: 'Electrician', slug: 'electrician' },
-          { id: 'ac-repair', name: 'AC Repair', slug: 'ac-repair' },
-          { id: 'carpenter', name: 'Carpenter', slug: 'carpenter' },
-          { id: 'painter', name: 'Painter', slug: 'painter' },
-        ]);
-        setCities([
-          { id: 'dadri', name: 'Dadri', slug: 'dadri' },
-          { id: 'greater-noida', name: 'Greater Noida', slug: 'greater-noida' },
-        ]);
+  
+  const [step, setStep] = useState(1);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [temporaryServices, setTemporaryServices] = useState<any[]>([]);
+  
+  // Step 3 Service Inputs
+  const [serviceCategory, setServiceCategory] = useState(''); // predefined dropdown for food/salon/home
+  const [customCategory, setCustomCategory] = useState(''); // When "Other" is selected
+  const [customTitle, setCustomTitle] = useState('');
+  const [servicePrice, setServicePrice] = useState('');
+  const [serviceDesc, setServiceDesc] = useState('');
+  const [serviceIsVeg, setServiceIsVeg] = useState(true);
+  const [serviceImage, setServiceImage] = useState('');
+  
+  // Variant Pricing State
+  const [isVariantPricing, setIsVariantPricing] = useState(false);
+  const [tempVariants, setTempVariants] = useState<{id: string, name: string, price: string}[]>([]);
+
+  const FOOD_CATEGORIES = ['Starters', 'Main Course', 'Breads', 'Desserts', 'Beverages', 'Snacks', 'Thalis', 'Other'];
+  const HOME_CATEGORIES = ['Plumbing', 'Electrical', 'Painting', 'RO Repair', 'Carpentry', 'Cleaning', 'Pest Control', 'Appliance Repair', 'Other'];
+  const SALON_CATEGORIES = ['Hair Cut', 'Shaving & Beard', 'Facial', 'Massage', 'Manicure & Pedicure', 'Makeup', 'Other'];
+
+  const [form, setForm] = useState({
+    businessType: '' as BusinessType,
+    businessName: '',
+    city: '',
+    address: '',
+    description: '',
+    
+    // CAB_TRANSPORT Fields
+    brand: 'Maruti Suzuki',
+    model: '',
+    vehicleNumberPlate: '',
+    fuelType: 'Petrol',
+    vehicleType: 'Sedan',
+    ac: true,
+    seats: 4,
+    
+    // FOOD_BEVERAGE Fields
+    cuisineType: '',
+    isPureVeg: false,
+    fssai: '',
+    
+    // SALON_BEAUTY / HOME_SERVICES Fields
+    experience: '',
+    certifications: '',
+
+    // IMAGE FIELD
+    image: '',
+    
+    // CONNECTION MODE
+    connectionMode: 'REQUIRE_APPROVAL',
+  });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, isService = false) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const url = URL.createObjectURL(file);
+      if (isService) {
+        setServiceImage(url);
+      } else {
+        setImageFile(file);
+        updateForm('image', url);
       }
-    };
-    load();
-  }, []);
+    }
+  };
 
-  const set = (field: Parameters<typeof setFormField>[0], value: string) =>
-    setFormField(field, value);
+  const updateForm = (field: string, value: any) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+  };
 
-  const progress = (step / 3) * 100;
+  const applyVariantPreset = (preset: 'half-full' | 'quarter-half-full' | 'weight') => {
+    if (preset === 'half-full') {
+      setTempVariants([{id: '1', name: 'Half', price: ''}, {id: '2', name: 'Full', price: ''}]);
+    } else if (preset === 'quarter-half-full') {
+      setTempVariants([{id: '1', name: 'Quarter', price: ''}, {id: '2', name: 'Half', price: ''}, {id: '3', name: 'Full', price: ''}]);
+    } else if (preset === 'weight') {
+      setTempVariants([{id: '1', name: '250g', price: ''}, {id: '2', name: '500g', price: ''}, {id: '3', name: '1kg', price: ''}]);
+    }
+  };
 
-  // ── Validation ──
-  const isPersonalValid = onboardingToken 
-    ? (isGoogle ? (!!personalPhone && !!personalGender && !!personalDob) : (!!personalName && !!personalEmail && !!personalPassword && !!personalGender && !!personalDob))
-    : true;
+  const addEmptyVariant = () => {
+    setTempVariants(prev => [...prev, {id: Date.now().toString(), name: '', price: ''}]);
+  };
 
-  const step1Valid = form.businessName.trim() && form.categoryId && form.businessType && (form.categoryId !== 'other' || customCategory.trim()) && form.locationType && isPersonalValid;
-  const step2Valid = form.cityName && form.localityName.trim() && form.pincode.length === 6;
+  const removeVariant = (id: string) => {
+    setTempVariants(prev => prev.filter(v => v.id !== id));
+  };
 
-  // ── Submit ──
-  const handleSubmit = async (withVerification: boolean) => {
-    setLoading(true);
+  const updateVariant = (id: string, field: 'name' | 'price', value: string) => {
+    setTempVariants(prev => prev.map(v => v.id === id ? { ...v, [field]: value } : v));
+  };
+
+  const handleAddTempService = () => {
+    if (!customTitle) return toast.error('Please provide a service title');
+    
+    if (form.businessType !== 'CAB_TRANSPORT' && !serviceCategory) {
+      return toast.error('Please select a category for the service');
+    }
+
+    if (serviceCategory === 'Other' && !customCategory) {
+      return toast.error('Please specify a custom category name');
+    }
+
+    let finalVariants: any[] = [];
+    if (isVariantPricing) {
+      finalVariants = tempVariants.filter(v => v.name.trim() && v.price.trim()).map(v => ({
+        name: v.name,
+        price: Number(v.price)
+      }));
+      if (finalVariants.length === 0) return toast.error('Please add at least one valid portion with a price');
+    }
+
+    setTemporaryServices(prev => [...prev, {
+      id: Date.now().toString(),
+      title: customTitle,
+      price: isVariantPricing ? undefined : (servicePrice ? Number(servicePrice) : undefined),
+      variants: finalVariants.length > 0 ? finalVariants : undefined,
+      description: serviceDesc || undefined,
+      foodCategory: serviceCategory === 'Other' ? customCategory : serviceCategory,
+      isVeg: form.businessType === 'FOOD_BEVERAGE' ? serviceIsVeg : undefined,
+      image: serviceImage || undefined
+    }]);
+
+    // Reset inputs but keep category for quick multiple adds
+    setCustomTitle('');
+    setServicePrice('');
+    setServiceDesc('');
+    setServiceImage('');
+    setCustomCategory('');
+    setIsVariantPricing(false);
+    setTempVariants([]);
+  };
+
+  const handleRemoveTempService = (id: string) => {
+    setTemporaryServices(prev => prev.filter(s => s.id !== id));
+  };
+
+  const nextStep = () => {
+    if (step === 1) {
+      if (!form.businessType) return toast.error('Please select a business category');
+      if (!form.businessName) return toast.error('Please enter a business name');
+      if (!form.city) return toast.error('Please enter your city');
+      setStep(2);
+    } else if (step === 2) {
+      setStep(3);
+    } else if (step === 3) {
+      setStep(4);
+    }
+  };
+
+
+  const handleRegister = async () => {
     try {
+      setIsSubmitting(true);
+      
       let currentToken = token;
       let currentUser = user;
 
-      // 1. If we have an onboardingToken, register the user FIRST
       if (onboardingToken && !token) {
         const onboardPayload: any = {
           onboardingToken,
-          address: `${form.localityName}, ${form.cityName}, ${form.pincode}`,
+          address: form.address || form.city,
           gender: personalGender,
           dateOfBirth: personalDob,
         };
@@ -128,466 +220,883 @@ export default function VendorRegisterPage() {
         currentToken = onboardRes.data?.data?.token || onboardRes.data?.token;
         currentUser = onboardRes.data?.data?.user || onboardRes.data?.user;
         
-        // Temporarily set auth so the next API call includes the JWT
         if (currentToken && currentUser) {
           setAuth(currentToken, currentUser);
           apiClient.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
         }
       }
 
-      // Build a unique registration number (business + timestamp)
-      const registrationNumber = `${form.businessName.replace(/\s+/g, '').toUpperCase().slice(0, 6)}-${Date.now()}`;
+      let metaData: any = {};
 
-      const payload: Record<string, any> = {
-        businessName: form.businessName.trim(),
-        registrationNumber,
-        localityName: form.localityName.trim(),
-        pincode: form.pincode,
-        cityName: form.cityName,
-        locationType: form.locationType,
+      
+      if (form.businessType === 'CAB_TRANSPORT') {
+        metaData = {
+          brand: form.brand,
+          model: form.model,
+          vehicleNumberPlate: form.vehicleNumberPlate,
+          fuelType: form.fuelType,
+          vehicleType: form.vehicleType,
+          ac: form.ac,
+          seats: Number(form.seats)
+        };
+      } else if (form.businessType === 'FOOD_BEVERAGE') {
+        metaData = {
+          cuisineType: form.cuisineType,
+          isPureVeg: form.isPureVeg,
+          fssai: form.fssai
+        };
+      } else {
+        metaData = {
+          experience: form.experience,
+          certifications: form.certifications,
+        };
+      }
+
+      const payload = {
+        businessName: form.businessName,
         businessType: form.businessType,
-        categoryIds: form.categoryId === 'other' ? [] : [form.categoryId],
-        requestedCategory: form.categoryId === 'other' ? customCategory.trim() : null,
+        localityName: form.address,
+        cityName: form.city,
+        description: form.description,
+        pincode: '000000',
+        locationType: 'Freelancer',
+        timeAvailability: '9 AM - 6 PM',
+        workingDays: 'Monday - Saturday',
+        connectionMode: form.businessType === 'FOOD_BEVERAGE' ? 'REQUIRE_APPROVAL' : form.connectionMode,
+        metaData,
+        imageUrl: form.image ? 'https://dummyimage.com/600x400/10b981/fff&text=Storefront' : undefined,
+        services: form.businessType !== 'CAB_TRANSPORT' ? temporaryServices.map(s => ({
+          title: s.title,
+          price: s.price,
+          description: s.description,
+          foodCategory: s.foodCategory,
+          isVeg: s.isVeg,
+          variants: s.variants
+        })) : []
       };
 
-      if (withVerification && form.idType && form.idNumber) {
-        payload.idType = form.idType;
-        payload.idNumber = form.idNumber.trim();
-      }
-
-      await apiClient.post('/vendors/register', payload);
-
-      // Update user role in store so Navbar reacts immediately
-      if (currentToken && currentUser) {
-        setAuth(currentToken, { ...currentUser, role: 'vendor' });
-      }
-
-      toast.success('Welcome to NearByBazar Pro! 🎉', {
-        description: 'Your vendor profile is now live.',
-        duration: 5000,
-      });
-      reset(); // clear state on success
-      router.push('/vendor-dashboard');
+      const res = await apiClient.post('/business/register', payload);
+      
+      setActiveBusiness(res.data?.data?.id);
+      
+      setIsSuccess(true);
+      
+      setTimeout(() => {
+        router.push('/vendor-dashboard');
+      }, 3000);
+      
     } catch (error: any) {
-      const msg = error.response?.data?.message || 'Registration failed. Please try again.';
-      toast.error(msg);
+      console.error(error);
+      toast.error(error.response?.data?.message || 'Failed to register business');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col">
-      {/* Gradient strip */}
-      <div className="h-1 bg-gradient-to-r from-primary via-purple-500 to-pink-500" />
+  const buildPreviewCatalog = () => {
+    if (form.businessType === 'CAB_TRANSPORT') {
+      return [{ id: '1', title: form.model || 'Cab Booking', price: 500, category: { name: 'Transport' } }];
+    }
 
-      {/* Progress header */}
-      <div className="bg-white border-b border-zinc-100 px-6 py-4 sticky top-0 z-10">
-        <div className="max-w-lg mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            {STEPS.map((s, i) => (
-              <div key={s.num} className="flex items-center gap-2 flex-1">
-                <div className="flex flex-col items-center gap-1">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 ${
-                    s.num < step
-                      ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-200'
-                      : s.num === step
-                      ? 'bg-primary text-white shadow-sm shadow-primary/30'
-                      : 'bg-zinc-100 text-zinc-400'
-                  }`}>
-                    {s.num < step ? <Check className="w-4 h-4" /> : <s.icon className="w-4 h-4" />}
-                  </div>
-                  <span className={`text-[10px] font-bold tracking-wide ${
-                    s.num === step ? 'text-primary' : s.num < step ? 'text-emerald-600' : 'text-zinc-400'
-                  }`}>
-                    {s.label}
-                  </span>
+    if (temporaryServices.length > 0) {
+      return temporaryServices.map(s => ({
+        id: s.id,
+        title: s.title,
+        price: s.price,
+        description: s.description,
+        variants: s.variants || (s.isVeg !== undefined ? (s.isVeg ? ['veg'] : ['veg', 'non-veg']) : []),
+        category: { name: s.foodCategory || 'Services' },
+        mediaUrl: s.image || undefined,
+        media: s.image ? [{ type: 'catalog_image', secureUrl: s.image }] : [],
+        metaData: { isNonVeg: s.isVeg === false }
+      }));
+    }
+
+    if (form.businessType === 'FOOD_BEVERAGE') {
+      return [
+        { id: '1', title: 'Example Dish 1', price: 299, variants: form.isPureVeg ? ['veg'] : ['veg', 'non-veg'], category: { name: 'Starters' } },
+        { id: '2', title: 'Example Dish 2', price: 149, variants: form.isPureVeg ? ['veg'] : ['veg'], category: { name: 'Main Course' } }
+      ];
+    }
+    
+    return [{ id: '1', title: 'Example Service', price: 499, category: { name: 'Services' } }];
+  };
+
+  const previewBusiness: any = {
+    businessName: form.businessName || 'Your Business Name',
+    localityName: form.address || 'Your Business Address',
+    city: form.city || 'City',
+    description: form.description || 'Welcome to our business!',
+    businessType: form.businessType || 'FOOD_BEVERAGE',
+    connectionMode: form.connectionMode || 'REQUIRE_APPROVAL',
+    isOnline: true,
+    membershipTier: 'Pro',
+    user: { phoneNumber: user?.phoneNumber || '9999999999' },
+    media: form.image ? [{ type: 'profile_image', secureUrl: form.image }] : [],
+    metaData: {
+      brand: form.brand,
+      model: form.model,
+      vehicleNumberPlate: form.vehicleNumberPlate,
+      fuelType: form.fuelType,
+      vehicleType: form.vehicleType,
+      ac: form.ac,
+      seats: form.seats,
+      cuisineType: form.cuisineType,
+      isPureVeg: form.isPureVeg,
+      experience: form.experience,
+    },
+    catalogItems: buildPreviewCatalog()
+  };
+
+  return (
+    <div className="max-w-[1400px] mx-auto md:grid md:grid-cols-12 md:gap-10 h-[calc(100vh-8rem)]">
+      
+      {/* ─── LEFT SIDE (FORM WIZARD) ─── */}
+      <div className="md:col-span-7 lg:col-span-6 bg-white rounded-3xl border border-zinc-200 shadow-sm p-6 lg:p-10 mb-8 md:mb-0 h-full overflow-y-auto">
+        
+        {!isSuccess && (
+          <div className="flex items-center gap-2 border-b border-zinc-100 pb-6 mb-8 overflow-x-auto scrollbar-hide">
+            {[
+              { num: 1, label: 'Core Info' },
+              { num: 2, label: 'Details' },
+              { num: 3, label: 'Catalog' },
+              { num: 4, label: 'Publish' }
+            ].map((s, i) => (
+              <div key={s.num} className="flex items-center">
+                <div className="flex flex-col items-start relative px-2">
+                  <span className={`text-[10px] font-black uppercase tracking-wider ${step >= s.num ? 'text-emerald-600' : 'text-zinc-400'}`}>Step {s.num}</span>
+                  <span className={`text-sm font-bold whitespace-nowrap ${step >= s.num ? 'text-zinc-900' : 'text-zinc-500'}`}>{s.label}</span>
+                  <div className={`absolute -bottom-[25px] left-0 h-1 w-full rounded-full transition-all ${step >= s.num ? 'bg-emerald-500' : 'bg-transparent'}`}></div>
                 </div>
-                {i < STEPS.length - 1 && (
-                  <div className={`flex-1 h-0.5 mx-2 rounded-full mb-5 transition-all ${s.num < step ? 'bg-emerald-400' : 'bg-zinc-200'}`} />
-                )}
+                {i < 3 && <ChevronRight className="w-4 h-4 text-zinc-300 mx-2" />}
               </div>
             ))}
           </div>
-          <div className="h-1 bg-zinc-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-primary to-purple-500 rounded-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      </div>
+        )}
 
-      {/* Content */}
-      <div className="flex-1 flex items-start justify-center px-4 py-10">
-        <div className="w-full max-w-lg">
-
-          {/* ─── STEP 1: Business Profile ─── */}
-          {step === 1 && (
-            <div className="space-y-8">
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <Briefcase className="w-6 h-6 text-primary" />
+        <div className="space-y-8">
+          
+          {step === 1 && !isSuccess && (
+            <div className="animate-in fade-in slide-in-from-right-4 space-y-6">
+              
+              
+              {onboardingToken && (
+                <div className="p-4 bg-zinc-50 rounded-xl space-y-4 mb-6 border border-zinc-200">
+                  <h3 className="text-sm font-bold text-zinc-900">Personal Details</h3>
+                  {!isGoogle && (
+                    <>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-zinc-600 uppercase">Your Full Name</label>
+                        <input className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white text-sm" value={personalName} onChange={e => setPersonalName(e.target.value)} required />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-zinc-600 uppercase">Email Address</label>
+                        <input className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white text-sm" type="email" value={personalEmail} onChange={e => setPersonalEmail(e.target.value)} required />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-zinc-600 uppercase">Secure Password</label>
+                        <input className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white text-sm" type="password" value={personalPassword} onChange={e => setPersonalPassword(e.target.value)} required />
+                      </div>
+                    </>
+                  )}
+                  {isGoogle && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-600 uppercase">Phone Number</label>
+                      <input className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white text-sm" type="tel" value={personalPhone} onChange={e => setPersonalPhone(e.target.value)} required />
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-600 uppercase">Gender</label>
+                      <select className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white text-sm" value={personalGender} onChange={e => setPersonalGender(e.target.value)} required>
+                        <option value="" disabled>Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-600 uppercase">Date of Birth</label>
+                      <input className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white text-sm" type="date" value={personalDob} onChange={e => setPersonalDob(e.target.value)} required />
+                    </div>
+                  </div>
                 </div>
-                <h1 className="text-2xl font-bold text-zinc-900 mb-1">Your Business Profile</h1>
-                <p className="text-zinc-500 text-sm">Tell customers what you offer and how you work.</p>
+              )}
+              <div>
+                <h2 className="text-xl font-black text-zinc-900 mb-4">Select Business Category *</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { id: 'FOOD_BEVERAGE', label: 'Restaurant / Cafe', icon: Utensils },
+                    { id: 'CAB_TRANSPORT', label: 'Cab & Transport', icon: Car },
+                    { id: 'SALON_BEAUTY', label: 'Salon & Beauty', icon: Scissors },
+                    { id: 'HOME_SERVICES', label: 'Home Services', icon: Home },
+                  ].map(cat => {
+                    const Icon = cat.icon;
+                    const isActive = form.businessType === cat.id;
+                    return (
+                      <button 
+                        key={cat.id} 
+                        onClick={() => updateForm('businessType', cat.id)}
+                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                          isActive ? 'border-emerald-500 bg-emerald-50/50' : 'border-zinc-200 hover:border-emerald-300 hover:bg-zinc-50'
+                        }`}
+                      >
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${isActive ? 'bg-emerald-600 text-white shadow-md' : 'bg-zinc-100 text-zinc-500'}`}>
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <span className={`text-xs font-bold ${isActive ? 'text-emerald-700' : 'text-zinc-700'}`}>{cat.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
-              <div className="space-y-5">
-                {/* Conditionally ask for Personal Details if onboarding new user */}
-                {onboardingToken && (
-                  <div className="p-4 bg-muted/30 rounded-xl space-y-4 mb-4 border border-zinc-100">
-                    <h3 className="text-sm font-bold text-zinc-900">Personal Details</h3>
-                    
-                    {!isGoogle && (
-                      <>
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-zinc-600 uppercase">Your Full Name</label>
-                          <Input className="h-11 bg-white" value={personalName} onChange={e => setPersonalName(e.target.value)} required />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-zinc-600 uppercase">Email Address</label>
-                          <Input className="h-11 bg-white" type="email" value={personalEmail} onChange={e => setPersonalEmail(e.target.value)} required />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-zinc-600 uppercase">Set Password</label>
-                          <Input className="h-11 bg-white" type="password" value={personalPassword} onChange={e => setPersonalPassword(e.target.value)} required minLength={6} />
-                        </div>
-                      </>
-                    )}
-
-                    {isGoogle && (
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-zinc-600 uppercase">Phone Number</label>
-                        <Input className="h-11 bg-white" type="tel" value={personalPhone} onChange={e => setPersonalPhone(e.target.value)} placeholder="+91" required pattern="^[6-9]\d{9}$" />
+              <div className="space-y-4 pt-4 border-t border-zinc-100">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-zinc-700">Business Image</label>
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-300 rounded-xl cursor-pointer bg-zinc-50 hover:bg-zinc-100 transition-all overflow-hidden relative">
+                    {form.image ? (
+                      <img src={form.image} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <UploadCloud className="w-8 h-8 text-zinc-400 mb-2" />
+                        <p className="text-sm font-semibold text-zinc-600"><span className="text-emerald-600">Click to upload</span> or drag and drop</p>
                       </div>
                     )}
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, false)} />
+                  </label>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-zinc-700">Business Name *</label>
+                  <input 
+                    type="text" 
+                    value={form.businessName}
+                    onChange={(e) => updateForm('businessName', e.target.value)}
+                    className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                    placeholder="e.g. Royal Tandoor Kitchen"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-700">City *</label>
+                    <input 
+                      type="text" 
+                      value={form.city}
+                      onChange={(e) => updateForm('city', e.target.value)}
+                      className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                      placeholder="e.g. New Delhi"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-700">Detailed Address</label>
+                    <input 
+                      type="text" 
+                      value={form.address}
+                      onChange={(e) => updateForm('address', e.target.value)}
+                      className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                      placeholder="Shop No. 8, Ground Floor..."
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-zinc-700">Description</label>
+                  <textarea 
+                    value={form.description}
+                    onChange={(e) => updateForm('description', e.target.value)}
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold resize-none"
+                    placeholder="Tell your customers about your business..."
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 flex justify-end">
+                <button 
+                  onClick={nextStep}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2"
+                >
+                  Continue <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+            </div>
+          )}
+
+          {step === 2 && !isSuccess && (
+            <div className="animate-in fade-in slide-in-from-right-4 space-y-6">
+              
+              <div className="flex items-center gap-3 mb-6">
+                <button onClick={() => setStep(1)} className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-500">
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div>
+                  <h2 className="text-xl font-black text-zinc-900">Storefront Details</h2>
+                  <p className="text-xs text-zinc-500 font-medium mt-1">Configure options tailored for {form.businessType.replace('_', ' ')}</p>
+                </div>
+              </div>
+
+              <div className="bg-zinc-50/50 p-5 rounded-2xl border border-zinc-200">
+                {/* CAB TRANSPORT */}
+                {form.businessType === 'CAB_TRANSPORT' && (
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-700">Vehicle Number Plate *</label>
+                      <input 
+                        type="text" 
+                        value={form.vehicleNumberPlate}
+                        onChange={(e) => updateForm('vehicleNumberPlate', e.target.value.toUpperCase())}
+                        className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold uppercase"
+                        placeholder="e.g. HR-20-XXXX"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-zinc-700">Brand</label>
+                        <select 
+                          value={form.brand}
+                          onChange={(e) => {
+                            updateForm('brand', e.target.value);
+                            updateForm('model', '');
+                          }}
+                          className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                        >
+                          <option value="Maruti Suzuki">Maruti Suzuki</option>
+                          <option value="Hyundai">Hyundai</option>
+                          <option value="Tata">Tata</option>
+                          <option value="Mahindra">Mahindra</option>
+                          <option value="Toyota">Toyota</option>
+                          <option value="Honda">Honda</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-zinc-700">Model</label>
+                        <select 
+                          value={form.model}
+                          onChange={(e) => updateForm('model', e.target.value)}
+                          className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                        >
+                          <option value="">Select Model</option>
+                          {form.brand === 'Maruti Suzuki' && <><option value="Swift">Swift</option><option value="Dzire">Dzire</option><option value="Ertiga">Ertiga</option><option value="Brezza">Brezza</option><option value="WagonR">WagonR</option></>}
+                          {form.brand === 'Hyundai' && <><option value="i20">i20</option><option value="Creta">Creta</option><option value="Venue">Venue</option><option value="Verna">Verna</option><option value="Aura">Aura</option></>}
+                          {form.brand === 'Tata' && <><option value="Tiago">Tiago</option><option value="Tigor">Tigor</option><option value="Nexon">Nexon</option><option value="Safari">Safari</option><option value="Harrier">Harrier</option></>}
+                          {form.brand === 'Mahindra' && <><option value="Scorpio">Scorpio</option><option value="XUV700">XUV700</option><option value="Bolero">Bolero</option><option value="Thar">Thar</option><option value="XUV300">XUV300</option></>}
+                          {form.brand === 'Toyota' && <><option value="Innova">Innova</option><option value="Fortuner">Fortuner</option><option value="Glanza">Glanza</option><option value="Camry">Camry</option></>}
+                          {form.brand === 'Honda' && <><option value="City">City</option><option value="Amaze">Amaze</option><option value="Elevate">Elevate</option></>}
+                        </select>
+                      </div>
+                    </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-zinc-600 uppercase">Gender</label>
-                        <div className="relative">
-                          <select 
-                            className="w-full h-11 px-3 rounded-lg border border-zinc-200 bg-white text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary appearance-none"
-                            value={personalGender}
-                            onChange={(e) => setPersonalGender(e.target.value)}
-                            required
-                          >
-                            <option value="">Select Gender</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                          </select>
-                          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-                        </div>
+                        <label className="text-xs font-bold text-zinc-700">Fuel Type</label>
+                        <select 
+                          value={form.fuelType}
+                          onChange={(e) => updateForm('fuelType', e.target.value)}
+                          className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                        >
+                          <option value="Petrol">Petrol</option>
+                          <option value="Diesel">Diesel</option>
+                          <option value="CNG">CNG</option>
+                          <option value="EV">EV</option>
+                        </select>
                       </div>
-
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-zinc-600 uppercase">Date of Birth</label>
-                        <Input 
-                          className="h-11 bg-white" 
-                          type="date" 
-                          value={personalDob} 
-                          onChange={e => setPersonalDob(e.target.value)} 
-                          max={new Date().toISOString().split('T')[0]}
-                          required 
+                        <label className="text-xs font-bold text-zinc-700">Vehicle Type</label>
+                        <select 
+                          value={form.vehicleType}
+                          onChange={(e) => updateForm('vehicleType', e.target.value)}
+                          className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                        >
+                          <option value="Hatchback">Hatchback</option>
+                          <option value="Sedan">Sedan</option>
+                          <option value="SUV">SUV</option>
+                          <option value="Auto">Auto Rickshaw</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-zinc-700">Seat Capacity</label>
+                        <input 
+                          type="number" 
+                          value={form.seats}
+                          onChange={(e) => updateForm('seats', e.target.value)}
+                          className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                        />
+                      </div>
+                      <div className="pt-6">
+                        <label className="flex items-center gap-3 p-2 border-zinc-200 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={form.ac}
+                            onChange={(e) => updateForm('ac', e.target.checked)}
+                            className="w-5 h-5 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-600"
+                          />
+                          <span className="text-sm font-bold text-zinc-800">Has AC</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* FOOD BEVERAGE */}
+                {form.businessType === 'FOOD_BEVERAGE' && (
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-700">Cuisine Focus (Optional)</label>
+                      <input 
+                        type="text" 
+                        value={form.cuisineType}
+                        onChange={(e) => updateForm('cuisineType', e.target.value)}
+                        className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                        placeholder="e.g. North Indian, Chinese"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-700">FSSAI License Number</label>
+                      <input 
+                        type="text" 
+                        value={form.fssai}
+                        onChange={(e) => updateForm('fssai', e.target.value)}
+                        className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                        placeholder="Registration Number"
+                      />
+                    </div>
+
+                    <div className="pt-2">
+                      <label className="flex items-center justify-between p-4 bg-white border border-green-200 rounded-xl cursor-pointer hover:border-green-400 shadow-sm transition-all">
+                        <div className="flex items-center gap-3">
+                          <span className="w-5 h-5 border-2 border-green-600 flex items-center justify-center p-[2px] rounded-sm">
+                            <span className="w-2.5 h-2.5 bg-green-600 rounded-full"></span>
+                          </span>
+                          <div>
+                            <span className="text-sm font-bold text-green-900 block">Pure Veg Restaurant</span>
+                            <span className="text-xs font-medium text-green-700/80 block mt-0.5">Show only vegetarian options to customers</span>
+                          </div>
+                        </div>
+                        <input 
+                          type="checkbox" 
+                          checked={form.isPureVeg}
+                          onChange={(e) => updateForm('isPureVeg', e.target.checked)}
+                          className="w-5 h-5 rounded border-green-300 text-green-600 focus:ring-green-600"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* OTHERS */}
+                {(form.businessType === 'SALON_BEAUTY' || form.businessType === 'HOME_SERVICES') && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-zinc-700">Years of Experience</label>
+                        <input 
+                          type="number" 
+                          value={form.experience}
+                          onChange={(e) => updateForm('experience', e.target.value)}
+                          className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                          placeholder="e.g. 5"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-zinc-700">Certifications (Optional)</label>
+                        <input 
+                          type="text" 
+                          value={form.certifications}
+                          onChange={(e) => updateForm('certifications', e.target.value)}
+                          className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                          placeholder="e.g. L'Oreal Expert"
                         />
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Business Name */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-zinc-700">Business / Professional Name</label>
-                  <Input
-                    placeholder="e.g. Ramesh Electricals, Sharma Plumbing..."
-                    className="h-12 bg-white rounded-xl border-zinc-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
-                    value={form.businessName}
-                    onChange={(e) => set('businessName', e.target.value)}
-                  />
-                </div>
-
-                {/* Category */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-zinc-700">Your Service Category</label>
-                  <div className="relative">
-                    <select
-                      className="w-full h-12 px-4 pr-10 rounded-xl border border-zinc-200 text-sm bg-white text-zinc-800 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary appearance-none font-medium"
-                      value={form.categoryId}
-                      onChange={(e) => set('categoryId', e.target.value)}
-                    >
-                      <option value="">Select a category...</option>
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
-                      <option value="other">Other (Custom Category)</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Business Type */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-zinc-700">Business Model</label>
-                  <div className="relative">
-                    <select
-                      className="w-full h-12 px-4 pr-10 rounded-xl border border-zinc-200 text-sm bg-white text-zinc-800 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary appearance-none font-medium"
-                      value={form.businessType}
-                      onChange={(e) => set('businessType', e.target.value)}
-                    >
-                      <option value="">Select how you operate...</option>
-                      <option value="RESTAURANT">Restaurant</option>
-                      <option value="CLOUD_KITCHEN">Cloud Kitchen</option>
-                      <option value="STREET_VENDOR">Street Food / Kiosk</option>
-                      <option value="CHEF">Personal Chef / Catering</option>
-                      <option value="SALON">Salon / Spa</option>
-                      <option value="EVENT_SERVICE">Event Service</option>
-                      <option value="HOME_MAINTENANCE">Home Maintenance (Electrician, Plumber)</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Custom Category input */}
-                {form.categoryId === 'other' && (
-                  <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                    <label className="text-sm font-semibold text-zinc-700">Please specify your service type</label>
-                    <Input
-                      placeholder="e.g. Tuition, Kitchen Help, Pet Care..."
-                      className="h-12 bg-white rounded-xl border-zinc-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
-                      value={customCategory}
-                      onChange={(e) => setCustomCategory(e.target.value)}
-                    />
-                    {customCategory.length > 2 && categories.find(c => c.name.toLowerCase().includes(customCategory.toLowerCase()) || customCategory.toLowerCase().includes(c.name.toLowerCase())) && (
-                      <div className="mt-2 text-sm bg-primary/5 text-primary p-3 rounded-xl flex justify-between items-center border border-primary/20">
-                         <span>Did you mean <strong>{categories.find(c => c.name.toLowerCase().includes(customCategory.toLowerCase()) || customCategory.toLowerCase().includes(c.name.toLowerCase()))?.name}</strong>?</span>
-                         <Button type="button" size="sm" className="h-8 text-xs font-bold" onClick={() => {
-                           const matched = categories.find(c => c.name.toLowerCase().includes(customCategory.toLowerCase()) || customCategory.toLowerCase().includes(c.name.toLowerCase()));
-                           if (matched) set('categoryId', matched.id);
-                           setCustomCategory('');
-                         }}>Use This</Button>
+                {/* CONNECTION MODE (NON-FOOD) */}
+                {form.businessType !== 'FOOD_BEVERAGE' && (
+                  <div className="space-y-4 pt-6 mt-6 border-t border-zinc-200">
+                    <div>
+                      <label className="block text-sm font-bold text-zinc-700 mb-2">Lead Generation Mode</label>
+                      <p className="text-xs text-zinc-500 mb-4 font-medium">Choose how customers can contact you for your services.</p>
+                      
+                      <div className="space-y-3">
+                        <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${form.connectionMode === 'DIRECT' ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-zinc-200 hover:bg-zinc-50'}`}>
+                          <input 
+                            type="radio" 
+                            name="connectionMode"
+                            value="DIRECT"
+                            checked={form.connectionMode === 'DIRECT'}
+                            onChange={(e) => updateForm('connectionMode', e.target.value)}
+                            className="mt-1 w-4 h-4 text-emerald-600 border-zinc-300 focus:ring-emerald-600"
+                          />
+                          <div>
+                            <span className="text-sm font-bold text-zinc-900 block">Direct Connect</span>
+                            <span className="text-xs font-medium text-zinc-500 block mt-0.5">Users can call or WhatsApp you instantly.</span>
+                          </div>
+                        </label>
+                        
+                        <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${form.connectionMode === 'REQUIRE_APPROVAL' ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-zinc-200 hover:bg-zinc-50'}`}>
+                          <input 
+                            type="radio" 
+                            name="connectionMode"
+                            value="REQUIRE_APPROVAL"
+                            checked={form.connectionMode === 'REQUIRE_APPROVAL'}
+                            onChange={(e) => updateForm('connectionMode', e.target.value)}
+                            className="mt-1 w-4 h-4 text-emerald-600 border-zinc-300 focus:ring-emerald-600"
+                          />
+                          <div>
+                            <span className="text-sm font-bold text-zinc-900 block">Require Approval (Recommended)</span>
+                            <span className="text-xs font-medium text-zinc-500 block mt-0.5">Users must send a booking request. Contact details remain hidden until you accept.</span>
+                          </div>
+                        </label>
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
 
-                {/* Business Type */}
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-zinc-700">How do you work?</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { value: 'Freelancer', icon: User, title: 'Independent Pro', desc: 'I come to the client' },
-                      { value: 'Shop', icon: Store, title: 'Shop / Studio', desc: 'I have a fixed location' },
-                    ].map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => set('locationType', opt.value)}
-                        className={`p-4 rounded-xl border-2 text-left transition-all ${
-                          form.locationType === opt.value
-                            ? 'border-primary bg-primary/5 shadow-sm'
-                            : 'border-zinc-200 bg-white hover:border-zinc-300'
-                        }`}
-                      >
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-2 ${
-                          form.locationType === opt.value ? 'bg-primary text-white' : 'bg-zinc-100 text-zinc-500'
-                        }`}>
-                          <opt.icon className="w-4 h-4" />
+              </div>
+
+              <div className="pt-6 flex justify-between">
+                <button 
+                  onClick={() => router.push('/vendor-dashboard')}
+                  className="text-zinc-500 font-bold px-4 hover:text-zinc-800"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={nextStep}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2"
+                >
+                  Continue <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+            </div>
+          )}
+
+          {step === 3 && !isSuccess && (
+            <div className="animate-in fade-in slide-in-from-right-4 space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <button onClick={() => setStep(2)} className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-500">
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div>
+                  <h2 className="text-xl font-black text-zinc-900">Add Your Services</h2>
+                  <p className="text-xs text-zinc-500 font-medium mt-1">List what you offer. You can add more later.</p>
+                </div>
+              </div>
+
+              {form.businessType === 'CAB_TRANSPORT' ? (
+                <div className="bg-zinc-50/50 p-8 text-center rounded-2xl border border-zinc-200 space-y-4">
+                  <Car className="w-12 h-12 text-zinc-300 mx-auto" />
+                  <p className="font-semibold text-zinc-700">Vehicle profiles do not require a service menu. Your base fare is implicitly set.</p>
+                  <p className="text-sm text-zinc-500">Proceed to Final Review.</p>
+                </div>
+              ) : (
+                <div className="bg-zinc-50/50 p-5 rounded-2xl border border-zinc-200 space-y-5">
+                  
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-zinc-700">Service Category *</label>
+                        <select 
+                          value={serviceCategory}
+                          onChange={(e) => setServiceCategory(e.target.value)}
+                          className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                        >
+                          <option value="" disabled>Select Category</option>
+                          {form.businessType === 'FOOD_BEVERAGE' && FOOD_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                          {form.businessType === 'HOME_SERVICES' && HOME_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                          {form.businessType === 'SALON_BEAUTY' && SALON_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
+                      </div>
+                      
+                      {serviceCategory === 'Other' && (
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-zinc-700">Specify Category Name *</label>
+                          <input 
+                            type="text" 
+                            value={customCategory}
+                            onChange={(e) => setCustomCategory(e.target.value)}
+                            className="w-full h-11 px-4 rounded-xl border border-emerald-300 bg-emerald-50 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                            placeholder="e.g. Pet Grooming"
+                          />
                         </div>
-                        <p className={`text-sm font-bold ${form.locationType === opt.value ? 'text-primary' : 'text-zinc-800'}`}>
-                          {opt.title}
-                        </p>
-                        <p className="text-xs text-zinc-500 mt-0.5">{opt.desc}</p>
-                      </button>
-                    ))}
+                      )}
+                    </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-700">{form.businessType === 'FOOD_BEVERAGE' ? 'Dish Name *' : 'Service Name *'}</label>
+                    <input 
+                      type="text" 
+                      value={customTitle}
+                      onChange={(e) => setCustomTitle(e.target.value)}
+                      className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                      placeholder={form.businessType === 'FOOD_BEVERAGE' ? 'e.g. Margherita Pizza' : 'e.g. Deep Cleaning'}
+                    />
                   </div>
-                </div>
-              </div>
 
-              <Button
-                onClick={() => setStep(2)}
-                disabled={!step1Valid}
-                className="w-full h-12 text-base font-semibold gap-2 rounded-xl"
-              >
-                Continue <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          )}
+                  {/* PRICING */}
+                  {form.businessType === 'FOOD_BEVERAGE' ? (
+                    <div className="bg-white p-4 rounded-xl border border-zinc-200">
+                      <div className="flex items-center justify-between mb-4">
+                         <label className="text-xs font-bold text-zinc-700">Pricing Mode</label>
+                         <div className="flex bg-zinc-100 rounded-lg p-1">
+                            <button 
+                              className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${!isVariantPricing ? 'bg-white shadow-sm text-zinc-900' : 'text-zinc-500 hover:text-zinc-700'}`}
+                              onClick={() => setIsVariantPricing(false)}
+                            >
+                              Single Price
+                            </button>
+                            <button 
+                              className={`px-3 py-1 text-xs font-bold rounded-md transition-all flex items-center gap-1 ${isVariantPricing ? 'bg-white shadow-sm text-emerald-600' : 'text-zinc-500 hover:text-zinc-700'}`}
+                              onClick={() => setIsVariantPricing(true)}
+                            >
+                              <Tags className="w-3 h-3" /> Portions / Variants
+                            </button>
+                         </div>
+                      </div>
 
-          {/* ─── STEP 2: Location ─── */}
-          {step === 2 && (
-            <div className="space-y-8">
-              <div>
-                <button
-                  onClick={() => setStep(1)}
-                  className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-600 mb-4 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" /> Back
-                </button>
-                <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
-                  <MapPin className="w-6 h-6 text-emerald-600" />
-                </div>
-                <h1 className="text-2xl font-bold text-zinc-900 mb-1">Service Location</h1>
-                <p className="text-zinc-500 text-sm">Help customers in your area find you easily.</p>
-              </div>
-
-              <div className="space-y-5">
-                {/* City */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-zinc-700">City</label>
-                  <div className="relative">
-                    <select
-                      className="w-full h-12 px-4 pr-10 rounded-xl border border-zinc-200 text-sm bg-white text-zinc-800 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary appearance-none font-medium"
-                      value={form.cityName}
-                      onChange={(e) => set('cityName', e.target.value)}
-                    >
-                      <option value="">Select your city...</option>
-                      {cities.map((c) => (
-                        <option key={c.id} value={c.name}>{c.name}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Area / Locality */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-zinc-700">Area / Locality</label>
-                  <Input
-                    placeholder="e.g. Sector 62, Alpha 1, Surajpur..."
-                    className="h-12 bg-white rounded-xl border-zinc-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
-                    value={form.localityName}
-                    onChange={(e) => set('localityName', e.target.value)}
-                  />
-                </div>
-
-                {/* Pincode */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-zinc-700">Pincode</label>
-                  <Input
-                    placeholder="6-digit pincode"
-                    type="tel"
-                    maxLength={6}
-                    className="h-12 bg-white rounded-xl border-zinc-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
-                    value={form.pincode}
-                    onChange={(e) => set('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  />
-                </div>
-              </div>
-
-              <Button
-                onClick={() => setStep(3)}
-                disabled={!step2Valid}
-                className="w-full h-12 text-base font-semibold gap-2 rounded-xl"
-              >
-                Continue <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          )}
-
-          {/* ─── STEP 3: Verification ─── */}
-          {step === 3 && (
-            <div className="space-y-8">
-              <div>
-                <button
-                  onClick={() => setStep(2)}
-                  className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-600 mb-4 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" /> Back
-                </button>
-                <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center mb-4">
-                  <ShieldCheck className="w-6 h-6 text-amber-600" />
-                </div>
-                <h1 className="text-2xl font-bold text-zinc-900 mb-1">Get Verified</h1>
-                <p className="text-zinc-500 text-sm">
-                  Verified pros get a <span className="font-semibold text-emerald-600">✓ Verified badge</span> and rank higher in search results.
-                </p>
-              </div>
-
-              {/* Verification psychological incentive */}
-              <div className="grid grid-cols-2 gap-3 mb-2">
-                <div className="border border-zinc-200 bg-zinc-50 rounded-xl p-3 opacity-60 grayscale flex flex-col items-center text-center">
-                  <div className="w-10 h-10 bg-zinc-200 rounded-full mb-2"></div>
-                  <div className="text-xs font-bold text-zinc-500 mb-1">Standard Profile</div>
-                  <div className="text-[10px] text-zinc-400">Average visibility</div>
-                </div>
-                <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-3 flex flex-col items-center text-center shadow-xs ring-1 ring-emerald-500/20">
-                  <div className="w-10 h-10 bg-emerald-100 rounded-full mb-2 flex items-center justify-center">
-                    <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <div className="text-xs font-bold text-emerald-700 flex items-center gap-1">
-                    Verified Profile <Check className="w-3 h-3" />
-                  </div>
-                  <div className="text-[10px] font-bold text-emerald-600/80">Gets 3x more leads!</div>
-                </div>
-              </div>
-              <p className="text-[10px] text-center text-zinc-400 font-medium pb-2">You can also skip this and verify your identity later from your dashboard.</p>
-
-              <div className="space-y-5">
-                {/* ID Type */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-zinc-700">
-                    ID Type
-                    <span className="ml-1.5 text-xs font-normal text-zinc-400">Optional</span>
-                  </label>
-                  <div className="relative">
-                    <select
-                      className="w-full h-12 px-4 pr-10 rounded-xl border border-zinc-200 text-sm bg-white text-zinc-800 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary appearance-none font-medium"
-                      value={form.idType}
-                      onChange={(e) => set('idType', e.target.value)}
-                    >
-                      <option value="">Select ID type...</option>
-                      {ID_TYPES.map((t) => (
-                        <option key={t} value={t}>{t}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* ID Number */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-zinc-700">
-                    ID Number
-                    <span className="ml-1.5 text-xs font-normal text-zinc-400">Optional</span>
-                  </label>
-                  <Input
-                    placeholder="Enter your ID number..."
-                    className="h-12 bg-white rounded-xl border-zinc-200 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
-                    value={form.idNumber}
-                    onChange={(e) => set('idNumber', e.target.value)}
-                    disabled={!form.idType}
-                  />
-                </div>
-              </div>
-
-              {/* Submit buttons */}
-              <div className="space-y-3">
-                <Button
-                  onClick={() => handleSubmit(true)}
-                  disabled={loading || !form.idType || !form.idNumber.trim()}
-                  className="w-full h-12 text-base font-semibold rounded-xl gap-2"
-                >
-                  {loading ? 'Submitting...' : (
-                    <><ShieldCheck className="w-4 h-4" /> Submit with Verification</>
+                      {!isVariantPricing ? (
+                         <div className="space-y-1.5">
+                           <label className="text-xs font-bold text-zinc-700">Fixed Price (₹)</label>
+                           <input 
+                             type="number" 
+                             value={servicePrice}
+                             onChange={(e) => setServicePrice(e.target.value)}
+                             className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:border-emerald-500 outline-none transition-all text-sm font-semibold"
+                             placeholder="e.g. 299"
+                           />
+                         </div>
+                      ) : (
+                         <div className="space-y-4">
+                            <div className="flex flex-wrap gap-2">
+                               <button onClick={() => applyVariantPreset('half-full')} className="px-3 py-1.5 text-[11px] font-bold bg-zinc-100 hover:bg-zinc-200 rounded-lg text-zinc-600">Half / Full</button>
+                               <button onClick={() => applyVariantPreset('quarter-half-full')} className="px-3 py-1.5 text-[11px] font-bold bg-zinc-100 hover:bg-zinc-200 rounded-lg text-zinc-600">Quarter / Half / Full</button>
+                               <button onClick={() => applyVariantPreset('weight')} className="px-3 py-1.5 text-[11px] font-bold bg-zinc-100 hover:bg-zinc-200 rounded-lg text-zinc-600">By Weight</button>
+                            </div>
+                            
+                            <div className="space-y-2 border-l-2 border-emerald-500 pl-3">
+                              {tempVariants.map((v, i) => (
+                                 <div key={v.id} className="flex gap-2 items-center">
+                                    <input 
+                                      type="text" 
+                                      value={v.name}
+                                      onChange={(e) => updateVariant(v.id, 'name', e.target.value)}
+                                      className="flex-1 h-9 px-3 text-sm rounded-lg border border-zinc-200 bg-zinc-50 outline-none focus:border-emerald-500" 
+                                      placeholder="Portion Name" 
+                                    />
+                                    <input 
+                                      type="number" 
+                                      value={v.price}
+                                      onChange={(e) => updateVariant(v.id, 'price', e.target.value)}
+                                      className="w-24 h-9 px-3 text-sm rounded-lg border border-zinc-200 bg-zinc-50 outline-none focus:border-emerald-500" 
+                                      placeholder="Price" 
+                                    />
+                                    <button onClick={() => removeVariant(v.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded">
+                                       <Trash2 className="w-4 h-4" />
+                                    </button>
+                                 </div>
+                              ))}
+                              <button onClick={addEmptyVariant} className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 py-1">
+                                 <Plus className="w-3 h-3" /> Add Custom Portion
+                              </button>
+                            </div>
+                         </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-zinc-700">Service Price (₹)</label>
+                      <input 
+                        type="number" 
+                        value={servicePrice}
+                        onChange={(e) => setServicePrice(e.target.value)}
+                        className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                        placeholder="e.g. 499"
+                      />
+                    </div>
                   )}
-                </Button>
 
-                <button
-                  type="button"
-                  onClick={() => handleSubmit(false)}
-                  disabled={loading}
-                  className="w-full py-3 text-sm text-zinc-400 hover:text-zinc-700 font-medium transition-colors disabled:opacity-50"
+                  <div className="grid grid-cols-2 gap-4">
+                    {form.businessType === 'FOOD_BEVERAGE' && !form.isPureVeg && (
+                      <div className="pt-6">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={serviceIsVeg}
+                            onChange={(e) => setServiceIsVeg(e.target.checked)}
+                            className="w-5 h-5 rounded border-green-300 text-green-600 focus:ring-green-600"
+                          />
+                          <span className="text-sm font-bold text-green-800">Is Veg?</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-700">Photo (Optional)</label>
+                    <div className="flex items-center gap-4">
+                      {serviceImage && <img src={serviceImage} className="w-12 h-12 rounded-lg object-cover" alt="Preview" />}
+                      <label className="flex-1 h-11 border border-zinc-200 bg-white rounded-xl flex items-center justify-center cursor-pointer hover:bg-zinc-50 transition-all text-sm font-semibold text-zinc-600">
+                        Upload Photo
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageChange(e, true)} />
+                      </label>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={handleAddTempService}
+                    className="w-full bg-zinc-900 hover:bg-zinc-800 text-white px-4 py-3 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2 mt-4"
+                  >
+                    <Plus className="w-4 h-4" /> Add to List
+                  </button>
+                </div>
+              )}
+
+              {/* Added Services List */}
+              {temporaryServices.length > 0 && form.businessType !== 'CAB_TRANSPORT' && (
+                <div className="space-y-3 pt-4">
+                  <h3 className="text-sm font-bold text-zinc-900">Services Added ({temporaryServices.length})</h3>
+                  {temporaryServices.map((svc) => (
+                    <div key={svc.id} className="flex items-center gap-3 bg-white border border-zinc-200 p-3 rounded-xl shadow-sm">
+                      {svc.image ? (
+                        <img src={svc.image} className="w-12 h-12 rounded-lg object-cover" alt="" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-zinc-100 flex items-center justify-center">
+                          <Utensils className="w-5 h-5 text-zinc-400" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-zinc-800 text-sm truncate">{svc.title}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {svc.variants && svc.variants.length > 0 ? (
+                            <span className="text-xs font-semibold text-blue-600">{svc.variants.length} Portions</span>
+                          ) : (
+                            svc.price && <span className="text-xs font-semibold text-emerald-600">₹{svc.price}</span>
+                          )}
+                          {svc.foodCategory && <span className="text-[10px] font-bold px-2 py-0.5 bg-zinc-100 text-zinc-500 rounded-full">{svc.foodCategory}</span>}
+                        </div>
+                      </div>
+                      <button onClick={() => handleRemoveTempService(svc.id)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg shrink-0">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="pt-6 flex justify-between border-t border-zinc-100">
+                <button 
+                  onClick={() => router.push('/vendor-dashboard')}
+                  className="text-zinc-500 font-bold px-4 hover:text-zinc-800"
                 >
-                  {loading ? '...' : 'Skip verification & submit profile →'}
+                  Cancel
                 </button>
+                <button 
+                  onClick={nextStep}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2"
+                >
+                  Continue to Review <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 4 && !isSuccess && (
+             <div className="animate-in fade-in slide-in-from-right-4 space-y-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <button onClick={() => setStep(3)} className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-500">
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                  <div>
+                    <h2 className="text-xl font-black text-zinc-900">Review & Publish</h2>
+                    <p className="text-xs text-zinc-500 font-medium mt-1">Verify your storefront in the Live Preview before launching.</p>
+                  </div>
+                </div>
+
+                <div className="bg-emerald-50/50 border border-emerald-100 p-6 rounded-2xl text-center space-y-4">
+                  <h3 className="font-bold text-emerald-900 text-lg">Ready to go live?</h3>
+                  <p className="text-sm text-emerald-700 font-medium max-w-sm mx-auto">
+                    Your {form.businessType.replace('_', ' ').toLowerCase()} storefront is looking great. Customers will see exactly what's on the right.
+                  </p>
+                </div>
+
+                <div className="pt-6 flex justify-between border-t border-zinc-100">
+                  <button 
+                    onClick={() => router.push('/vendor-dashboard')}
+                    className="text-zinc-500 font-bold px-4 hover:text-zinc-800"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleRegister}
+                    disabled={isSubmitting}
+                    className="bg-zinc-900 hover:bg-black disabled:bg-zinc-400 text-white px-10 py-3 rounded-xl font-bold transition-all shadow-md flex items-center gap-2"
+                  >
+                    {isSubmitting ? 'Publishing...' : 'Publish Storefront'}
+                  </button>
+                </div>
+             </div>
+          )}
+
+          {isSuccess && (
+            <div className="animate-in zoom-in-95 duration-500 flex flex-col items-center justify-center text-center h-full py-20 space-y-6">
+              <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+                <PartyPopper className="w-12 h-12 text-emerald-600" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-black text-zinc-900 mb-2">Storefront Published!</h2>
+                <p className="text-zinc-500 font-medium">Your business is now live. Redirecting to your dashboard...</p>
               </div>
             </div>
           )}
 
         </div>
       </div>
+
+      {/* ─── RIGHT SIDE (SLEEK FLOATING PREVIEW) ─── */}
+      <div className="hidden lg:flex lg:col-span-6 h-full items-center justify-center relative overflow-hidden bg-zinc-50 rounded-3xl border border-zinc-200">
+        
+        {/* Responsive constraints instead of hardcoded transform scale */}
+        <div 
+          className="relative w-full max-w-[350px] aspect-[9/19.5] max-h-[75vh] mx-auto overflow-hidden rounded-[40px] border-8 border-neutral-800 shadow-2xl bg-white flex flex-col"
+        >
+          {/* Subtle Top Browser-like Header */}
+          <div className="h-8 bg-white/80 backdrop-blur border-b border-zinc-100 flex items-center justify-center px-4 relative z-50 shrink-0">
+             <div className="w-12 h-1.5 bg-zinc-200 rounded-full"></div>
+          </div>
+          
+          {/* Reactive Content Wrapper */}
+          <div className="flex-1 w-full h-full overflow-y-auto scrollbar-hide relative z-0">
+            {!form.businessType ? (
+              <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-zinc-50">
+                <div className="w-20 h-20 rounded-3xl bg-emerald-50 flex items-center justify-center mb-6 shadow-sm border border-emerald-100">
+                  <Store className="w-10 h-10 text-emerald-500" />
+                </div>
+                <h3 className="text-xl font-black text-zinc-900">Your Storefront</h3>
+                <p className="text-sm font-medium text-zinc-500 mt-2 leading-relaxed">
+                  As you build your profile, you'll see a real-time preview of what your customers will see right here.
+                </p>
+              </div>
+            ) : (
+              <div className="w-full min-h-full bg-white">
+                {form.businessType === 'CAB_TRANSPORT' && <CabTransportLayout business={previewBusiness} theme="trust-utility" />}
+                {form.businessType === 'FOOD_BEVERAGE' && <FoodLayout business={previewBusiness} theme="playful-vibrant" />}
+                {(form.businessType === 'SALON_BEAUTY' || form.businessType === 'HOME_SERVICES') && <HomeServicesLayout business={previewBusiness} theme="premium-elegant" />}
+              </div>
+            )}
+          </div>
+        </div>
+
+      </div>
+
     </div>
   );
 }

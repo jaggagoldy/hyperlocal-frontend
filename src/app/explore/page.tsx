@@ -125,16 +125,20 @@ export default function ExplorePage() {
   useEffect(() => {
     if (isInitialized.current) {
       const params = new URLSearchParams(searchParams.toString());
-      if (businessType) params.set('businessType', businessType);
-      else params.delete('businessType');
+      let changed = false;
+
+      if (businessType && params.get('businessType') !== businessType) { params.set('businessType', businessType); changed = true; }
+      else if (!businessType && params.has('businessType')) { params.delete('businessType'); changed = true; }
       
-      if (minRating) params.set('minRating', minRating);
-      else params.delete('minRating');
+      if (minRating && params.get('minRating') !== minRating) { params.set('minRating', minRating); changed = true; }
+      else if (!minRating && params.has('minRating')) { params.delete('minRating'); changed = true; }
       
-      if (openNow) params.set('openNow', 'true');
-      else params.delete('openNow');
+      if (openNow && params.get('openNow') !== 'true') { params.set('openNow', 'true'); changed = true; }
+      else if (!openNow && params.has('openNow')) { params.delete('openNow'); changed = true; }
       
-      router.replace(`?${params.toString()}`, { scroll: false });
+      if (changed) {
+        router.replace(`?${params.toString()}`, { scroll: false });
+      }
     }
   }, [businessType, minRating, openNow, router, searchParams]);
 
@@ -677,11 +681,10 @@ export default function ExplorePage() {
                       </DrawerHeader>
                       <div className="flex-1 overflow-y-auto space-y-6 pb-6 px-1">
                         
-                        {/* Business Model Filter */}
                         <div className="space-y-3">
                           <h4 className="text-sm font-bold text-zinc-800">Business Model</h4>
                           <div className="grid grid-cols-2 gap-2">
-                            {['RESTAURANT', 'SALON', 'EVENT_SERVICE', 'HOME_MAINTENANCE', 'STREET_VENDOR'].map((bt) => (
+                            {['FOOD_BEVERAGE', 'SALON_BEAUTY', 'HOME_ESSENTIALS', 'CAB_TRANSPORT'].map((bt) => (
                               <label key={bt} className="flex items-center gap-2 text-sm text-zinc-600 cursor-pointer">
                                 <input 
                                   type="checkbox" 

@@ -12,12 +12,21 @@ import HomeServicesLayout from '@/components/vendor/HomeServicesLayout';
 import CabTransportLayout from '@/components/vendor/CabTransportLayout';
 import { ReviewSection } from '@/components/vendor/ReviewSection';
 
+import QRCode from 'react-qr-code';
+import { QrCode, Smartphone } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+
 export default function VendorProfilePage() {
   const params = useParams();
   const router = useRouter();
   const slug = params.slug as string;
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUrl, setCurrentUrl] = useState('');
+
+  useEffect(() => {
+    setCurrentUrl(typeof window !== 'undefined' ? window.location.href : '');
+  }, []);
 
   useEffect(() => {
     const fetchBusiness = async () => {
@@ -75,6 +84,39 @@ export default function VendorProfilePage() {
               </h1>
               <p className={`text-xs truncate ${isDarkPremium ? 'text-zinc-400' : 'text-zinc-500'}`}>{business.localityName}</p>
             </div>
+            
+            <Dialog>
+              <DialogTrigger>
+                <button className={`p-2 rounded-full hover:bg-white/10 ${isDarkPremium ? 'text-zinc-100' : 'text-zinc-800'} transition-colors`}>
+                  <QrCode className="w-5 h-5" />
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md bg-white">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-zinc-900">
+                    <Smartphone className="w-5 h-5" />
+                    Install App or Share
+                  </DialogTitle>
+                  <DialogDescription>
+                    Scan this QR code to open {business.businessName}&apos;s store directly on your phone.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col items-center justify-center py-6 space-y-6">
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-zinc-200">
+                    {currentUrl && <QRCode value={currentUrl} size={200} />}
+                  </div>
+                  <div className="text-center space-y-2">
+                    <h4 className="font-bold text-zinc-900">How to install?</h4>
+                    <p className="text-sm text-zinc-600">
+                      1. Scan QR code with your phone camera.<br/>
+                      2. Tap the link to open in your browser.<br/>
+                      3. Select &quot;Add to Home Screen&quot; from your browser menu.
+                    </p>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
           </div>
         </header>
       )}

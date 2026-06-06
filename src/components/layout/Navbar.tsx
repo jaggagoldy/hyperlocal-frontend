@@ -86,26 +86,26 @@ export function Navbar() {
         {/* Center Nav Links */}
         <nav className="hidden md:flex items-center gap-2">
           <Link href="/">
-            <Button variant="ghost" className="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary font-bold h-10 px-4 rounded-xl gap-2">
+            <Button variant="ghost" className={`${pathname === '/' ? 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'} font-bold h-10 px-4 rounded-xl gap-2`}>
               <Home className="w-4 h-4" />
               Home
             </Button>
           </Link>
           <Link href="/food">
-            <Button variant="ghost" className="text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 font-bold h-10 px-4 rounded-xl gap-2">
+            <Button variant="ghost" className={`${pathname.startsWith('/food') ? 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'} font-bold h-10 px-4 rounded-xl gap-2`}>
               <Coffee className="w-4 h-4" />
               Food
             </Button>
           </Link>
           <Link href="/explore">
-            <Button variant="ghost" className="text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 font-bold h-10 px-4 rounded-xl gap-2">
+            <Button variant="ghost" className={`${pathname.startsWith('/explore') ? 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'} font-bold h-10 px-4 rounded-xl gap-2`}>
               <Search className="w-4 h-4" />
               Explore
             </Button>
           </Link>
           {isAuthenticated && isProMode && (
             <Link href="/vendor-dashboard">
-              <Button variant="ghost" className="text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 font-bold h-10 px-4 rounded-xl gap-2">
+              <Button variant="ghost" className={`${pathname.startsWith('/vendor-dashboard') ? 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'} font-bold h-10 px-4 rounded-xl gap-2`}>
                 <LayoutDashboard className="w-4 h-4" />
                 Dashboard
               </Button>

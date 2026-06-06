@@ -1,6 +1,7 @@
 'use client';
 
-import { ArrowLeft, CheckCircle2, Car, Users, Wind, MapPin } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, CheckCircle2, Car, Users, Wind, MapPin, X, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { BusinessProfile } from '@/types/models';
 
@@ -11,14 +12,67 @@ interface CabTransportLayoutProps {
 
 export default function CabTransportLayout({ business, theme }: CabTransportLayoutProps) {
   const router = useRouter();
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [requestDetails, setRequestDetails] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const connectionMode = business.connectionMode || 'REQUIRE_APPROVAL';
 
-  const handleNegotiate = () => {
+  const handlePrimaryAction = () => {
+    if (connectionMode === 'DIRECT') {
+      executeDirectConnect();
+    } else {
+      setIsRequestModalOpen(true);
+    }
+  };
+
+  const executeDirectConnect = async () => {
     const vehicleModel = business.metaData?.model || 'vehicle';
     const message = `Hi ${business.businessName}, I saw your ${vehicleModel} on NearByBazar and want to check your availability for a trip. Please let me know your rates!`;
     const phone = business.user?.phoneNumber || '9999999999';
     const formattedPhone = phone.startsWith('+') ? phone.replace('+', '') : (phone.length === 10 ? `91${phone}` : phone);
     
+    try {
+      await import('@/lib/api-client').then(m => m.default.post('/analytics/lead', {
+        businessProfileId: business.id,
+        type: 'whatsapp_click'
+      }));
+    } catch (e) {
+      console.error('Failed to log analytics', e);
+    }
+    
     window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const submitRequest = async () => {
+    try {
+      setIsSubmitting(true);
+      const { useAuthStore } = await import('@/store/authStore');
+      const { user } = useAuthStore.getState();
+      
+      const baseFareAmt = business.catalogItems && business.catalogItems.length > 0 
+        ? business.catalogItems[0].price 
+        : (business.metaData?.baseFare || 0);
+      
+      await import('@/lib/api-client').then(m => m.default.post('/orders/checkout', {
+        businessProfileId: business.id,
+        orderType: 'SERVICE_BOOKING',
+        customerName: user?.name || 'Guest User',
+        customerPhone: user?.phoneNumber || '9999999999',
+        serviceLocation: requestDetails,
+        totalValue: isNaN(Number(baseFareAmt)) ? 0 : Number(baseFareAmt),
+        status: 'PENDING',
+        items: [] // No specific items for a cab ride
+      }));
+      
+      alert('Request Submitted Successfully! The driver will review and accept.');
+      setIsRequestModalOpen(false);
+      setRequestDetails('');
+    } catch (error) {
+      console.error(error);
+      alert('Failed to submit request');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const vehicleImage = business.media?.find((m: any) => m.type === 'shop_photo' || m.type === 'vehicle_photo')?.secureUrl 
@@ -131,13 +185,41 @@ export default function CabTransportLayout({ business, theme }: CabTransportLayo
             </div>
           </div>
           <button 
-            onClick={handleNegotiate}
+            onClick={handlePrimaryAction}
             className="flex-1 sm:flex-none w-full sm:w-auto bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(22,163,74,0.3)] flex items-center justify-center gap-2"
           >
-            Call & Negotiate Fare on WhatsApp
+            {connectionMode === 'DIRECT' ? 'Call & Negotiate Fare on WhatsApp' : 'Request to Book Cab'}
           </button>
         </div>
       </div>
+
+      {/* Request Modal */}
+      {isRequestModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-zinc-900 w-full max-w-md rounded-2xl p-6 border border-zinc-800 shadow-2xl relative">
+            <button onClick={() => setIsRequestModalOpen(false)} className="absolute top-4 right-4 text-zinc-400 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-bold text-white mb-2">Request Cab</h3>
+            <p className="text-zinc-400 text-sm mb-6">Where do you want to go and when? Provide details so the driver can approve your trip.</p>
+            
+            <textarea 
+              value={requestDetails}
+              onChange={(e) => setRequestDetails(e.target.value)}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:outline-none focus:border-green-500 min-h-[120px] mb-4"
+              placeholder="E.g. Pickup from Airport tomorrow at 5am, drop off at City Center."
+            />
+
+            <button 
+              onClick={submitRequest}
+              disabled={isSubmitting || requestDetails.trim() === ''}
+              className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Send Request'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

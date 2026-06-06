@@ -35,6 +35,14 @@ export default function CartDrawer({ vendor, theme }: CartDrawerProps) {
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const isPreview = typeof window !== 'undefined' && window.location.pathname.includes('/vendor-dashboard');
+    if (isPreview) {
+      toast.success('Preview Mode: Your checkout flow works perfectly! (No real order placed)');
+      clearCart();
+      setIsOpen(false);
+      return;
+    }
+
     // Check authentication first
     const { isAuthenticated } = useAuthStore.getState();
     if (!isAuthenticated) {
@@ -49,8 +57,8 @@ export default function CartDrawer({ vendor, theme }: CartDrawerProps) {
 
     setIsSubmitting(true);
     try {
-      await apiClient.post('/orders/checkout', {
-        vendorId: vendor.id,
+      await apiClient.post('/orders', {
+        businessProfileId: vendor.id,
         orderType: 'TRANSACTIONAL',
         customerName,
         customerPhone,
@@ -146,8 +154,8 @@ export default function CartDrawer({ vendor, theme }: CartDrawerProps) {
                 type="submit" 
                 form="checkout-form"
                 disabled={isSubmitting}
-                className={`w-full py-4 rounded-xl font-bold text-lg flex justify-center items-center ${theme.colors.primary} border border-transparent disabled:opacity-50 text-white`}
-                style={{ backgroundColor: 'var(--primary, #000)' }} // Fallback if theme structure implies tailwind classes for bg
+                className={`w-full py-4 rounded-xl font-bold text-lg flex justify-center items-center ${theme?.colors?.primary || 'bg-green-600'} border border-transparent disabled:opacity-50 text-white`}
+                style={{ backgroundColor: 'var(--primary, #16a34a)' }} // Fallback if theme structure implies tailwind classes for bg
               >
                 {isSubmitting ? 'Processing...' : 'Place Order via WhatsApp'}
               </button>

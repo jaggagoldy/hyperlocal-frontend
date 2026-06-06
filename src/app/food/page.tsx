@@ -95,13 +95,17 @@ export default function FoodPage() {
   useEffect(() => {
     if (isInitialized.current) {
       const params = new URLSearchParams(searchParams.toString());
-      if (minRating) params.set('minRating', minRating);
-      else params.delete('minRating');
+      let changed = false;
       
-      if (openNow) params.set('openNow', 'true');
-      else params.delete('openNow');
+      if (minRating && params.get('minRating') !== minRating) { params.set('minRating', minRating); changed = true; }
+      else if (!minRating && params.has('minRating')) { params.delete('minRating'); changed = true; }
       
-      router.replace(`?${params.toString()}`, { scroll: false });
+      if (openNow && params.get('openNow') !== 'true') { params.set('openNow', 'true'); changed = true; }
+      else if (!openNow && params.has('openNow')) { params.delete('openNow'); changed = true; }
+      
+      if (changed) {
+        router.replace(`?${params.toString()}`, { scroll: false });
+      }
     }
   }, [minRating, openNow, router, searchParams]);
 
@@ -246,7 +250,7 @@ export default function FoodPage() {
           page: reset ? 1 : page, 
           limit: 10,
           verifiedOnly,
-          businessType: businessType || 'RESTAURANT,STREET_VENDOR', // ALWAYS FILTER FOR FOOD
+          businessType: businessType || 'FOOD_BEVERAGE', // ALWAYS FILTER FOR FOOD
           minRating,
           openNow
         }
@@ -424,6 +428,11 @@ export default function FoodPage() {
                         onClick={() => {
                           setCategory(slug);
                           setIsMobileFilterOpen(false);
+                          
+                          const foodCategories = ['restaurant', 'cloud-kitchen', 'street-food'];
+                          if (slug && !foodCategories.includes(slug)) {
+                            router.push('/explore');
+                          }
                         }}
                         className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors ${
                           isSelected 
@@ -639,11 +648,10 @@ export default function FoodPage() {
                       </DrawerHeader>
                       <div className="flex-1 overflow-y-auto space-y-6 pb-6 px-1">
                         
-                        {/* Business Model Filter */}
                         <div className="space-y-3">
                           <h4 className="text-sm font-bold text-zinc-800">Business Model</h4>
                           <div className="grid grid-cols-2 gap-2">
-                            {['RESTAURANT', 'SALON', 'EVENT_SERVICE', 'HOME_MAINTENANCE', 'STREET_VENDOR'].map((bt) => (
+                            {['FOOD_BEVERAGE', 'SALON_BEAUTY', 'HOME_ESSENTIALS', 'CAB_TRANSPORT'].map((bt) => (
                               <label key={bt} className="flex items-center gap-2 text-sm text-zinc-600 cursor-pointer">
                                 <input 
                                   type="checkbox" 

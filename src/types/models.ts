@@ -62,7 +62,8 @@ export interface BusinessProfile {
   reviews?: Review[];
   categories?: { category: Category }[];
   catalogItems?: CatalogItem[];
-  user?: { phoneNumber?: string };
+  user?: { phoneNumber?: string; name?: string };
+  connectionMode?: 'DIRECT' | 'REQUIRE_APPROVAL'; // Matchmaking Engine — Phase 1
 }
 
 
