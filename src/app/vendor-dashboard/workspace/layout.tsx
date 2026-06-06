@@ -6,8 +6,8 @@ import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import apiClient from '@/lib/api-client';
 import { 
-  Store, Car, Home, Scissors, LayoutDashboard, Settings, 
-  Package, CheckSquare, ClipboardList, Star, MessageSquare, Menu, ChevronDown 
+  Store, Building2, Users, CreditCard, Package, Calendar, MessageSquare, Bot, 
+  Wallet, Contact, QrCode, User, MonitorSmartphone, ChevronDown, Bell, LayoutDashboard
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
@@ -28,7 +28,6 @@ export default function WorkspaceLayout({
   useEffect(() => {
     if (_hasHydrated) {
       if (!activeBusinessId) {
-        // No active business? Kick back to Hub
         router.replace('/vendor-dashboard');
       } else {
         fetchBusinessesAndSetContext();
@@ -47,7 +46,6 @@ export default function WorkspaceLayout({
       if (current) {
         setActiveBusinessData(current);
       } else {
-        // ID is invalid, go to Hub
         setActiveBusiness(null);
         router.replace('/vendor-dashboard');
       }
@@ -60,152 +58,197 @@ export default function WorkspaceLayout({
 
   if (!_hasHydrated || isLoading || !activeBusiness) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+      <div className="flex h-screen w-full items-center justify-center bg-[#F3F4F6]">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     );
   }
 
-  // --- Dynamic Navigation Logic ---
-  const type = activeBusiness.businessType;
-  
-  let navItems = [
-    { name: 'Dashboard', href: '/vendor-dashboard/workspace', icon: LayoutDashboard }
+  const handleBusinessSwitch = (id: string) => {
+    setActiveBusiness(id);
+    setIsSwitcherOpen(false);
+    // Setting activeBusinessId triggers useEffect, which fetches new metrics on dashboard home
+  };
+
+  const SIDEBAR_GROUPS = [
+    {
+      label: 'MANAGEMENT',
+      items: [
+        { name: 'My Business', href: '/vendor-dashboard/workspace/management/my-business', icon: Store },
+        { name: 'Restaurants/Catalog', href: '/vendor-dashboard/workspace/management/catalog', icon: Building2 },
+        { name: 'Staff Members', href: '/vendor-dashboard/workspace/management/staff', icon: Users },
+        { name: 'Subscriptions', href: '/vendor-dashboard/workspace/management/subscriptions', icon: CreditCard },
+        { name: 'Offerings', href: '/vendor-dashboard/workspace/management/offerings', icon: Package },
+      ]
+    },
+    {
+      label: 'COMMUNICATIONS',
+      items: [
+        { name: 'Appointments', href: '/vendor-dashboard/workspace/communications/appointments', icon: Calendar },
+        { name: 'Enquiries', href: '/vendor-dashboard/workspace/communications/enquiries', icon: MessageSquare },
+        { name: 'AI & WhatsApp', href: '/vendor-dashboard/workspace/communications/ai-whatsapp', icon: Bot },
+      ]
+    },
+    {
+      label: 'ASSETS & FINANCE',
+      items: [
+        { name: 'Wallet', href: '/vendor-dashboard/workspace/finance/wallet', icon: Wallet },
+        { name: 'Physical Card', href: '/vendor-dashboard/workspace/finance/physical-card', icon: Contact },
+        { name: 'QR Standee', href: '/vendor-dashboard/workspace/finance/qr-standee', icon: QrCode },
+      ]
+    },
+    {
+      label: 'ACCOUNT',
+      items: [
+        { name: 'Profile', href: '/vendor-dashboard/workspace/account/profile', icon: User },
+        { name: 'POS System', href: '/vendor-dashboard/workspace/account/pos', icon: MonitorSmartphone },
+      ]
+    }
   ];
 
-  if (type === 'CAB_TRANSPORT') {
-    navItems.push(
-      { name: 'My Vehicles', href: '/vendor-dashboard/workspace/catalog', icon: Car },
-      { name: 'Ride Requests', href: '/vendor-dashboard/workspace/leads', icon: MessageSquare }
-    );
-  } else if (type === 'FOOD_BEVERAGE') {
-    navItems.push(
-      { name: 'Menu Builder', href: '/vendor-dashboard/workspace/catalog', icon: Menu },
-      { name: 'Live Orders', href: '/vendor-dashboard/workspace/leads', icon: ClipboardList }
-    );
-  } else {
-    navItems.push(
-      { name: 'My Services', href: '/vendor-dashboard/workspace/catalog', icon: Package },
-      { name: 'Appointments', href: '/vendor-dashboard/workspace/leads', icon: CheckSquare }
-    );
-  }
-
-  // Common Tabs
-  navItems.push(
-    { name: 'Reviews', href: '/vendor-dashboard/workspace/reviews', icon: Star },
-    { name: 'Settings', href: '/vendor-dashboard/workspace/settings', icon: Settings }
-  );
-
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="flex h-screen bg-[#F8F9FA] text-zinc-900 font-sans">
       
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-          
-          {/* Workspace Switcher */}
-          <div className="relative">
-            <button 
-              onClick={() => setIsSwitcherOpen(!isSwitcherOpen)}
-              className="w-full flex items-center justify-between bg-slate-100 dark:bg-slate-800 px-3 py-2.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-            >
-              <div className="flex flex-col items-start truncate text-left pr-2">
-                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">ACTIVE WORKSPACE</span>
-                <span className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate w-full">{activeBusiness.businessName}</span>
-              </div>
-              <ChevronDown className="w-4 h-4 text-slate-500 flex-shrink-0" />
-            </button>
-            
-            {isSwitcherOpen && (
-              <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 overflow-hidden">
-                <div className="max-h-60 overflow-y-auto py-1">
-                  {businesses.map(b => (
-                    <button
-                      key={b.id}
-                      onClick={() => {
-                        setActiveBusiness(b.id);
-                        setIsSwitcherOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${b.id === activeBusiness.id ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 font-semibold' : 'text-slate-700 dark:text-slate-300'}`}
-                    >
-                      {b.businessName}
-                    </button>
-                  ))}
-                </div>
-                <div className="border-t border-slate-200 dark:border-slate-700">
-                  <Link href="/vendor-dashboard" className="block px-4 py-2.5 text-sm text-center text-indigo-600 dark:text-indigo-400 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700">
-                    Go to Hub Overview
-                  </Link>
-                </div>
-              </div>
-            )}
+      {/* ─── DESKTOP SIDEBAR ─── */}
+      <aside className="hidden lg:flex flex-col w-64 bg-[#EBECEE] border-r border-zinc-200/60 overflow-y-auto">
+        <div className="p-5 pb-2">
+          {/* Logo Placeholder - BusinessBay style */}
+          <div className="flex items-center gap-2 mb-6 cursor-pointer" onClick={() => router.push('/vendor-dashboard/workspace')}>
+            <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-white font-black text-lg">B</div>
+            <div>
+              <h1 className="font-bold text-lg leading-tight">BusinessBay</h1>
+              <p className="text-[9px] text-zinc-500 uppercase tracking-wide font-bold">AI Innovation Hub</p>
+            </div>
           </div>
           
+          <button 
+            onClick={() => router.push('/vendor-dashboard/workspace')}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-sm transition-colors ${
+              pathname === '/vendor-dashboard/workspace' ? 'bg-[#1D4ED8] text-white shadow-md' : 'text-zinc-600 hover:bg-zinc-200/50'
+            }`}
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            Dashboard
+            {activeBusiness.membershipTier === 'Pro' && (
+              <span className="ml-auto text-[9px] bg-white/20 px-1.5 py-0.5 rounded-md uppercase tracking-wider">BB OS Pro</span>
+            )}
+          </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium text-sm ${
-                  isActive 
-                    ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400' 
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                <Icon className={`w-5 h-5 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
-                {item.name}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 py-4 px-3">
+          {SIDEBAR_GROUPS.map((group, idx) => (
+            <div key={idx} className="mb-6">
+              <h3 className="px-4 mb-2 text-[10px] font-black text-zinc-400 uppercase tracking-widest">{group.label}</h3>
+              <ul className="space-y-0.5">
+                {group.items.map(item => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+                  return (
+                    <li key={item.name}>
+                      <Link 
+                        href={item.href}
+                        className={`flex items-center gap-3 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                          isActive ? 'bg-zinc-200/70 text-zinc-900' : 'text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-800'
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 ${isActive ? 'text-zinc-800' : 'text-zinc-400'}`} />
+                        {item.name}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
         </nav>
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Mobile Header */}
-        <header className="md:hidden sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Workspace</span>
-            <span className="text-sm font-bold truncate max-w-[150px]">{activeBusiness.businessName}</span>
+      {/* ─── MAIN CONTENT WRAPPER ─── */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#F8F9FA]">
+        
+        {/* ─── TOP NAVBAR ─── */}
+        <header className="h-16 border-b border-zinc-200 bg-white flex items-center justify-between px-6 shrink-0 z-40 sticky top-0">
+          <div className="flex items-center gap-4">
+            {/* Mobile Sidebar Toggle - Hidden on Desktop */}
+            <button className="lg:hidden p-2 -ml-2 text-zinc-500 hover:bg-zinc-100 rounded-lg">
+              <LayoutDashboard className="w-5 h-5" />
+            </button>
+            <h2 className="text-lg font-bold text-zinc-800 hidden md:block">
+              {pathname === '/vendor-dashboard/workspace' ? 'Dashboard Overview' : pathname.split('/').pop()?.replace(/-/g, ' ').toUpperCase()}
+            </h2>
           </div>
-          <button 
-            onClick={() => router.push('/vendor-dashboard')}
-            className="text-xs bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-md font-medium"
-          >
-            Switch
-          </button>
+
+          <div className="flex items-center gap-4">
+            
+            {/* Wallet Button */}
+            <button className="hidden md:flex items-center gap-2 bg-zinc-100 hover:bg-zinc-200 transition-colors px-4 py-2 rounded-lg text-sm font-bold text-zinc-700 border border-zinc-200">
+              <Wallet className="w-4 h-4 text-zinc-500" />
+              Wallet: ₹0.00 <ChevronDown className="w-3 h-3 ml-1 text-zinc-400" />
+            </button>
+
+            {/* Business Switcher Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => setIsSwitcherOpen(!isSwitcherOpen)}
+                className="flex items-center gap-2 bg-[#1D4ED8] hover:bg-blue-800 transition-colors px-4 py-2 rounded-lg text-sm font-bold text-white shadow-sm"
+              >
+                <span className="truncate max-w-[120px]">{activeBusiness.businessName}</span>
+                <ChevronDown className="w-3 h-3 opacity-80" />
+              </button>
+              
+              {isSwitcherOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsSwitcherOpen(false)}></div>
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-zinc-200 rounded-xl shadow-xl z-50 overflow-hidden py-2 animate-in fade-in slide-in-from-top-2">
+                    <div className="max-h-60 overflow-y-auto">
+                      {businesses.map(b => (
+                        <button
+                          key={b.id}
+                          onClick={() => handleBusinessSwitch(b.id)}
+                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                            b.id === activeBusiness.id ? 'bg-blue-50 text-blue-700 font-bold' : 'text-zinc-600 hover:bg-zinc-50 font-medium'
+                          }`}
+                        >
+                          {b.businessName}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="px-4 py-2 mt-2 border-t border-zinc-100">
+                      <button 
+                        onClick={() => router.push('/vendor-dashboard/workspace/management/my-business')} 
+                        className="w-full bg-[#1D4ED8] text-white rounded-lg py-2 text-xs font-bold hover:bg-blue-800"
+                      >
+                        + Create New Business
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Language & Notifications */}
+            <div className="flex items-center gap-3 border-l border-zinc-200 pl-4">
+              <button className="text-sm font-bold text-zinc-600 flex items-center gap-1 hover:text-zinc-900">
+                EN <ChevronDown className="w-3 h-3 text-zinc-400" />
+              </button>
+              <button className="p-2 text-zinc-500 hover:bg-zinc-100 rounded-full relative">
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1.5 right-2 w-2 h-2 bg-rose-500 rounded-full border border-white"></span>
+              </button>
+              <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-white font-bold text-sm">
+                A
+              </div>
+            </div>
+
+          </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+        {/* ─── PAGE CONTENT ─── */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
           {children}
         </main>
 
-        {/* Mobile Bottom Navigation */}
-        <nav className="md:hidden fixed bottom-0 z-40 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-2 py-2 flex justify-around items-center">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-colors min-w-[64px] ${
-                  isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="text-[10px] font-medium">{item.name.split(' ')[0]}</span>
-              </Link>
-            );
-          })}
-        </nav>
       </div>
-
     </div>
   );
 }

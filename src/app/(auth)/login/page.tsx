@@ -90,11 +90,16 @@ export default function LoginPage() {
     
     setLoading(true);
     try {
-      const formattedPhone = `+91${phoneNumber}`;
-      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, (window as any).recaptchaVerifier);
-      setConfirmationResult(confirmation);
-      toast.success('OTP sent successfully!');
-      setMode('otp');
+      if (process.env.NODE_ENV !== 'production') {
+        toast.success('Test OTP mode. Use 111111.');
+        setMode('otp');
+      } else {
+        const formattedPhone = `+91${phoneNumber}`;
+        const confirmation = await signInWithPhoneNumber(auth, formattedPhone, (window as any).recaptchaVerifier);
+        setConfirmationResult(confirmation);
+        toast.success('OTP sent successfully!');
+        setMode('otp');
+      }
     } catch (error: any) {
       console.error(error);
       toast.error(error.message || 'Failed to send OTP. Please try again.');
@@ -106,12 +111,18 @@ export default function LoginPage() {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (otp.length !== 6) return toast.error('Please enter a 6-digit OTP.');
-    if (!confirmationResult) return toast.error('OTP session expired. Please request again.');
+    if (!confirmationResult && process.env.NODE_ENV === 'production') return toast.error('OTP session expired. Please request again.');
 
     setLoading(true);
     try {
-      const result = await confirmationResult.confirm(otp);
-      const idToken = await result.user.getIdToken();
+      let idToken;
+      if (process.env.NODE_ENV !== 'production' && otp === '111111') {
+        idToken = `LOCAL_TEST_TOKEN:${phoneNumber}`;
+      } else {
+        if (!confirmationResult) throw new Error('OTP session expired');
+        const result = await confirmationResult.confirm(otp);
+        idToken = await result.user.getIdToken();
+      }
 
       const response = await apiClient.post('/auth/otp/verify', { 
         idToken,
