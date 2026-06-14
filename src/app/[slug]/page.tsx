@@ -2,6 +2,8 @@ import axios from 'axios';
 import { notFound } from 'next/navigation';
 import { getTemplateComponent, TEMPLATE_METADATA } from '@/lib/templateRegistry';
 
+export const dynamic = 'force-dynamic';
+
 // This function simulates fetching business data from your backend.
 // In a real implementation, you would call your API.
 async function getBusinessBySlug(slug: string) {
