@@ -44,7 +44,7 @@ export default function RetailFashion({ business }: { business: BusinessProfile 
       {/* Sticky Filter Bar */}
       <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-zinc-200 px-6 py-4 flex items-center justify-between font-sans">
         <div className="flex gap-6 overflow-x-auto no-scrollbar text-xs font-semibold uppercase tracking-widest text-zinc-500">
-          {(business?.metaData?.cuisines?.length > 0 ? business.metaData.cuisines : ['Women', 'Men', 'Accessories']).map((cat: string, idx: number) => (
+          {((business?.metaData as any)?.cuisines?.length > 0 ? (business.metaData as any).cuisines : ['Women', 'Men', 'Accessories']).map((cat: string, idx: number) => (
             <button key={idx} className={`shrink-0 hover:text-black transition-colors ${idx === 0 ? 'text-black border-b-2 border-black pb-1' : ''}`}>{cat}</button>
           ))}
         </div>

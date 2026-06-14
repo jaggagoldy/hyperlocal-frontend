@@ -31,7 +31,9 @@ export const useCartStore = create<CartStore>()(
         let { cartItems, vendorId, orderType } = get();
 
         // Automatically clear cart if switching to a new vendor or order type
-        if ((vendorId && vendorId !== item.businessProfileId) || (orderType && orderType !== currentOrderType && cartItems.length > 0)) {
+        // Automatically clear cart if switching to a new vendor or order type
+        const itemVendorId = item.businessProfileId || item.vendorId;
+        if ((vendorId && vendorId !== itemVendorId) || (orderType && orderType !== currentOrderType && cartItems.length > 0)) {
           cartItems = [];
         }
 
@@ -47,7 +49,7 @@ export const useCartStore = create<CartStore>()(
           });
         } else {
           set({
-            vendorId: item.businessProfileId,
+            vendorId: itemVendorId,
             orderType: currentOrderType,
             cartItems: [...cartItems, { catalogItem: item, quantity: 1 }]
           });

@@ -17,6 +17,7 @@ interface BookingModalProps {
 }
 
 export default function BookingModal({ vendor, theme, onClose }: BookingModalProps) {
+  const router = useRouter();
   const { cartItems, getTotalValue, clearCart } = useCartStore();
   
   // Form State

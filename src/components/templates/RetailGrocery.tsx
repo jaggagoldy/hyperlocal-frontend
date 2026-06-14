@@ -39,7 +39,7 @@ export default function RetailGrocery({ business }: { business: BusinessProfile 
 
       {/* Category Pills */}
       <div className="px-4 py-6 flex gap-3 overflow-x-auto no-scrollbar border-b border-zinc-100">
-        {(business?.metaData?.cuisines?.length > 0 ? business.metaData.cuisines : ['Fruits', 'Veggies', 'Dairy', 'Bakery', 'Meat']).map((cat: string, idx: number) => (
+        {((business?.metaData as any)?.cuisines?.length > 0 ? (business.metaData as any).cuisines : ['Fruits', 'Veggies', 'Dairy', 'Bakery', 'Meat']).map((cat: string, idx: number) => (
           <div key={idx} className="flex flex-col items-center gap-2 shrink-0 group cursor-pointer">
             <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform border border-emerald-100 text-emerald-600 shadow-sm">
                <span className="text-xl font-bold">{cat.charAt(0)}</span>

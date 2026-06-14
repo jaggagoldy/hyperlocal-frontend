@@ -16,6 +16,7 @@ interface CartDrawerProps {
 }
 
 export default function CartDrawer({ vendor, theme }: CartDrawerProps) {
+  const router = useRouter();
   const { cartItems, getTotalValue, clearCart } = useCartStore();
   const [isOpen, setIsOpen] = useState(false);
   

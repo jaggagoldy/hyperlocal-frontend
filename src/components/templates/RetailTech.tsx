@@ -42,7 +42,7 @@ export default function RetailTech({ business }: { business: BusinessProfile }) 
       <div className="px-6 py-6 border-b border-zinc-900">
         <h2 className="text-xs font-bold text-zinc-500 tracking-widest uppercase mb-4">Shop by Category</h2>
         <div className="flex gap-4 overflow-x-auto no-scrollbar">
-          {(business?.metaData?.cuisines?.length > 0 ? business.metaData.cuisines : ['Displays', 'Gaming', 'Audio']).map((cat: string, idx: number) => (
+          {((business?.metaData as any)?.cuisines?.length > 0 ? (business.metaData as any).cuisines : ['Displays', 'Gaming', 'Audio']).map((cat: string, idx: number) => (
             <div key={idx} className="flex flex-col items-center gap-2 shrink-0 group cursor-pointer">
               <div className="w-16 h-16 rounded-full border border-zinc-800 bg-zinc-900 flex items-center justify-center group-hover:border-cyan-500/50 group-hover:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all">
                  <span className="text-cyan-400 font-bold text-xl uppercase font-mono">{cat.charAt(0)}</span>

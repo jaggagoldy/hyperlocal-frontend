@@ -172,7 +172,7 @@ export interface TemplateProps {
   business: BusinessProfile;
 }
 
-export const TemplateRegistry: Record<string, React.FC<TemplateProps>> = {
+export const TemplateRegistry: Record<string, React.ComponentType<any>> = {
   // Food Templates
   'food-classic': FoodClassic,
   'food-immersive': FoodImmersive,

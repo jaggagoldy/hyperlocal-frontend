@@ -92,6 +92,7 @@ export interface SearchDeficit {
 export interface CatalogItem {
   id: string;
   vendorId: string;
+  businessProfileId?: string;
   categoryId: string;
   title: string;
   description?: string;
