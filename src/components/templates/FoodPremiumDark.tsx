@@ -67,6 +67,14 @@ export default function FoodPremiumDark({ business, theme }: FoodLayoutProps) {
     return result;
   }, [catalog, searchQuery, vegFilter, nonVegFilter]);
 
+  console.log('FoodPremiumDark render:', { 
+    catalogLength: catalog.length, 
+    filteredLength: filteredCatalog.length,
+    searchQuery,
+    vegFilter,
+    nonVegFilter
+  });
+
   const categories = ['Recommended', 'Starters', 'Main Course', 'Breads', 'Desserts', 'Beverages'];
   const heroImage = business.metaData?.bannerUrl || business.media?.filter((m: any) => m.type === 'shop_photo')[0]?.secureUrl || 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1200&q=80';
 

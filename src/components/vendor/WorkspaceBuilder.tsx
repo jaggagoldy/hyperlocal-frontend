@@ -298,6 +298,45 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
     return 'Your Restaurant';
   };
 
+  const previewCatalog = catalog.length > 0 ? catalog.filter((c: any) => c.isActive !== false).map(c => ({
+    ...c,
+    // Map list editor field names to schema models
+    title: c.title,
+    price: c.price,
+    description: c.description,
+    mediaUrl: c.mediaUrl
+  })) : (() => {
+    const bType = initialData?.businessType;
+    if (isRetail) return [
+      { id: '1', title: 'Premium Wireless Headphones', price: 2999, isActive: true, foodCategory: 'Electronics' },
+      { id: '2', title: 'Classic Leather Wallet', price: 899, isActive: true, foodCategory: 'Accessories' }
+    ];
+    if (bType === 'SALON_BEAUTY') return [
+      { id: '1', title: 'Haircut & Styling', price: 499, isActive: true, description: '45 min session' },
+      { id: '2', title: 'Deep Conditioning', price: 799, isActive: true, description: '60 min treatment' },
+      { id: '3', title: 'Manicure & Pedicure', price: 999, isActive: true, description: 'Nail care combo' }
+    ];
+    if (bType === 'DOCTOR_CLINIC') return [
+      { id: '1', title: 'General Consultation', price: 500, isActive: true, description: '20 min in-clinic' },
+      { id: '2', title: 'Video Consultation', price: 300, isActive: true, description: '15 min online' },
+      { id: '3', title: 'Follow-up Visit', price: 200, isActive: true, description: '10 min review' }
+    ];
+    if (bType === 'TUTOR_ACADEMY') return [
+      { id: '1', title: 'Mathematics (Class 10)', price: 1200, isActive: true, description: 'Monthly batch' },
+      { id: '2', title: 'Physics Crash Course', price: 2500, isActive: true, description: '30-hour program' },
+      { id: '3', title: 'Exam Preparation', price: 3500, isActive: true, description: 'Full syllabus coverage' }
+    ];
+    if (isService) return [
+      { id: '1', title: 'Basic Package', price: 999, isActive: true, description: 'Standard service' },
+      { id: '2', title: 'Premium Package', price: 1999, isActive: true, description: 'Priority + extras' }
+    ];
+    // FOOD_BEVERAGE default
+    return [
+      { id: '1', title: 'High-Protein Egg Curry', price: 250, isActive: true, metaData: { isVeg: false, dietaryType: 'egg' }, variants: [{id: 'v1', name: 'Half', price: 150}, {id: 'v2', name: 'Full', price: 250}] },
+      { id: '2', title: 'Garlic Naan', price: 50, isActive: true, metaData: { isVeg: true, dietaryType: 'veg' } }
+    ];
+  })();
+
   const previewBusiness = {
     businessName: name || getDefaultPreviewName(),
     address: address || '123 Main Street',
@@ -319,37 +358,8 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
       contactEmail,
       enableServiceSelection
     },
-    catalog: catalog.length > 0 ? catalog.filter((c: any) => c.isActive) : (() => {
-      const bType = initialData?.businessType;
-      if (isRetail) return [
-        { id: '1', title: 'Premium Wireless Headphones', price: 2999, isActive: true, foodCategory: 'Electronics' },
-        { id: '2', title: 'Classic Leather Wallet', price: 899, isActive: true, foodCategory: 'Accessories' }
-      ];
-      if (bType === 'SALON_BEAUTY') return [
-        { id: '1', title: 'Haircut & Styling', price: 499, isActive: true, description: '45 min session' },
-        { id: '2', title: 'Deep Conditioning', price: 799, isActive: true, description: '60 min treatment' },
-        { id: '3', title: 'Manicure & Pedicure', price: 999, isActive: true, description: 'Nail care combo' }
-      ];
-      if (bType === 'DOCTOR_CLINIC') return [
-        { id: '1', title: 'General Consultation', price: 500, isActive: true, description: '20 min in-clinic' },
-        { id: '2', title: 'Video Consultation', price: 300, isActive: true, description: '15 min online' },
-        { id: '3', title: 'Follow-up Visit', price: 200, isActive: true, description: '10 min review' }
-      ];
-      if (bType === 'TUTOR_ACADEMY') return [
-        { id: '1', title: 'Mathematics (Class 10)', price: 1200, isActive: true, description: 'Monthly batch' },
-        { id: '2', title: 'Physics Crash Course', price: 2500, isActive: true, description: '30-hour program' },
-        { id: '3', title: 'Exam Preparation', price: 3500, isActive: true, description: 'Full syllabus coverage' }
-      ];
-      if (isService) return [
-        { id: '1', title: 'Basic Package', price: 999, isActive: true, description: 'Standard service' },
-        { id: '2', title: 'Premium Package', price: 1999, isActive: true, description: 'Priority + extras' }
-      ];
-      // FOOD_BEVERAGE default
-      return [
-        { id: '1', title: 'High-Protein Egg Curry', price: 250, isActive: true, metaData: { isVeg: false, dietaryType: 'egg' }, variants: [{id: 'v1', name: 'Half', price: 150}, {id: 'v2', name: 'Full', price: 250}] },
-        { id: '2', title: 'Garlic Naan', price: 50, isActive: true, metaData: { isVeg: true, dietaryType: 'veg' } }
-      ];
-    })()
+    catalog: previewCatalog,
+    catalogItems: previewCatalog
   };
 
   const currentArchetype = getTemplateArchetype(initialData?.businessType);
