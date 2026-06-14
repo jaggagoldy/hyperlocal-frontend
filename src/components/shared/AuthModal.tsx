@@ -141,8 +141,8 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     setLoading(true);
     try {
       if (process.env.NODE_ENV !== 'production') {
-        // Skip Firebase OTP in dev completely to allow 111111
-        toast.success('Test OTP mode. Use 111111.');
+        // Dev mode: use 111111 (existing bypass) or 1111 (universal bypass)
+        toast.success('Dev mode — use 111111 or 1111 as OTP.');
         setMode('otp');
       } else {
         const formattedPhone = `+91${phoneNumber}`;
@@ -161,12 +161,15 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otp.length !== 6) return toast.error('Please enter a 6-digit OTP.');
+    if (otp.length !== 6 && otp !== '1111') return toast.error('Please enter a 6-digit OTP or 1111 for dev bypass.');
     if (!confirmationResult && process.env.NODE_ENV === 'production') return toast.error('OTP session expired. Please request again.');
     setLoading(true);
     try {
       let idToken;
-      if (process.env.NODE_ENV !== 'production' && otp === '111111') {
+      if (process.env.NODE_ENV !== 'production' && otp === '1111') {
+        // Universal dev bypass — works for ANY phone number, auto-creates account
+        idToken = `DEV_BYPASS:${phoneNumber}:1111`;
+      } else if (process.env.NODE_ENV !== 'production' && otp === '111111') {
         idToken = `LOCAL_TEST_TOKEN:${phoneNumber}`;
       } else {
         if (!confirmationResult) throw new Error('OTP session expired');

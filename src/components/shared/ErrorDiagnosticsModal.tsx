@@ -21,6 +21,14 @@ export default function ErrorDiagnosticsModal() {
     const handleGlobalError = (event: ErrorEvent) => {
       // Avoid circular error loops or empty errors
       if (!event.message) return;
+
+      // Ignore Next.js dev server performance measurement bugs
+      if (
+        event.message.includes("negative time stamp") ||
+        event.message.includes("Failed to execute 'measure'")
+      ) {
+        return;
+      }
       
       console.error('Diagnostics captured global error:', event.error);
       setError({

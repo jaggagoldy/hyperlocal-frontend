@@ -8,9 +8,7 @@ import { Store, Car, Home, Scissors, ChevronRight, Loader2, ArrowLeft, Building 
 import { toast } from 'sonner';
 
 const BUSINESS_TYPES = [
-  { id: 'CAB_TRANSPORT', title: 'Cab & Transport', icon: Car, color: 'text-blue-500', bg: 'bg-blue-500/10' },
   { id: 'FOOD_BEVERAGE', title: 'Food & Beverage', icon: Store, color: 'text-orange-500', bg: 'bg-orange-500/10' },
-  { id: 'HOME_ESSENTIALS', title: 'Home Services', icon: Home, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
   { id: 'SALON_BEAUTY', title: 'Salon & Beauty', icon: Scissors, color: 'text-pink-500', bg: 'bg-pink-500/10' },
 ];
 

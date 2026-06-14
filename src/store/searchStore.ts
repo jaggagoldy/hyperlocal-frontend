@@ -17,8 +17,8 @@ interface SearchState {
 }
 
 export const useSearchStore = create<SearchState>((set) => ({
-  selectedCity: 'hisar', // Default launch city
-  selectedCategory: 'electrician', // Default category
+  selectedCity: 'fatehabad', // Default launch city for seeded data
+  selectedCategory: '', // Show all categories by default
   searchQuery: '',
   page: 1,
   businessType: '',

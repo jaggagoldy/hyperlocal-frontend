@@ -19,7 +19,8 @@ import {
   Users,
   Megaphone,
   Star,
-  Loader2
+  Loader2,
+  Utensils
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -200,16 +201,30 @@ export function AuthenticatedHomeView() {
     try {
       setIsSubmittingRfq(true);
       
+      const categoryMapping: Record<string, string> = {
+        'electrician': 'repairs-services',
+        'plumber': 'repairs-services',
+        'ac-repair': 'repairs-services',
+        'carpenter': 'repairs-services',
+        'ro-repair': 'repairs-services',
+        'painter': 'home-services',
+        'car-rental': 'cab-transport',
+        'salon-booking': 'salon-beauty',
+        'real-estate': 'real-estate',
+        'restaurant-cafe': 'restaurant-cafe'
+      };
+      const dbCategorySlug = categoryMapping[rfqCategory] || rfqCategory;
+
       let catalogItemId = '';
       const resLocal = await apiClient.get('/catalog/explore', {
-        params: { citySlug: selectedCity, categorySlug: rfqCategory, limit: 1 }
+        params: { citySlug: selectedCity, categorySlug: dbCategorySlug, limit: 1 }
       });
 
       if (resLocal.data?.data?.[0]) {
         catalogItemId = resLocal.data.data[0].id;
       } else {
         const resAny = await apiClient.get('/catalog/explore', {
-          params: { categorySlug: rfqCategory, limit: 1 }
+          params: { categorySlug: dbCategorySlug, limit: 1 }
         });
         if (resAny.data?.data?.[0]) {
           catalogItemId = resAny.data.data[0].id;
@@ -354,7 +369,7 @@ export function AuthenticatedHomeView() {
                             {item.vendor?.businessType === 'CAB_TRANSPORT' && (
                               <span className="bg-blue-100 text-blue-700 border-blue-200 border px-1.5 py-0.5 rounded text-[10px] font-bold">Cab</span>
                             )}
-                            {(item.vendor?.businessType === 'HOME_SERVICES' || item.vendor?.businessType === 'SALON_BEAUTY' || item.vendor?.businessType === 'HOME_ESSENTIALS') && (
+                            {(item.vendor?.businessType === 'HOME_ESSENTIALS' || item.vendor?.businessType === 'SALON_BEAUTY' || item.vendor?.businessType === 'HOME_ESSENTIALS') && (
                               <span className="bg-purple-100 text-purple-700 border-purple-200 border px-1.5 py-0.5 rounded text-[10px] font-bold">Service</span>
                             )}
                           </div>
@@ -392,33 +407,47 @@ export function AuthenticatedHomeView() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { id: 'electrician', name: t('homeMaintenance'), icon: Wrench, count: 6, gradient: 'from-blue-500 to-indigo-600' },
-              { id: 'car-rental', name: t('carRental'), icon: Car, count: 2, gradient: 'from-teal-500 to-emerald-600' },
-              { id: 'salon-booking', name: t('salonBooking'), icon: Scissors, count: 2, gradient: 'from-rose-500 to-pink-600' },
-              { id: 'real-estate', name: t('realEstate'), icon: Building, count: 1, gradient: 'from-amber-500 to-orange-600' }
-            ].map(vert => (
-              <div 
-                key={vert.id}
-                onClick={() => handleVerticalClick(vert.id)}
-                className="group bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:border-primary/20 hover:scale-[1.02] cursor-pointer transition-all duration-300 flex flex-col justify-between min-h-[160px]"
-              >
-                <div className={`w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br ${vert.gradient} text-white flex items-center justify-center shadow-xs transition-transform group-hover:scale-105`}>
-                  <vert.icon className="w-5.5 h-5.5" />
-                </div>
-                <div className="mt-4">
-                  <h3 className="font-extrabold text-zinc-800 text-sm group-hover:text-primary transition-colors whitespace-normal leading-tight">
-                    {vert.name}
-                  </h3>
-                  <div className="flex items-center justify-between text-[10px] text-zinc-400 mt-2 font-bold">
-                    <span>{vert.count} PROS ACTIVE</span>
-                    <ChevronRight className="w-4 h-4 text-zinc-300 shrink-0 group-hover:text-primary transition-colors group-hover:translate-x-0.5" />
+          {(() => {
+            const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_APP_ENV === 'production';
+            return (
+              <div className={`grid grid-cols-2 gap-4 ${isProduction ? 'md:grid-cols-2 max-w-2xl mx-auto' : 'md:grid-cols-4'}`}>
+                {(() => {
+                  return [
+                    ...(isProduction ? [] : [
+                      { id: 'electrician', name: t('homeMaintenance'), icon: Wrench, count: 6, gradient: 'from-blue-500 to-indigo-600' },
+                      { id: 'car-rental', name: t('carRental'), icon: Car, count: 2, gradient: 'from-teal-500 to-emerald-600' },
+                    ]),
+                    ...(isProduction ? [
+                      { id: 'restaurant-cafe', name: language === 'hi' ? 'रेस्टोरेंट और कैफ़े' : 'Restaurant & Cafe', icon: Utensils, count: 1, gradient: 'from-orange-500 to-red-600' }
+                    ] : []),
+                    { id: 'salon-booking', name: t('salonBooking'), icon: Scissors, count: 2, gradient: 'from-rose-500 to-pink-600' },
+                    ...(isProduction ? [] : [
+                      { id: 'real-estate', name: t('realEstate'), icon: Building, count: 1, gradient: 'from-amber-500 to-orange-600' }
+                    ])
+                  ];
+                })().map(vert => (
+                  <div 
+                    key={vert.id}
+                    onClick={() => handleVerticalClick(vert.id)}
+                    className="group bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:border-primary/20 hover:scale-[1.02] cursor-pointer transition-all duration-300 flex flex-col justify-between min-h-[160px]"
+                  >
+                    <div className={`w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br ${vert.gradient} text-white flex items-center justify-center shadow-xs transition-transform group-hover:scale-105`}>
+                      <vert.icon className="w-5.5 h-5.5" />
+                    </div>
+                    <div className="mt-4">
+                      <h3 className="font-extrabold text-zinc-800 text-sm group-hover:text-primary transition-colors whitespace-normal leading-tight">
+                        {vert.name}
+                      </h3>
+                      <div className="flex items-center justify-between text-[10px] text-zinc-400 mt-2 font-bold">
+                        <span>{vert.count} PROS ACTIVE</span>
+                        <ChevronRight className="w-4 h-4 text-zinc-300 shrink-0 group-hover:text-primary transition-colors group-hover:translate-x-0.5" />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </section>
 
         {/* ─── VERIFIED PROS CAROUSEL SHOWCASE ─── */}
@@ -604,15 +633,30 @@ export function AuthenticatedHomeView() {
                         className="w-full h-11 px-3 rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-900 text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-medium"
                       >
                         <option value="" className="text-zinc-400">{t('rfqCategory')}...</option>
-                        <option value="electrician">{t('electrician')}</option>
-                        <option value="plumber">{t('plumber')}</option>
-                        <option value="ac-repair">{t('ac-repair')}</option>
-                        <option value="carpenter">{t('carpenter')}</option>
-                        <option value="painter">{t('painter')}</option>
-                        <option value="ro-repair">{t('ro-repair')}</option>
-                        <option value="car-rental">{t('carRental')}</option>
-                        <option value="salon-booking">{t('salonBooking')}</option>
-                        <option value="real-estate">{t('realEstate')}</option>
+                        {(() => {
+                          const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_APP_ENV === 'production';
+                          if (isProduction) {
+                            return (
+                              <>
+                                <option value="restaurant-cafe">{language === 'hi' ? 'रेस्टोरेंट और कैफ़े' : 'Restaurant & Cafe'}</option>
+                                <option value="salon-booking">{t('salonBooking')}</option>
+                              </>
+                            );
+                          }
+                          return (
+                            <>
+                              <option value="electrician">{t('electrician')}</option>
+                              <option value="plumber">{t('plumber')}</option>
+                              <option value="ac-repair">{t('ac-repair')}</option>
+                              <option value="carpenter">{t('carpenter')}</option>
+                              <option value="painter">{t('painter')}</option>
+                              <option value="ro-repair">{t('ro-repair')}</option>
+                              <option value="car-rental">{t('carRental')}</option>
+                              <option value="salon-booking">{t('salonBooking')}</option>
+                              <option value="real-estate">{t('realEstate')}</option>
+                            </>
+                          );
+                        })()}
                       </select>
                     </div>
 

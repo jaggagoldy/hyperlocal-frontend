@@ -437,7 +437,12 @@ export default function ExplorePage() {
         </button>
 
         {/* Grouped Verticals */}
-        {VERTICALS.map(vertical => {
+        {(() => {
+          const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_APP_ENV === 'production';
+          return isProduction 
+            ? VERTICALS.filter(v => ['food-dining', 'salon-booking'].includes(v.id))
+            : VERTICALS;
+        })().map(vertical => {
           const isExpanded = expandedVerticals[vertical.id];
           return (
             <div key={vertical.id} className="border border-zinc-150 rounded-xl overflow-hidden bg-white shadow-xs">
@@ -684,7 +689,12 @@ export default function ExplorePage() {
                         <div className="space-y-3">
                           <h4 className="text-sm font-bold text-zinc-800">Business Model</h4>
                           <div className="grid grid-cols-2 gap-2">
-                            {['FOOD_BEVERAGE', 'SALON_BEAUTY', 'HOME_ESSENTIALS', 'CAB_TRANSPORT'].map((bt) => (
+                            {(() => {
+                              const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_APP_ENV === 'production';
+                              return isProduction 
+                                ? ['FOOD_BEVERAGE', 'SALON_BEAUTY']
+                                : ['FOOD_BEVERAGE', 'SALON_BEAUTY', 'HOME_ESSENTIALS', 'CAB_TRANSPORT'];
+                            })().map((bt) => (
                               <label key={bt} className="flex items-center gap-2 text-sm text-zinc-600 cursor-pointer">
                                 <input 
                                   type="checkbox" 

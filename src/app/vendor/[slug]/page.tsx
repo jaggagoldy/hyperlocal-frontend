@@ -86,10 +86,8 @@ export default function VendorProfilePage() {
             </div>
             
             <Dialog>
-              <DialogTrigger>
-                <button className={`p-2 rounded-full hover:bg-white/10 ${isDarkPremium ? 'text-zinc-100' : 'text-zinc-800'} transition-colors`}>
-                  <QrCode className="w-5 h-5" />
-                </button>
+              <DialogTrigger className={`p-2 rounded-full hover:bg-white/10 ${isDarkPremium ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-800 hover:bg-black/5'} transition-colors`}>
+                <QrCode className="w-5 h-5" />
               </DialogTrigger>
               <DialogContent className="sm:max-w-md bg-white">
                 <DialogHeader>

@@ -25,12 +25,51 @@ export default function CartDrawer({ vendor, theme }: CartDrawerProps) {
   const [serviceLocation, setServiceLocation] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Coupon State
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState<{code: string, amount: number, title: string} | null>(null);
+  const [discountError, setDiscountError] = useState('');
+
   const totalValue = getTotalValue();
+  const finalTotal = appliedDiscount ? Math.max(0, totalValue - appliedDiscount.amount) : totalValue;
   const itemCount = cartItems.reduce((acc, ci) => acc + ci.quantity, 0);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   if (itemCount === 0) return null;
+
+  const handleApplyCoupon = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setDiscountError('');
+    setAppliedDiscount(null);
+
+    if (!couponCode) return;
+
+    const offers = vendor.metaData?.offers || [];
+    const offer = offers.find((o: any) => o.code.toUpperCase() === couponCode.toUpperCase());
+    
+    if (!offer) {
+      setDiscountError('Invalid or expired coupon code');
+      return;
+    }
+
+    let amount = 0;
+    if (offer.discount.includes('%')) {
+      const match = offer.discount.match(/(\d+)/);
+      if (match) {
+        const percentage = Number(match[1]);
+        amount = totalValue * (percentage / 100);
+      }
+    } else {
+      const match = offer.discount.match(/(\d+)/);
+      if (match) {
+        amount = Number(match[1]);
+      }
+    }
+
+    setAppliedDiscount({ code: offer.code, title: offer.title, amount });
+    toast.success(`Coupon applied! Saved ₹${amount.toFixed(2)}`);
+  };
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +102,8 @@ export default function CartDrawer({ vendor, theme }: CartDrawerProps) {
         customerName,
         customerPhone,
         serviceLocation,
+        totalAmount: finalTotal,
+        appliedCoupon: appliedDiscount ? appliedDiscount.code : null,
         items: cartItems.map(ci => ({
           catalogItemId: ci.catalogItem.id,
           quantity: ci.quantity
@@ -71,6 +112,7 @@ export default function CartDrawer({ vendor, theme }: CartDrawerProps) {
       toast.success('Order placed successfully! The vendor will contact you shortly.');
       clearCart();
       setIsOpen(false);
+      router.push('/profile/enquiries');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to place order.');
     } finally {
@@ -90,7 +132,7 @@ export default function CartDrawer({ vendor, theme }: CartDrawerProps) {
             >
               <div className="flex items-center gap-2">
                 <span className="bg-white/20 px-2 py-0.5 rounded text-sm">{itemCount} item{itemCount > 1 ? 's' : ''}</span>
-                <span className="text-lg">₹{totalValue}</span>
+                <span className="text-lg">₹{finalTotal.toFixed(2)}</span>
               </div>
               <div className="flex items-center gap-1">
                 <span>View Cart</span>
@@ -103,17 +145,17 @@ export default function CartDrawer({ vendor, theme }: CartDrawerProps) {
 
       {/* Drawer Overlay */}
       {isOpen && (
-        <div className="fixed inset-0 z-[60] bg-black/60 flex flex-col justify-end">
-          <div className="bg-background w-full max-h-[90vh] rounded-t-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom">
-            <div className="p-4 border-b flex justify-between items-center bg-muted/30">
-              <h2 className="font-bold text-lg">Checkout</h2>
-              <button onClick={() => setIsOpen(false)} className="p-2 rounded-full hover:bg-black/5"><X className="w-5 h-5" /></button>
+        <div className="fixed inset-0 z-[60] bg-black/60 flex flex-col justify-end text-zinc-900 font-sans">
+          <div className="bg-white w-full max-h-[90vh] rounded-t-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom">
+            <div className="p-4 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/80">
+              <h2 className="font-bold text-lg text-zinc-900">Checkout</h2>
+              <button onClick={() => setIsOpen(false)} className="p-2 rounded-full hover:bg-zinc-200 text-zinc-500"><X className="w-5 h-5" /></button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-white">
               {/* Order Summary */}
               <div>
-                <h3 className="font-semibold text-sm text-muted-foreground mb-3 uppercase tracking-wider">Order Summary</h3>
+                <h3 className="font-bold text-xs text-zinc-500 mb-3 uppercase tracking-wider">Order Summary</h3>
                 <div className="space-y-3">
                   {cartItems.map(ci => (
                     <div key={ci.catalogItem.id} className="flex justify-between items-start text-sm">
@@ -121,35 +163,81 @@ export default function CartDrawer({ vendor, theme }: CartDrawerProps) {
                         <span className="font-medium">{ci.quantity}x</span>
                         <span>{ci.catalogItem.title}</span>
                       </div>
-                      <span className="font-semibold">₹{(parseFloat(ci.catalogItem.price?.toString() || '0') * ci.quantity)}</span>
+                      <span className="font-semibold">₹{(parseFloat(ci.catalogItem.price?.toString() || '0') * ci.quantity).toFixed(2)}</span>
                     </div>
                   ))}
-                  <div className="pt-3 border-t flex justify-between font-bold text-lg">
-                    <span>Total</span>
-                    <span>₹{totalValue}</span>
+                  <div className="pt-3 border-t">
+                    <div className="flex gap-2 mb-2">
+                      <input 
+                        type="text" 
+                        value={couponCode} 
+                        onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                        placeholder="Enter Coupon Code" 
+                        className="flex-1 border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-green-500 uppercase font-semibold text-zinc-900 placeholder:text-zinc-400 bg-white" 
+                      />
+                      <button onClick={handleApplyCoupon} className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-bold hover:bg-zinc-800 transition-colors">
+                        Apply
+                      </button>
+                    </div>
+                    {discountError && <p className="text-xs text-red-500 font-semibold mb-2">{discountError}</p>}
+                    {appliedDiscount && (
+                       <div className="flex justify-between items-center bg-green-50 text-green-700 px-3 py-2 rounded-lg mb-2 text-sm">
+                         <div>
+                           <span className="font-bold">{appliedDiscount.code}</span> applied!
+                         </div>
+                         <button onClick={() => { setAppliedDiscount(null); setCouponCode(''); }} className="text-xs font-bold hover:underline">Remove</button>
+                       </div>
+                    )}
+                    
+                    <div className="flex justify-between text-sm text-zinc-500 mt-2">
+                      <span>Subtotal</span>
+                      <span>₹{totalValue.toFixed(2)}</span>
+                    </div>
+                    {appliedDiscount && (
+                      <div className="flex justify-between text-sm text-green-600 font-bold mt-1">
+                        <span>Discount ({appliedDiscount.code})</span>
+                        <span>- ₹{appliedDiscount.amount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-black text-xl mt-3 pt-3 border-t">
+                      <span>Total</span>
+                      <span>₹{finalTotal.toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Delivery Details */}
               <form id="checkout-form" onSubmit={handleCheckout} className="space-y-4">
-                <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Delivery Details</h3>
+                <h3 className="font-bold text-xs text-zinc-500 uppercase tracking-wider mt-2">Delivery Details</h3>
                 <div>
-                  <label className="text-sm font-medium">Your Name</label>
-                  <input required type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} className="mt-1 w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary/50" placeholder="e.g. Rahul Kumar" />
+                  <label className="text-sm font-semibold text-zinc-700">Your Name</label>
+                  <input required type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} className="mt-1 w-full border border-zinc-200 rounded-lg p-2.5 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-zinc-900 bg-white" placeholder="e.g. Rahul Kumar" />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Mobile Number</label>
-                  <input required type="tel" pattern="[6-9][0-9]{9}" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="mt-1 w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary/50" placeholder="10-digit mobile number" />
+                  <input 
+                    required 
+                    type="tel" 
+                    maxLength={10}
+                    pattern="[6-9][0-9]{9}" 
+                    value={customerPhone} 
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      if (val.length <= 10) setCustomerPhone(val);
+                    }} 
+                    className="mt-1 w-full border border-zinc-200 rounded-lg p-2.5 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-zinc-900 bg-white" 
+                    placeholder="10-digit mobile number" 
+                  />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Complete Delivery Address</label>
-                  <textarea required value={serviceLocation} onChange={e => setServiceLocation(e.target.value)} rows={3} className="mt-1 w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary/50 resize-none" placeholder="House no, Street, Landmark..." />
+                  <label className="text-sm font-semibold text-zinc-700">Complete Delivery Address</label>
+                  <textarea required value={serviceLocation} onChange={e => setServiceLocation(e.target.value)} rows={3} className="mt-1 w-full border border-zinc-200 rounded-lg p-2.5 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 resize-none text-zinc-900 bg-white" placeholder="House no, Street, Landmark..." />
                 </div>
               </form>
             </div>
 
-            <div className="p-4 border-t bg-background pb-safe">
+            <div className="p-4 border-t border-zinc-100 bg-white pb-safe">
               <button 
                 type="submit" 
                 form="checkout-form"

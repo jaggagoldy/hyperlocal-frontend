@@ -7,7 +7,7 @@ import { BusinessProfile, CatalogItem } from '@/types/models';
 
 interface HomeServicesLayoutProps {
   business: BusinessProfile;
-  theme: any;
+  theme?: any;
 }
 
 export default function HomeServicesLayout({ business, theme }: HomeServicesLayoutProps) {
@@ -114,6 +114,17 @@ export default function HomeServicesLayout({ business, theme }: HomeServicesLayo
   const isVerified = business.membershipTier === 'Pro' || business.membershipTier === 'Starter';
   const experience = business.metaData?.experience || '5+ Years';
 
+  const taxonomy = business.metaData?.taxonomy || {};
+  const customTags = business.metaData?.customTags || [];
+  
+  const taxonomyTags = Object.values(taxonomy).flatMap(val => {
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string' && val) return [val];
+    return [];
+  });
+  
+  const allTags = [...new Set([...taxonomyTags, ...customTags])];
+
   return (
     <div className="w-full relative min-h-screen">
       {/* Hero Profile Card */}
@@ -145,6 +156,20 @@ export default function HomeServicesLayout({ business, theme }: HomeServicesLayo
           </div>
         </div>
       </div>
+
+      {/* Specialties & Tags */}
+      {allTags.length > 0 && (
+        <div className="mb-8 bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-5">
+          <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-3">Specialties & Tags</h3>
+          <div className="flex flex-wrap gap-2">
+            {allTags.map((tag, idx) => (
+              <span key={idx} className="bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-xl text-xs font-semibold border border-zinc-700/50">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Services Checklist */}
       <div className="mb-32">

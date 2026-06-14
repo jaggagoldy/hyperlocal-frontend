@@ -10,6 +10,14 @@ const withSerwist = withSerwistInit({
 const nextConfig = {
   reactStrictMode: true,
   turbopack: {},
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'loremflickr.com',
+      },
+    ],
+  },
 };
 
 export default withSerwist(nextConfig);

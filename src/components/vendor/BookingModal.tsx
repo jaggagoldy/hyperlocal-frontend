@@ -75,6 +75,7 @@ export default function BookingModal({ vendor, theme, onClose }: BookingModalPro
       toast.success('Booking Request sent successfully! The vendor will confirm shortly.');
       clearCart();
       onClose();
+      router.push('/profile/enquiries');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to send booking request.');
     } finally {

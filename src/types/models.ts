@@ -27,8 +27,14 @@ export interface Media {
 export type BusinessType =
   | 'FOOD_BEVERAGE'
   | 'SALON_BEAUTY'
+  | 'DOCTOR_CLINIC'
+  | 'TUTOR_ACADEMY'
+  | 'HOME_SERVICES'
+  | 'REPAIRS_SERVICES'
+  | 'RETAIL'
   | 'HOME_ESSENTIALS'
-  | 'CAB_TRANSPORT';
+  | 'CAB_TRANSPORT'
+  | string; // allow backend to pass new types without breaking the client
 
 export interface BusinessProfile {
   id: string;
@@ -62,6 +68,7 @@ export interface BusinessProfile {
   reviews?: Review[];
   categories?: { category: Category }[];
   catalogItems?: CatalogItem[];
+  catalog?: any[]; // Injected by WorkspaceBuilder for live preview
   user?: { phoneNumber?: string; name?: string };
   connectionMode?: 'DIRECT' | 'REQUIRE_APPROVAL'; // Matchmaking Engine — Phase 1
 }

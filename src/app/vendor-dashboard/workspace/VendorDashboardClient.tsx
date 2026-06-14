@@ -19,6 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import DishModal from '@/components/vendor/DishModal';
 import { VendorTutorialModal } from '@/components/vendor-dashboard/VendorTutorialModal';
 import {
   Drawer,
@@ -400,59 +401,60 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
   };
 
   // Handle Catalog Form submission
-  const handleCatalogSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCatalogSubmit = async (dish: any, file?: File | null) => {
     if (!vendor) return;
 
-    if (!catalogForm.title.trim()) {
+    if (!dish.title.trim()) {
       toast.error('Service title is required');
       return;
     }
 
-    if (!catalogForm.categoryId) {
-      toast.error('Category is required');
-      return;
+    // Attempt to map back the selected category name to its ID
+    let finalCategoryId = categories[0]?.id || '';
+    if (dish.foodCategory && dish.foodCategory.length > 0) {
+      const selectedCatName = dish.foodCategory[0];
+      const matchedCat = categories.find(c => c.name === selectedCatName);
+      if (matchedCat) {
+        finalCategoryId = matchedCat.id;
+      }
     }
 
     try {
       setIsSubmittingCatalog(true);
 
       const formData = new FormData();
-      formData.append('title', catalogForm.title.trim());
-      formData.append('description', catalogForm.description.trim());
-      formData.append('categoryId', catalogForm.categoryId);
-      formData.append('isActive', catalogForm.isActive.toString());
+      formData.append('title', dish.title.trim());
+      formData.append('description', dish.description.trim());
+      formData.append('categoryId', finalCategoryId);
+      formData.append('isActive', dish.isActive.toString());
       formData.append('vendorId', vendor.id);
-      formData.append('variants', JSON.stringify(catalogForm.variants || []));
+      formData.append('variants', JSON.stringify(dish.variants || []));
       
-      if (catalogForm.price) {
-        formData.append('price', catalogForm.price);
+      if (dish.price) {
+        formData.append('price', dish.price.toString());
       }
 
-      if (selectedFile) {
-        formData.append('media', selectedFile);
+      if (file) {
+        formData.append('media', file);
       }
 
-      if (catalogForm.id) {
+      const isEdit = dish.id && catalogItems.some(i => i.id === dish.id);
+
+      if (isEdit) {
         // EDIT MODE
-        const res = await apiClient.patch(`/catalog/${catalogForm.id}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const res = await apiClient.patch(`/catalog/${dish.id}`, formData);
         
         const updatedItem = res.data?.data;
         setCatalogItems(prev => prev.map(item =>
-          item.id === catalogForm.id ? { ...item, ...updatedItem } : item
+          item.id === dish.id ? { ...item, ...updatedItem } : item
         ));
         toast.success('Service updated successfully!');
       } else {
         // CREATE MODE
-        const res = await apiClient.post('/catalog', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-
+        const res = await apiClient.post('/catalog', formData);
         const newItem = res.data?.data;
         setCatalogItems(prev => [newItem, ...prev]);
-        toast.success('New service added to catalog!');
+        toast.success('Service created successfully!');
       }
 
       setIsCatalogOpen(false);
@@ -1088,76 +1090,19 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
         </div>
       </main>
 
-      {/* DRAWER & MODALS (Reusing previous ones with dark backdrop) */}
-      <Drawer open={isCatalogOpen} onOpenChange={setIsCatalogOpen}>
-        <DrawerContent>
-          <div className="mx-auto w-full max-w-lg p-5">
-            <DrawerHeader className="px-0 pt-0">
-              <DrawerTitle className="text-lg font-bold text-zinc-900">{catalogForm.id ? 'Edit Service Details' : 'Add New Service'}</DrawerTitle>
-            </DrawerHeader>
-            <form onSubmit={handleCatalogSubmit} className="space-y-4 mt-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="title" className="text-xs font-bold text-zinc-700">Service Title *</Label>
-                <Input id="title" value={catalogForm.title} onChange={e => setCatalogForm(prev => ({ ...prev, title: e.target.value }))} required />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="price" className="text-xs font-bold text-zinc-700">Price (₹)</Label>
-                  <Input id="price" type="number" value={catalogForm.price} onChange={e => setCatalogForm(prev => ({ ...prev, price: e.target.value }))} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="category" className="text-xs font-bold text-zinc-700">Category *</Label>
-                  <select id="category" className="w-full h-10 px-3 rounded-md border border-zinc-200 bg-white" value={catalogForm.categoryId} onChange={e => setCatalogForm(prev => ({ ...prev, categoryId: e.target.value }))} required>
-                    <option value="">Choose...</option>
-                    {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold text-zinc-700">Variants (Optional)</Label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="checkbox" checked={catalogForm.variants?.includes('veg') || false} onChange={e => {
-                      const newVars = e.target.checked 
-                        ? [...(catalogForm.variants || []), 'veg'] 
-                        : (catalogForm.variants || []).filter((v: string) => v !== 'veg');
-                      setCatalogForm(prev => ({ ...prev, variants: newVars }));
-                    }} className="rounded border-zinc-300 text-green-600 focus:ring-green-600" />
-                    <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 border border-green-600 flex items-center justify-center p-[1px]"><span className="w-2 h-2 bg-green-600 rounded-full"></span></span> Veg</span>
-                  </label>
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="checkbox" checked={catalogForm.variants?.includes('non-veg') || false} onChange={e => {
-                      const newVars = e.target.checked 
-                        ? [...(catalogForm.variants || []), 'non-veg'] 
-                        : (catalogForm.variants || []).filter((v: string) => v !== 'non-veg');
-                      setCatalogForm(prev => ({ ...prev, variants: newVars }));
-                    }} className="rounded border-zinc-300 text-rose-600 focus:ring-rose-600" />
-                    <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 border border-rose-600 flex items-center justify-center p-[1px]"><span className="w-2 h-2 bg-rose-600 rounded-full"></span></span> Non-Veg</span>
-                  </label>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="description" className="text-xs font-bold text-zinc-700">Description</Label>
-                <Textarea id="description" value={catalogForm.description} onChange={e => setCatalogForm(prev => ({ ...prev, description: e.target.value }))} rows={2} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="service-image" className="text-xs font-bold text-zinc-700">Service Picture (Optional)</Label>
-                <input
-                  id="service-image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                />
-              </div>
-              <div className="flex gap-3 pt-4 border-t border-zinc-100">
-                <DrawerClose asChild><Button type="button" variant="outline" className="flex-1">Cancel</Button></DrawerClose>
-                <Button type="submit" disabled={isSubmittingCatalog} className="flex-1">{isSubmittingCatalog ? 'Saving...' : 'Save Service'}</Button>
-              </div>
-            </form>
-          </div>
-        </DrawerContent>
-      </Drawer>
+      <DishModal 
+        isOpen={isCatalogOpen}
+        onClose={() => setIsCatalogOpen(false)}
+        onSave={handleCatalogSubmit}
+        availableCategories={categories.length > 0 ? categories.map(c => c.name) : ['General']}
+        editItem={catalogForm.id ? {
+          ...catalogForm,
+          foodCategory: categories.find(c => c.id === catalogForm.categoryId)?.name || 'General',
+          mediaUrl: filePreview
+        } : null}
+        isService={vendor?.businessType === 'SERVICE'}
+        isRetail={vendor?.businessType === 'RETAIL'}
+      />
 
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

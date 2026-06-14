@@ -186,7 +186,7 @@ export default function ServiceDetailPage() {
                 >
                   Add to Cart
                 </button>
-              ) : vendor.businessType === 'HOME_SERVICES' || vendor.businessType === 'SALON_BEAUTY' || vendor.businessType === 'HOME_ESSENTIALS' ? (
+              ) : vendor.businessType === 'HOME_ESSENTIALS' || vendor.businessType === 'SALON_BEAUTY' || vendor.businessType === 'HOME_ESSENTIALS' ? (
                 <button 
                   onClick={() => router.push(`/vendor/${vendor.slug}?preselect=${item.id}`)}
                   className="w-full bg-primary hover:bg-primary/90 text-white font-black py-3.5 rounded-xl transition-colors shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] flex items-center justify-center gap-2"

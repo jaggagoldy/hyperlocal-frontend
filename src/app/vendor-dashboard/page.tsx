@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/authStore';
-import { Store, Car, Home, Scissors, Plus, ChevronRight, MapPin, Star, AlertCircle } from 'lucide-react';
-import AddBusinessWizard from '@/components/vendor/AddBusinessWizard';
+import { Store, Car, Home, Scissors, Plus, ChevronRight, MapPin, Star, AlertCircle, Briefcase, Stethoscope, Plane, Heart, Dumbbell, GraduationCap, Truck, Wrench, Key, Banknote, Bed, Building, Utensils } from 'lucide-react';
+
+const IconMap: Record<string, any> = { Utensils, Car, Scissors, Home, Briefcase, Stethoscope, Plane, Heart, Dumbbell, GraduationCap, Truck, Wrench, Key, Banknote, Bed, Building, Store };
 
 interface BusinessProfile {
   id: string;
@@ -15,33 +16,15 @@ interface BusinessProfile {
   rating: number;
   city: { name: string } | null;
   localityName: string | null;
+  categories: { category: { name: string, icon: string } }[];
 }
 
-const BUSINESS_TYPE_ICONS: Record<string, any> = {
-  CAB_TRANSPORT: Car,
-  FOOD_BEVERAGE: Store,
-  HOME_ESSENTIALS: Home,
-  SALON_BEAUTY: Scissors
-};
 
-const BUSINESS_TYPE_COLORS: Record<string, string> = {
-  CAB_TRANSPORT: 'text-blue-500 bg-blue-50 dark:bg-blue-500/10',
-  FOOD_BEVERAGE: 'text-orange-500 bg-orange-50 dark:bg-orange-500/10',
-  HOME_ESSENTIALS: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10',
-  SALON_BEAUTY: 'text-pink-500 bg-pink-50 dark:bg-pink-500/10'
-};
 
-const BUSINESS_TYPE_LABELS: Record<string, string> = {
-  CAB_TRANSPORT: 'Cab & Transport',
-  FOOD_BEVERAGE: 'Food & Beverage',
-  HOME_ESSENTIALS: 'Home Services',
-  SALON_BEAUTY: 'Salon & Beauty'
-};
 
 export default function GlobalHubPage() {
   const [businesses, setBusinesses] = useState<BusinessProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
   const router = useRouter();
   const { setActiveBusiness } = useAuthStore();
 
@@ -88,7 +71,7 @@ export default function GlobalHubPage() {
         
         {/* Create New Business Card */}
         <div 
-          onClick={() => setIsWizardOpen(true)}
+          onClick={() => router.push('/vendor/register')}
           className="group cursor-pointer min-h-[220px] rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-400 bg-transparent flex flex-col items-center justify-center p-6 transition-all duration-300 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/5"
         >
           <div className="w-14 h-14 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -100,9 +83,10 @@ export default function GlobalHubPage() {
 
         {/* Existing Business Cards */}
         {businesses.map((business) => {
-          const Icon = BUSINESS_TYPE_ICONS[business.businessType] || Store;
-          const colorClass = BUSINESS_TYPE_COLORS[business.businessType] || 'text-slate-500 bg-slate-50 dark:bg-slate-800';
-          const label = BUSINESS_TYPE_LABELS[business.businessType] || business.businessType;
+          const cat = business.categories?.[0]?.category;
+          const Icon = cat?.icon ? (IconMap[cat.icon] || Store) : Store;
+          const colorClass = 'text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10';
+          const label = cat?.name || business.businessType;
           
           return (
             <div 
@@ -152,16 +136,6 @@ export default function GlobalHubPage() {
         })}
 
       </div>
-
-      {isWizardOpen && (
-        <AddBusinessWizard 
-          onClose={() => setIsWizardOpen(false)} 
-          onSuccess={() => {
-            setIsWizardOpen(false);
-            fetchBusinesses();
-          }} 
-        />
-      )}
     </div>
   );
 }

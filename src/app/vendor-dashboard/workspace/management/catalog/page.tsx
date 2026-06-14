@@ -2,14 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import { Store, PackagePlus, ArrowRight, Loader2, Plus, Tag, Tags, Trash2, ArrowLeft, Pencil, Image as ImageIcon, FileUp, X, Eye, EyeOff } from 'lucide-react';
+import { Store, PackagePlus, ArrowRight, Loader2, Plus, Tag, Tags, Trash2, ArrowLeft, Pencil, Image as ImageIcon, FileUp, X, Eye, EyeOff, Paintbrush } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import apiClient from '@/lib/api-client';
 import { toast } from 'sonner';
 
-import CabTransportLayout from '@/components/vendor/CabTransportLayout';
-import FoodLayout from '@/components/vendor/FoodLayout';
-import HomeServicesLayout from '@/components/vendor/HomeServicesLayout';
+import { getTemplateComponent } from '@/lib/templateRegistry';
 
 export default function CatalogManagementPage() {
   const { activeBusinessId } = useAuthStore();
@@ -29,7 +27,7 @@ export default function CatalogManagementPage() {
   const [customTitle, setCustomTitle] = useState('');
   const [servicePrice, setServicePrice] = useState('');
   const [serviceDesc, setServiceDesc] = useState('');
-  const [serviceIsVeg, setServiceIsVeg] = useState(true);
+  const [serviceDietary, setServiceDietary] = useState('veg'); // veg, non-veg, vegan, egg
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
@@ -103,12 +101,14 @@ export default function CatalogManagementPage() {
       setServiceCategory('');
     }
 
-    if (item.metaData && item.metaData.isNonVeg !== undefined) {
-      setServiceIsVeg(!item.metaData.isNonVeg);
+    if (item.metaData && item.metaData.dietaryType) {
+      setServiceDietary(item.metaData.dietaryType);
+    } else if (item.metaData && item.metaData.isNonVeg !== undefined) {
+      setServiceDietary(!item.metaData.isNonVeg ? 'veg' : 'non-veg');
     } else if (item.metaData && item.metaData.isVeg !== undefined) {
-      setServiceIsVeg(item.metaData.isVeg);
+      setServiceDietary(item.metaData.isVeg ? 'veg' : 'non-veg');
     } else {
-      setServiceIsVeg(true);
+      setServiceDietary('veg');
     }
 
     setMediaPreview(item.mediaUrl || null);
@@ -135,7 +135,7 @@ export default function CatalogManagementPage() {
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, isActive: newStatus } : i));
       const formData = new FormData();
       formData.append('isActive', String(newStatus));
-      await apiClient.patch(`/catalog/${item.id}`, formData, { headers: { 'x-business-id': activeBusinessId, 'Content-Type': 'multipart/form-data' } });
+      await apiClient.patch(`/catalog/${item.id}`, formData, { headers: { 'x-business-id': activeBusinessId } });
       toast.success(`Service ${newStatus ? 'shown' : 'hidden'} successfully`);
     } catch (error) {
       console.error(error);
@@ -172,14 +172,17 @@ export default function CatalogManagementPage() {
       formData.append('isAvailable', 'true');
       if (finalVariants.length > 0) formData.append('variants', JSON.stringify(finalVariants));
       formData.append('foodCategory', serviceCategory === 'Other' ? customCategory : serviceCategory);
-      if (businessData?.businessType === 'FOOD_BEVERAGE') formData.append('isVeg', String(serviceIsVeg));
+      if (businessData?.businessType === 'FOOD_BEVERAGE') {
+        formData.append('isVeg', String(serviceDietary === 'veg' || serviceDietary === 'vegan'));
+        formData.append('metaData', JSON.stringify({ dietaryType: serviceDietary }));
+      }
       if (mediaFile) formData.append('media', mediaFile);
 
       if (editItemId) {
-        await apiClient.patch(`/catalog/${editItemId}`, formData, { headers: { 'x-business-id': activeBusinessId, 'Content-Type': 'multipart/form-data' } });
+        await apiClient.patch(`/catalog/${editItemId}`, formData, { headers: { 'x-business-id': activeBusinessId } });
         toast.success('Service updated successfully');
       } else {
-        await apiClient.post('/catalog', formData, { headers: { 'x-business-id': activeBusinessId, 'Content-Type': 'multipart/form-data' } });
+        await apiClient.post('/catalog', formData, { headers: { 'x-business-id': activeBusinessId } });
         toast.success('Service added successfully');
       }
       
@@ -215,9 +218,9 @@ export default function CatalogManagementPage() {
       title: customTitle || 'New Service',
       price: isVariantPricing ? undefined : (servicePrice ? Number(servicePrice) : 0),
       description: serviceDesc,
-      variants: isVariantPricing ? tempVariants.filter(v => v.name).map(v => ({name: v.name, price: Number(v.price) || 0})) : (businessData?.businessType === 'FOOD_BEVERAGE' ? (serviceIsVeg ? ['veg'] : ['veg', 'non-veg']) : []),
+      variants: isVariantPricing ? tempVariants.filter(v => v.name).map(v => ({name: v.name, price: Number(v.price) || 0})) : (businessData?.businessType === 'FOOD_BEVERAGE' ? [serviceDietary] : []),
       category: { name: serviceCategory === 'Other' ? (customCategory || 'Custom') : (serviceCategory || 'New Category') },
-      metaData: { isNonVeg: serviceIsVeg === false }
+      metaData: { isNonVeg: serviceDietary === 'non-veg', dietaryType: serviceDietary, isVeg: serviceDietary === 'veg' || serviceDietary === 'vegan' }
     };
 
     return [tempItem, ...existingMapped];
@@ -258,12 +261,20 @@ export default function CatalogManagementPage() {
           <p className="text-sm font-medium text-zinc-500 mt-1">Manage the services you offer to customers.</p>
         </div>
         {!isBuilderMode && (
-          <button 
-            onClick={() => { resetForm(); setIsBuilderMode(true); }}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md shadow-emerald-600/20"
-          >
-            <PackagePlus className="w-4 h-4" /> Add Service
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => router.push('/vendor-dashboard/workspace/builder')}
+              className="flex items-center gap-2 bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-700 px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm"
+            >
+              <Paintbrush className="w-4 h-4 text-emerald-600" /> Edit Storefront App
+            </button>
+            <button 
+              onClick={() => { resetForm(); setIsBuilderMode(true); }}
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md shadow-emerald-600/20"
+            >
+              <PackagePlus className="w-4 h-4" /> Add Service
+            </button>
+          </div>
         )}
       </div>
 
@@ -291,7 +302,7 @@ export default function CatalogManagementPage() {
                   >
                     <option value="" disabled>Select Category</option>
                     {businessData.businessType === 'FOOD_BEVERAGE' && FOOD_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                    {businessData.businessType === 'HOME_SERVICES' && HOME_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    {businessData.businessType === 'HOME_ESSENTIALS' && HOME_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                     {businessData.businessType === 'SALON_BEAUTY' && SALON_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                   </select>
                 </div>
@@ -406,22 +417,23 @@ export default function CatalogManagementPage() {
 
             {businessData.businessType === 'FOOD_BEVERAGE' && (
               <div className="space-y-1.5 pt-2">
-                <label className="text-xs font-bold text-zinc-700">Dietary Preference</label>
-                <div className="flex gap-3">
-                  <label className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 transition-all cursor-pointer ${serviceIsVeg ? 'border-green-500 bg-green-50 text-green-700 font-bold' : 'border-zinc-200 bg-white text-zinc-600 hover:border-green-200 font-semibold'}`}>
-                    <input type="radio" name="isVeg" checked={serviceIsVeg} onChange={() => setServiceIsVeg(true)} className="hidden" />
-                    <div className="w-3 h-3 rounded-full border-2 border-green-600 flex items-center justify-center">
-                       <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
-                    </div>
-                    Veg
-                  </label>
-                  <label className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 transition-all cursor-pointer ${!serviceIsVeg ? 'border-red-500 bg-red-50 text-red-700 font-bold' : 'border-zinc-200 bg-white text-zinc-600 hover:border-red-200 font-semibold'}`}>
-                    <input type="radio" name="isVeg" checked={!serviceIsVeg} onChange={() => setServiceIsVeg(false)} className="hidden" />
-                    <div className="w-3 h-3 border-2 border-red-600 flex items-center justify-center">
-                       <div className="w-1.5 h-1.5 bg-red-600 rounded-full"></div>
-                    </div>
-                    Non-Veg
-                  </label>
+                <label className="text-xs font-bold text-zinc-700">Dietary Type</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {[
+                    { id: 'veg', label: 'Pure Veg', color: 'text-green-700 bg-green-50 border-green-200' },
+                    { id: 'non-veg', label: 'Non-Veg', color: 'text-red-700 bg-red-50 border-red-200' },
+                    { id: 'vegan', label: 'Vegan', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+                    { id: 'egg', label: 'Contains Egg', color: 'text-yellow-700 bg-yellow-50 border-yellow-200' }
+                  ].map(type => (
+                    <button
+                      key={type.id}
+                      onClick={() => setServiceDietary(type.id)}
+                      type="button"
+                      className={`py-2 rounded-xl border text-xs font-bold transition-all ${serviceDietary === type.id ? type.color + ' border-2 shadow-sm' : 'border-zinc-200 text-zinc-500 bg-white hover:bg-zinc-50'}`}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
@@ -552,9 +564,10 @@ export default function CatalogManagementPage() {
             <div className="w-2 h-2 rounded-full bg-zinc-900"></div>
           </div>
           <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-hide relative z-40 bg-zinc-50">
-            {businessData.businessType === 'CAB_TRANSPORT' && <CabTransportLayout business={previewBiz} theme="trust-utility" />}
-            {businessData.businessType === 'FOOD_BEVERAGE' && <FoodLayout business={previewBiz} theme="playful-vibrant" />}
-            {(businessData.businessType === 'SALON_BEAUTY' || businessData.businessType === 'HOME_SERVICES') && <HomeServicesLayout business={previewBiz} theme="premium-elegant" />}
+            {(() => {
+              const PreviewTemplate = getTemplateComponent(businessData?.themeFlavor, businessData?.businessType);
+              return <PreviewTemplate business={previewBiz as any} theme="trust-utility" />;
+            })()}
           </div>
         </div>
       </div>

@@ -181,7 +181,7 @@ export default function CabTransportLayout({ business, theme }: CabTransportLayo
           <div className="hidden sm:block">
             <div className="text-xs text-zinc-400 uppercase tracking-wider font-bold mb-0.5">Base Fare</div>
             <div className="text-2xl font-black text-white">
-              {typeof baseFare === 'number' || !isNaN(Number(baseFare)) ? `₹${baseFare}` : baseFare}
+              {typeof baseFare === 'number' || !isNaN(Number(baseFare)) ? `₹${Number(baseFare).toFixed(2)}` : baseFare}
             </div>
           </div>
           <button 

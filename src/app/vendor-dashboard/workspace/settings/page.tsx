@@ -64,7 +64,7 @@ export default function WorkspaceSettingsPage() {
           localityName: currentBiz.localityName || '',
           chowkLandmark: currentBiz.chowkLandmark || '',
           phone: currentBiz.user?.phoneNumber || currentBiz.phone || '',
-          isActive: currentBiz.isActive !== false,
+          isActive: currentBiz.status !== 'closed',
           workingDays: currentBiz.workingDays || '',
           timeAvailability: currentBiz.timeAvailability || '',
           connectionMode: currentBiz.connectionMode || 'REQUIRE_APPROVAL',
@@ -101,7 +101,11 @@ export default function WorkspaceSettingsPage() {
       }
 
       const finalTime = openTime && closeTime ? `${openTime} - ${closeTime}` : formData.timeAvailability;
-      await apiClient.patch(`/business/update`, { ...formData, timeAvailability: finalTime }, { headers: { 'x-business-id': activeBusinessId }});
+      
+      const payload = { ...formData, timeAvailability: finalTime, status: formData.isActive ? 'available' : 'closed' };
+      delete (payload as any).isActive;
+      
+      await apiClient.patch(`/business/update`, payload, { headers: { 'x-business-id': activeBusinessId }});
       toast.success('Business settings updated successfully!');
       fetchBusinessDetails();
       setMediaFile(null);

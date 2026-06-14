@@ -24,6 +24,27 @@ apiClient.interceptors.request.use(
       config.headers['x-business-id'] = activeBusinessId;
     }
     
+    // Fix: If request data is FormData, do not set/override Content-Type manually.
+    // Let the browser set the boundary correctly.
+    const isFormData = config.data && (
+      (typeof FormData !== 'undefined' && config.data instanceof FormData) ||
+      (config.data.constructor && config.data.constructor.name === 'FormData') ||
+      (typeof config.data.append === 'function')
+    );
+    if (isFormData) {
+      if (config.headers) {
+        if (typeof config.headers.delete === 'function') {
+          config.headers.delete('Content-Type');
+          config.headers.delete('content-type');
+        }
+        delete config.headers['Content-Type'];
+        delete config.headers['content-type'];
+        delete config.headers['Content-type'];
+        config.headers['Content-Type'] = undefined;
+        config.headers['content-type'] = undefined;
+      }
+    }
+    
     return config;
   },
   (error) => Promise.reject(error)

@@ -68,7 +68,7 @@ export function VendorCard({ vendor, viewMode = 'grid' }: VendorCardProps) {
               {vendor.businessType === 'CAB_TRANSPORT' && (
                 <span className="shrink-0 bg-blue-100 text-blue-700 border-blue-200 border px-1.5 py-0.5 rounded text-[10px] font-bold">Cab</span>
               )}
-              {(vendor.businessType === 'HOME_SERVICES' || vendor.businessType === 'SALON_BEAUTY' || vendor.businessType === 'HOME_ESSENTIALS') && (
+              {(vendor.businessType === 'HOME_ESSENTIALS' || vendor.businessType === 'SALON_BEAUTY' || vendor.businessType === 'HOME_ESSENTIALS') && (
                 <span className="shrink-0 bg-purple-100 text-purple-700 border-purple-200 border px-1.5 py-0.5 rounded text-[10px] font-bold">Service</span>
               )}
             </h3>

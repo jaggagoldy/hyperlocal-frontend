@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Minus, Plus, Search, Star, ArrowLeft } from 'lucide-react';
+import { Minus, Plus, Search, Star, ArrowLeft, Heart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/useCartStore';
 import { BusinessProfile, CatalogItem } from '@/types/models';
-import CartDrawer from './CartDrawer';
-import VariantModal from './VariantModal';
+import CartDrawer from '../vendor/CartDrawer';
+import VariantModal from '../vendor/VariantModal';
 import { toast } from 'sonner';
 
 interface FoodLayoutProps {
@@ -22,6 +22,7 @@ export default function FoodLayout({ business, theme }: FoodLayoutProps) {
   const [vegFilter, setVegFilter] = useState(false);
   const [nonVegFilter, setNonVegFilter] = useState(false);
   const [bestsellerFilter, setBestsellerFilter] = useState(false);
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
   
   const [selectedVariantItem, setSelectedVariantItem] = useState<CatalogItem | null>(null);
 
@@ -67,7 +68,7 @@ export default function FoodLayout({ business, theme }: FoodLayoutProps) {
   }, [catalog, searchQuery, vegFilter, nonVegFilter]);
 
   const categories = ['Recommended', 'Starters', 'Main Course', 'Breads', 'Desserts', 'Beverages'];
-  const heroImage = business.media?.filter((m: any) => m.type === 'shop_photo')[0]?.secureUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80';
+  const heroImage = business.metaData?.bannerUrl || business.media?.filter((m: any) => m.type === 'shop_photo')[0]?.secureUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80';
 
   return (
     <div className="w-full bg-white relative">
@@ -76,13 +77,33 @@ export default function FoodLayout({ business, theme }: FoodLayoutProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
         
         <div className="absolute inset-0 max-w-5xl mx-auto px-4 pt-4 pb-6 flex flex-col justify-between">
-          <button onClick={() => router.back()} className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/30 transition-colors">
-             <ArrowLeft className="w-6 h-6" />
-          </button>
+          <div className="flex justify-between items-center">
+            <button onClick={() => router.back()} className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+               <ArrowLeft className="w-6 h-6" />
+            </button>
+            <button className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+               <Heart className="w-5 h-5" />
+            </button>
+          </div>
           
           <div className="text-white">
-            <h1 className="text-3xl md:text-5xl font-black mb-2 tracking-tight">{business.businessName}</h1>
-            <p className="text-zinc-200 text-sm md:text-base font-medium mb-4 flex items-center gap-2">
+            {business.metaData?.logoUrl && (
+               <div className="w-16 h-16 rounded-2xl bg-white p-1 shadow-xl mb-4">
+                  <img src={business.metaData.logoUrl} className="w-full h-full object-cover rounded-xl" alt="Logo" />
+               </div>
+            )}
+            <h1 className="text-3xl md:text-5xl font-black mb-2 tracking-tight break-words px-2 line-clamp-2">{business.businessName}</h1>
+            <div className="mb-2">
+              <p className={`text-zinc-100 text-sm md:text-base font-medium break-words ${isDescExpanded ? '' : 'line-clamp-2'}`}>
+                {business.description || 'Classic Culinary Experience'}
+              </p>
+              {(business.description?.length || 0) > 80 && (
+                <button onClick={() => setIsDescExpanded(!isDescExpanded)} className="text-xs font-bold text-zinc-300 underline mt-1 hover:text-white transition-colors">
+                  {isDescExpanded ? 'See Less' : 'See More'}
+                </button>
+              )}
+            </div>
+            <p className="text-zinc-300 text-xs md:text-sm font-medium mb-4 flex items-center gap-2">
               <span className="truncate">{business.localityName}</span>
               <span className="text-zinc-400">•</span>
               <span>2.5 km away</span>
@@ -91,15 +112,45 @@ export default function FoodLayout({ business, theme }: FoodLayoutProps) {
               <span className="px-2.5 py-1.5 bg-green-600 rounded-lg shadow-sm flex items-center gap-1 text-white">
                 <Star className="w-3.5 h-3.5 fill-current"/> {business.rating ? business.rating.toFixed(1) : 'NEW'}
               </span>
-              <span className="px-3 py-1.5 bg-white/20 rounded-lg backdrop-blur-md">North Indian</span>
-              <span className="px-3 py-1.5 bg-white/20 rounded-lg backdrop-blur-md">Chinese</span>
-              <span className="px-3 py-1.5 bg-white/20 rounded-lg backdrop-blur-md">Fast Food</span>
+              {business.metaData?.isPureVeg && (
+                <span className="px-2.5 py-1.5 bg-green-600 rounded-lg shadow-sm font-bold text-white">
+                  Pure Veg
+                </span>
+              )}
+              {business.metaData?.isDineInAvailable && (
+                <span className="px-2.5 py-1.5 bg-blue-600 rounded-lg shadow-sm font-bold text-white">
+                  Dine-In
+                </span>
+              )}
+              {business.metaData?.cuisines?.map((c: string) => (
+                <span key={c} className="px-3 py-1.5 bg-white/20 rounded-lg backdrop-blur-md">{c}</span>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 mt-6">
+        {business.metaData?.offers && business.metaData.offers.length > 0 && (
+          <div className="mb-6">
+            <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
+              {business.metaData.offers.map((offer: any, idx: number) => (
+                <div key={idx} className="shrink-0 w-[260px] p-4 rounded-xl bg-blue-50 border border-dashed border-blue-300 flex flex-col justify-between relative overflow-hidden">
+                  <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full border-l border-dashed border-blue-300"></div>
+                  <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full border-r border-dashed border-blue-300"></div>
+                  
+                  <div className="text-center z-10">
+                    <h4 className="text-blue-700 font-black text-lg">{offer.discount}</h4>
+                    <p className="text-blue-600 font-semibold text-xs mt-0.5">{offer.title}</p>
+                    <div className="mt-3 inline-block px-3 py-1 bg-white border border-dashed border-blue-200 rounded text-blue-800 font-mono font-bold text-[10px] tracking-widest">
+                      {offer.code}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-md pt-4 pb-4 -mx-4 px-4 md:mx-0 md:px-0 shadow-sm md:shadow-none">
           <div className="relative mb-4">
             <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
@@ -159,7 +210,7 @@ export default function FoodLayout({ business, theme }: FoodLayoutProps) {
                             )}
                           </div>
                           
-                          <h4 className="font-bold text-zinc-900 text-lg leading-tight mb-1">{item.title}</h4>
+                          <h4 className="font-bold text-zinc-900 text-lg leading-tight mb-1 break-words line-clamp-2">{item.title}</h4>
                           
                           {(() => {
                             const customPortions = item.variants && Array.isArray(item.variants) && item.variants.length > 0 && typeof item.variants[0] === 'object' ? item.variants : null;

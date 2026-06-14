@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import apiClient from '@/lib/api-client';
 import { 
   Home, Store, PlusCircle, Settings,
-  LogOut, User, Bell, ChevronRight, BarChart3, ShoppingBag
+  LogOut, User, Bell, ChevronRight, BarChart3, ShoppingBag, Sparkles
 } from 'lucide-react';
 
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
@@ -23,6 +23,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     { name: 'Dashboard', href: '/vendor-dashboard/workspace', icon: Home },
     { name: 'Orders', href: '/vendor-dashboard/workspace/management/orders', icon: ShoppingBag },
     { name: 'Catalog & Menu', href: '/vendor-dashboard/workspace/management/catalog', icon: Store },
+    { name: 'Design Storefront', href: '/vendor-dashboard/workspace/builder', icon: Sparkles },
     { name: 'Leads & Enquiries', href: '/vendor-dashboard/workspace/management/leads', icon: BarChart3 },
     { name: 'Business Settings', href: '/vendor-dashboard/workspace/settings', icon: Settings },
   ];

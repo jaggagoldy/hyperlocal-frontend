@@ -298,12 +298,12 @@ export default function VendorLoginPage() {
           {mode === 'email' && (
             <form onSubmit={handleEmailLogin} className="space-y-5">
               <div className="space-y-1">
-                <label className="text-sm font-medium">Email address</label>
+                <label className="text-sm font-medium">Email or Mobile Number</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
-                    type="email"
-                    placeholder="vendor@example.com"
+                    type="text"
+                    placeholder="vendor@example.com or 9999999999"
                     className="h-12 pl-10 bg-muted/30 focus-visible:bg-background"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

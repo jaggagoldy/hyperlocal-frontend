@@ -5,17 +5,23 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import apiClient from '@/lib/api-client';
 import { toast } from 'sonner';
-import { ChevronRight, ArrowLeft, CheckCircle2, Store, Utensils, Car, Scissors, Home, UploadCloud, Smartphone, Plus, Trash2, PartyPopper, Tags } from 'lucide-react';
+import { ChevronRight, ArrowLeft, CheckCircle2, Store, Utensils, Car, Scissors, Home, UploadCloud, Smartphone, Plus, Trash2, PartyPopper, Tags, Briefcase, Stethoscope, Plane, Heart, Dumbbell, GraduationCap, Truck, Wrench, Key, Banknote, Bed, Building, Search, X, Check } from 'lucide-react';
+
+const IconMap: any = { Utensils, Car, Scissors, Home, Briefcase, Stethoscope, Plane, Heart, Dumbbell, GraduationCap, Truck, Wrench, Key, Banknote, Bed, Building };
 
 // Layout Imports for Live Preview
-import CabTransportLayout from '@/components/vendor/CabTransportLayout';
-import FoodLayout from '@/components/vendor/FoodLayout';
-import HomeServicesLayout from '@/components/vendor/HomeServicesLayout';
+import { getTemplateComponent, TEMPLATE_METADATA } from '@/lib/templateRegistry';
+import WorkspaceBuilder from '@/components/vendor/WorkspaceBuilder';
 
-type BusinessType = 'FOOD_BEVERAGE' | 'CAB_TRANSPORT' | 'SALON_BEAUTY' | 'HOME_SERVICES' | '';
+type BusinessType = 'FOOD_BEVERAGE' | 'CAB_TRANSPORT' | 'SALON_BEAUTY' | 'HOME_ESSENTIALS' | '';
 
 export default function VendorRegisterPage() {
+  const [categories, setCategories] = useState<any[]>([]);
   const router = useRouter();
+  
+  const [categoryQuery, setCategoryQuery] = useState('');
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const filteredCategories = categories.filter(c => c.name.toLowerCase().includes(categoryQuery.toLowerCase()));
   
   const { user, setActiveBusiness, setAuth, token } = useAuthStore();
   
@@ -37,6 +43,7 @@ export default function VendorRegisterPage() {
       if (token) setOnboardingToken(token);
       setIsGoogle(google);
     }
+    apiClient.get('/categories').then(res => setCategories(res.data.data || [])).catch(console.error);
   }, []);
 
   
@@ -64,7 +71,9 @@ export default function VendorRegisterPage() {
   const SALON_CATEGORIES = ['Hair Cut', 'Shaving & Beard', 'Facial', 'Massage', 'Manicure & Pedicure', 'Makeup', 'Other'];
 
   const [form, setForm] = useState({
-    businessType: '' as BusinessType,
+    businessType: '',
+    selectedTemplateId: '',
+    selectedCategoryId: '',
     businessName: '',
     city: '',
     address: '',
@@ -84,7 +93,7 @@ export default function VendorRegisterPage() {
     isPureVeg: false,
     fssai: '',
     
-    // SALON_BEAUTY / HOME_SERVICES Fields
+    // SALON_BEAUTY / HOME_ESSENTIALS Fields
     experience: '',
     certifications: '',
 
@@ -184,11 +193,11 @@ export default function VendorRegisterPage() {
       if (!form.businessType) return toast.error('Please select a business category');
       if (!form.businessName) return toast.error('Please enter a business name');
       if (!form.city) return toast.error('Please enter your city');
-      setStep(2);
-    } else if (step === 2) {
       setStep(3);
     } else if (step === 3) {
       setStep(4);
+    } else if (step === 4) {
+      setStep(5);
     }
   };
 
@@ -264,6 +273,8 @@ export default function VendorRegisterPage() {
         workingDays: 'Monday - Saturday',
         connectionMode: form.businessType === 'FOOD_BEVERAGE' ? 'REQUIRE_APPROVAL' : form.connectionMode,
         metaData,
+        categoryIds: form.selectedCategoryId ? [form.selectedCategoryId] : [],
+        themeFlavor: form.selectedTemplateId,
         imageUrl: form.image ? 'https://dummyimage.com/600x400/10b981/fff&text=Storefront' : undefined,
         services: form.businessType !== 'CAB_TRANSPORT' ? temporaryServices.map(s => ({
           title: s.title,
@@ -345,11 +356,25 @@ export default function VendorRegisterPage() {
       isPureVeg: form.isPureVeg,
       experience: form.experience,
     },
-    catalogItems: buildPreviewCatalog()
+    catalogItems: buildPreviewCatalog(),
+    catalog: buildPreviewCatalog()
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto md:grid md:grid-cols-12 md:gap-10 h-[calc(100vh-8rem)]">
+    <>
+      {step >= 2 && ['FOOD_BEVERAGE', 'RETAIL'].includes(form.businessType) && !isSuccess ? (
+        <WorkspaceBuilder 
+          initialData={form}
+          onSuccess={() => {
+            setIsSuccess(true);
+            setStep(6);
+            setTimeout(() => {
+              router.push('/vendor-dashboard');
+            }, 3000);
+          }} 
+        />
+      ) : (
+        <div className="max-w-[1400px] mx-auto md:grid md:grid-cols-12 md:gap-10 h-[calc(100vh-8rem)]">
       
       {/* ─── LEFT SIDE (FORM WIZARD) ─── */}
       <div className="md:col-span-7 lg:col-span-6 bg-white rounded-3xl border border-zinc-200 shadow-sm p-6 lg:p-10 mb-8 md:mb-0 h-full overflow-y-auto">
@@ -422,32 +447,74 @@ export default function VendorRegisterPage() {
                   </div>
                 </div>
               )}
-              <div>
-                <h2 className="text-xl font-black text-zinc-900 mb-4">Select Business Category *</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { id: 'FOOD_BEVERAGE', label: 'Restaurant / Cafe', icon: Utensils },
-                    { id: 'CAB_TRANSPORT', label: 'Cab & Transport', icon: Car },
-                    { id: 'SALON_BEAUTY', label: 'Salon & Beauty', icon: Scissors },
-                    { id: 'HOME_SERVICES', label: 'Home Services', icon: Home },
-                  ].map(cat => {
-                    const Icon = cat.icon;
-                    const isActive = form.businessType === cat.id;
-                    return (
+              
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-black text-zinc-900 mb-2">What is your business type?</h2>
+                  <p className="text-sm text-zinc-500 font-medium mb-6">Select the category that best describes what you do.</p>
+                  
+                  <div className="relative mb-6">
+                    <Search className="absolute left-4 top-4 w-5 h-5 text-zinc-400" />
+                    <input
+                      type="text"
+                      placeholder="Search e.g. Doctor, Restaurant, Gym, Plumber..."
+                      value={categoryQuery}
+                      onChange={(e) => setCategoryQuery(e.target.value)}
+                      className="w-full h-14 pl-12 pr-12 rounded-2xl border-2 border-zinc-200 bg-white focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all text-base font-bold text-zinc-900 shadow-sm"
+                    />
+                    {categoryQuery && (
                       <button 
-                        key={cat.id} 
-                        onClick={() => updateForm('businessType', cat.id)}
-                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
-                          isActive ? 'border-emerald-500 bg-emerald-50/50' : 'border-zinc-200 hover:border-emerald-300 hover:bg-zinc-50'
-                        }`}
+                        onClick={() => setCategoryQuery('')}
+                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-zinc-400 hover:text-zinc-600"
                       >
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${isActive ? 'bg-emerald-600 text-white shadow-md' : 'bg-zinc-100 text-zinc-500'}`}>
-                          <Icon className="w-5 h-5" />
-                        </div>
-                        <span className={`text-xs font-bold ${isActive ? 'text-emerald-700' : 'text-zinc-700'}`}>{cat.label}</span>
+                         <X className="w-5 h-5" />
                       </button>
-                    )
-                  })}
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[400px] overflow-y-auto pb-4 pr-2">
+                    {filteredCategories.length > 0 ? (
+                      filteredCategories.map(cat => {
+                        const Icon = IconMap[cat.icon] || Store;
+                        const isSelected = form.selectedCategoryId === cat.id;
+                        return (
+                          <button
+                            key={cat.id}
+                            onClick={() => {
+                              updateForm('selectedCategoryId', cat.id);
+                              updateForm('businessType', cat.archetype);
+                              updateForm('categorySlug', cat.slug);
+                            }}
+                            className={`w-full flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all duration-200 ${
+                              isSelected 
+                                ? 'bg-emerald-50 border-emerald-500 shadow-md transform scale-[1.02]' 
+                                : 'bg-white border-zinc-100 hover:border-emerald-200 hover:shadow-sm hover:bg-zinc-50'
+                            }`}
+                          >
+                            <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 transition-colors ${
+                              isSelected ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-zinc-100 text-zinc-500'
+                            }`}>
+                              <Icon className="w-7 h-7" />
+                            </div>
+                            <div className={`text-sm font-black text-center leading-tight mb-1 ${
+                              isSelected ? 'text-emerald-900' : 'text-zinc-900'
+                            }`}>
+                              {cat.name}
+                            </div>
+                            <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">
+                              {cat.archetype.replace('_', ' ')}
+                            </div>
+                          </button>
+                        )
+                      })
+                    ) : (
+                      <div className="col-span-full p-12 text-center bg-zinc-50 rounded-2xl border border-zinc-100">
+                        <Search className="w-10 h-10 text-zinc-300 mx-auto mb-4" />
+                        <p className="text-zinc-500 font-bold text-lg">No categories found</p>
+                        <p className="text-zinc-400 text-sm mt-1">Try searching for something else</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -525,11 +592,67 @@ export default function VendorRegisterPage() {
             </div>
           )}
 
+          
           {step === 2 && !isSuccess && (
+            <div className="animate-in fade-in slide-in-from-right-4 space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <button onClick={() => setStep(1)} className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-500">
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div>
+                  <h2 className="text-xl font-black text-zinc-900">Storefront Design</h2>
+                  <p className="text-xs text-zinc-500 font-medium mt-1">Select a visual template for your business.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {TEMPLATE_METADATA.filter(t => t.archetype === form.businessType).map(template => {
+                  const Icon = template.icon;
+                  const isActive = form.selectedTemplateId === template.id;
+                  
+                  return (
+                    <button
+                      key={template.id}
+                      onClick={() => updateForm('selectedTemplateId', template.id)}
+                      className={`text-left p-5 rounded-2xl border-2 transition-all duration-200 ${
+                        isActive 
+                          ? 'border-emerald-600 bg-emerald-50/50 shadow-md ring-4 ring-emerald-600/10' 
+                          : 'border-zinc-200 hover:border-emerald-300 hover:bg-zinc-50'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 border ${template.color}`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <h4 className={`text-md font-bold mb-1 ${isActive ? 'text-emerald-900' : 'text-zinc-900'}`}>
+                        {template.name}
+                      </h4>
+                      <p className="text-xs text-zinc-500 font-medium leading-relaxed">
+                        {template.description}
+                      </p>
+                    </button>
+                  )
+                })}
+              </div>
+              
+              <div className="pt-4 flex justify-end border-t border-zinc-100">
+                <button 
+                  onClick={nextStep}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2"
+                >
+                  Continue <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && !isSuccess && (
             <div className="animate-in fade-in slide-in-from-right-4 space-y-6">
               
               <div className="flex items-center gap-3 mb-6">
-                <button onClick={() => setStep(1)} className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-500">
+                <button onClick={() => {
+                  const availableTemplates = TEMPLATE_METADATA.filter(t => t.archetype === form.businessType);
+                  if (availableTemplates.length <= 1) setStep(1); else setStep(2);
+                }} className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-500">
                   <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div>
@@ -692,7 +815,7 @@ export default function VendorRegisterPage() {
                 )}
 
                 {/* OTHERS */}
-                {(form.businessType === 'SALON_BEAUTY' || form.businessType === 'HOME_SERVICES') && (
+                {(form.businessType === 'SALON_BEAUTY' || form.businessType === 'HOME_ESSENTIALS') && (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
@@ -781,10 +904,10 @@ export default function VendorRegisterPage() {
             </div>
           )}
 
-          {step === 3 && !isSuccess && (
+          {step === 4 && !isSuccess && (
             <div className="animate-in fade-in slide-in-from-right-4 space-y-6">
               <div className="flex items-center gap-3 mb-6">
-                <button onClick={() => setStep(2)} className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-500">
+                <button onClick={() => setStep(3)} className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-500">
                   <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div>
@@ -812,7 +935,7 @@ export default function VendorRegisterPage() {
                         >
                           <option value="" disabled>Select Category</option>
                           {form.businessType === 'FOOD_BEVERAGE' && FOOD_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                          {form.businessType === 'HOME_SERVICES' && HOME_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                          {form.businessType === 'HOME_ESSENTIALS' && HOME_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                           {form.businessType === 'SALON_BEAUTY' && SALON_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </select>
                       </div>
@@ -1009,7 +1132,7 @@ export default function VendorRegisterPage() {
             </div>
           )}
 
-          {step === 4 && !isSuccess && (
+          {step === 5 && !isSuccess && (
              <div className="animate-in fade-in slide-in-from-right-4 space-y-6">
                 <div className="flex items-center gap-3 mb-6">
                   <button onClick={() => setStep(3)} className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-500">
@@ -1087,9 +1210,10 @@ export default function VendorRegisterPage() {
               </div>
             ) : (
               <div className="w-full min-h-full bg-white">
-                {form.businessType === 'CAB_TRANSPORT' && <CabTransportLayout business={previewBusiness} theme="trust-utility" />}
-                {form.businessType === 'FOOD_BEVERAGE' && <FoodLayout business={previewBusiness} theme="playful-vibrant" />}
-                {(form.businessType === 'SALON_BEAUTY' || form.businessType === 'HOME_SERVICES') && <HomeServicesLayout business={previewBusiness} theme="premium-elegant" />}
+                {(() => {
+                  const PreviewTemplate = getTemplateComponent(form.selectedTemplateId, form.businessType);
+                  return <PreviewTemplate business={previewBusiness as any} theme="trust-utility" />;
+                })()}
               </div>
             )}
           </div>
@@ -1098,5 +1222,7 @@ export default function VendorRegisterPage() {
       </div>
 
     </div>
+      )}
+    </>
   );
 }

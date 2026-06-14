@@ -30,14 +30,9 @@ export const useCartStore = create<CartStore>()(
       addItem: (item, currentOrderType) => {
         let { cartItems, vendorId, orderType } = get();
 
-        // If trying to add an item from a different vendor, reject immediately.
-        if (vendorId && vendorId !== item.vendorId) {
-          return { success: false, error: 'You have items from another vendor in your cart. Please clear your cart first.' };
-        }
-
-        // If trying to mix booking/transactional order types, reject.
-        if (orderType && orderType !== currentOrderType && cartItems.length > 0) {
-          return { success: false, error: 'You cannot mix different service types in one checkout. Please clear your cart first.' };
+        // Automatically clear cart if switching to a new vendor or order type
+        if ((vendorId && vendorId !== item.businessProfileId) || (orderType && orderType !== currentOrderType && cartItems.length > 0)) {
+          cartItems = [];
         }
 
         const existingItem = cartItems.find(ci => ci.catalogItem.id === item.id);
@@ -52,7 +47,7 @@ export const useCartStore = create<CartStore>()(
           });
         } else {
           set({
-            vendorId: item.vendorId,
+            vendorId: item.businessProfileId,
             orderType: currentOrderType,
             cartItems: [...cartItems, { catalogItem: item, quantity: 1 }]
           });

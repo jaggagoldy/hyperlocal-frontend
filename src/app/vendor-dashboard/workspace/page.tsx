@@ -18,7 +18,7 @@ export default function ActiveBusinessDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState('All Time');
   const [showCampaignModal, setShowCampaignModal] = useState(false);
-  const [stats, setStats] = useState({ leads: 0, orders: 0 });
+  const [stats, setStats] = useState({ leads: 0, orders: 0, profileViews: 0 });
 
   useEffect(() => {
     if (!activeBusinessId) {
@@ -50,6 +50,13 @@ export default function ActiveBusinessDashboard() {
         }).catch(() => ({ data: { data: [] } }));
         const orders = ordersRes.data?.data || [];
 
+        // Fetch dashboard metrics
+        const dashboardRes = await apiClient.get('/business/me/dashboard', {
+          headers: { 'x-business-id': activeBusinessId }
+        }).catch(() => null);
+        const analytics = dashboardRes?.data?.data?.analytics;
+        const profileViews = analytics?.profileViews || 0;
+
         // Combine and sort
         const combined = [
           ...leads.map((l: any) => ({ ...l, _type: 'LEAD' })),
@@ -57,7 +64,7 @@ export default function ActiveBusinessDashboard() {
         ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         
         setRecentItems(combined.slice(0, 5));
-        setStats({ leads: leads.length, orders: orders.length });
+        setStats({ leads: leads.length, orders: orders.length, profileViews });
       } else {
         router.push('/vendor-dashboard');
       }
@@ -118,7 +125,7 @@ export default function ActiveBusinessDashboard() {
           </div>
           <div>
             <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Profile Views</p>
-            <h3 className="text-2xl font-black text-zinc-900">1,248</h3>
+            <h3 className="text-2xl font-black text-zinc-900">{stats.profileViews.toLocaleString()}</h3>
           </div>
         </div>
         <div className="bg-white rounded-2xl p-5 border border-zinc-200 shadow-sm flex items-center gap-4">

@@ -57,6 +57,7 @@ export function EnquiryDrawer({ item, vendorName }: EnquiryDrawerProps) {
       toast.success('Inquiry sent! The vendor has been alerted via WhatsApp.');
       setIsOpen(false);
       setRequirement('');
+      router.push('/profile/enquiries');
     } catch (error: any) {
       console.error(error);
       const errData = error.response?.data;

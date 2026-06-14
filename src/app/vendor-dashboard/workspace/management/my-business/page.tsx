@@ -12,7 +12,7 @@ import CabTransportLayout from '@/components/vendor/CabTransportLayout';
 import FoodLayout from '@/components/vendor/FoodLayout';
 import HomeServicesLayout from '@/components/vendor/HomeServicesLayout';
 
-type BusinessType = 'FOOD_BEVERAGE' | 'CAB_TRANSPORT' | 'SALON_BEAUTY' | 'HOME_SERVICES' | '';
+type BusinessType = 'FOOD_BEVERAGE' | 'CAB_TRANSPORT' | 'SALON_BEAUTY' | 'HOME_ESSENTIALS' | '';
 
 export default function MyBusinessWizardPage() {
   const router = useRouter();
@@ -62,7 +62,7 @@ export default function MyBusinessWizardPage() {
     isPureVeg: false,
     fssai: '',
     
-    // SALON_BEAUTY / HOME_SERVICES Fields
+    // SALON_BEAUTY / HOME_ESSENTIALS Fields
     experience: '',
     certifications: '',
 
@@ -324,12 +324,17 @@ export default function MyBusinessWizardPage() {
               <div>
                 <h2 className="text-xl font-black text-zinc-900 mb-4">Select Business Category *</h2>
                 <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { id: 'FOOD_BEVERAGE', label: 'Restaurant / Cafe', icon: Utensils },
-                    { id: 'CAB_TRANSPORT', label: 'Cab & Transport', icon: Car },
-                    { id: 'SALON_BEAUTY', label: 'Salon & Beauty', icon: Scissors },
-                    { id: 'HOME_SERVICES', label: 'Home Services', icon: Home },
-                  ].map(cat => {
+                  {(() => {
+                    const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_APP_ENV === 'production';
+                    return [
+                      { id: 'FOOD_BEVERAGE', label: 'Restaurant / Cafe', icon: Utensils },
+                      ...(isProduction ? [] : [
+                        { id: 'CAB_TRANSPORT', label: 'Cab & Transport', icon: Car },
+                        { id: 'HOME_ESSENTIALS', label: 'Home Services', icon: Home }
+                      ]),
+                      { id: 'SALON_BEAUTY', label: 'Salon & Beauty', icon: Scissors }
+                    ];
+                  })().map(cat => {
                     const Icon = cat.icon;
                     const isActive = form.businessType === cat.id;
                     return (
@@ -591,7 +596,7 @@ export default function MyBusinessWizardPage() {
                 )}
 
                 {/* OTHERS */}
-                {(form.businessType === 'SALON_BEAUTY' || form.businessType === 'HOME_SERVICES') && (
+                {(form.businessType === 'SALON_BEAUTY' || form.businessType === 'HOME_ESSENTIALS') && (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
@@ -669,7 +674,7 @@ export default function MyBusinessWizardPage() {
                         >
                           <option value="" disabled>Select Category</option>
                           {form.businessType === 'FOOD_BEVERAGE' && FOOD_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                          {form.businessType === 'HOME_SERVICES' && HOME_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                          {form.businessType === 'HOME_ESSENTIALS' && HOME_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                           {form.businessType === 'SALON_BEAUTY' && SALON_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </select>
                       </div>
@@ -946,7 +951,7 @@ export default function MyBusinessWizardPage() {
               <div className="w-full min-h-full bg-white">
                 {form.businessType === 'CAB_TRANSPORT' && <CabTransportLayout business={previewBusiness} theme="trust-utility" />}
                 {form.businessType === 'FOOD_BEVERAGE' && <FoodLayout business={previewBusiness} theme="playful-vibrant" />}
-                {(form.businessType === 'SALON_BEAUTY' || form.businessType === 'HOME_SERVICES') && <HomeServicesLayout business={previewBusiness} theme="premium-elegant" />}
+                {(form.businessType === 'SALON_BEAUTY' || form.businessType === 'HOME_ESSENTIALS') && <HomeServicesLayout business={previewBusiness} theme="premium-elegant" />}
               </div>
             )}
           </div>
