@@ -16,12 +16,9 @@ import WorkspaceBuilder from '@/components/vendor/WorkspaceBuilder';
 type BusinessType = 'FOOD_BEVERAGE' | 'CAB_TRANSPORT' | 'SALON_BEAUTY' | 'HOME_ESSENTIALS' | '';
 
 export default function VendorRegisterPage() {
-  const [categories, setCategories] = useState<any[]>([]);
+  const [verticals, setVerticals] = useState<any[]>([]);
+  const [selectedVertical, setSelectedVertical] = useState<any | null>(null);
   const router = useRouter();
-  
-  const [categoryQuery, setCategoryQuery] = useState('');
-  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
-  const filteredCategories = categories.filter(c => c.name.toLowerCase().includes(categoryQuery.toLowerCase()));
   
   const { user, setActiveBusiness, setAuth, token } = useAuthStore();
   
@@ -43,7 +40,7 @@ export default function VendorRegisterPage() {
       if (token) setOnboardingToken(token);
       setIsGoogle(google);
     }
-    apiClient.get('/categories').then(res => setCategories(res.data.data || [])).catch(console.error);
+    apiClient.get('/verticals').then(res => setVerticals(res.data.data || [])).catch(console.error);
   }, []);
 
   
@@ -72,6 +69,9 @@ export default function VendorRegisterPage() {
 
   const [form, setForm] = useState({
     businessType: '',
+    subcategorySlug: '',
+    bookingMode: '',
+    categorySlug: '',
     selectedTemplateId: '',
     selectedCategoryId: '',
     businessName: '',
@@ -191,6 +191,7 @@ export default function VendorRegisterPage() {
   const nextStep = () => {
     if (step === 1) {
       if (!form.businessType) return toast.error('Please select a business category');
+      if (!form.subcategorySlug) return toast.error('Please choose your business type');
       if (!form.businessName) return toast.error('Please enter a business name');
       if (!form.city) return toast.error('Please enter your city');
       setStep(3);
@@ -206,35 +207,6 @@ export default function VendorRegisterPage() {
     try {
       setIsSubmitting(true);
       
-      let currentToken = token;
-      let currentUser = user;
-
-      if (onboardingToken && !token) {
-        const onboardPayload: any = {
-          onboardingToken,
-          address: form.address || form.city,
-          gender: personalGender,
-          dateOfBirth: personalDob,
-        };
-        
-        if (isGoogle) {
-          onboardPayload.phoneNumber = personalPhone;
-        } else {
-          onboardPayload.name = personalName;
-          onboardPayload.email = personalEmail;
-          onboardPayload.password = personalPassword;
-        }
-
-        const onboardRes = await apiClient.post('/auth/onboard', onboardPayload);
-        currentToken = onboardRes.data?.data?.token || onboardRes.data?.token;
-        currentUser = onboardRes.data?.data?.user || onboardRes.data?.user;
-        
-        if (currentToken && currentUser) {
-          setAuth(currentToken, currentUser);
-          apiClient.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
-        }
-      }
-
       let metaData: any = {};
 
       
@@ -264,6 +236,8 @@ export default function VendorRegisterPage() {
       const payload = {
         businessName: form.businessName,
         businessType: form.businessType,
+        subcategorySlug: form.subcategorySlug,
+        bookingMode: form.bookingMode,
         localityName: form.address,
         cityName: form.city,
         description: form.description,
@@ -449,73 +423,82 @@ export default function VendorRegisterPage() {
               )}
               
               <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-black text-zinc-900 mb-2">What is your business type?</h2>
-                  <p className="text-sm text-zinc-500 font-medium mb-6">Select the category that best describes what you do.</p>
-                  
-                  <div className="relative mb-6">
-                    <Search className="absolute left-4 top-4 w-5 h-5 text-zinc-400" />
-                    <input
-                      type="text"
-                      placeholder="Search e.g. Doctor, Restaurant, Gym, Plumber..."
-                      value={categoryQuery}
-                      onChange={(e) => setCategoryQuery(e.target.value)}
-                      className="w-full h-14 pl-12 pr-12 rounded-2xl border-2 border-zinc-200 bg-white focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all text-base font-bold text-zinc-900 shadow-sm"
-                    />
-                    {categoryQuery && (
-                      <button 
-                        onClick={() => setCategoryQuery('')}
-                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-zinc-400 hover:text-zinc-600"
-                      >
-                         <X className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
+                {/* Stage 1: pick the vertical (category). Stage 2: pick the sub-category. */}
+                {!selectedVertical ? (
+                  <div>
+                    <h2 className="text-2xl font-black text-zinc-900 mb-2">What kind of business?</h2>
+                    <p className="text-sm text-zinc-500 font-medium mb-6">Choose your category. More categories are coming soon.</p>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[400px] overflow-y-auto pb-4 pr-2">
-                    {filteredCategories.length > 0 ? (
-                      filteredCategories.map(cat => {
-                        const Icon = IconMap[cat.icon] || Store;
-                        const isSelected = form.selectedCategoryId === cat.id;
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {verticals.map((v: any) => {
+                        const Icon = IconMap[v.icon] || Store;
+                        const comingSoon = v.comingSoon;
                         return (
                           <button
-                            key={cat.id}
+                            key={v.key}
+                            disabled={comingSoon}
                             onClick={() => {
-                              updateForm('selectedCategoryId', cat.id);
-                              updateForm('businessType', cat.archetype);
-                              updateForm('categorySlug', cat.slug);
+                              if (comingSoon) return;
+                              setSelectedVertical(v);
+                              updateForm('businessType', v.key);
+                              updateForm('bookingMode', (v.bookingModes && v.bookingModes[0]) || '');
+                            }}
+                            className={`relative w-full flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all duration-200 ${
+                              comingSoon
+                                ? 'bg-zinc-50 border-zinc-100 opacity-60 cursor-not-allowed'
+                                : 'bg-white border-zinc-100 hover:border-emerald-300 hover:shadow-sm hover:bg-zinc-50'
+                            }`}
+                          >
+                            {comingSoon && (
+                              <span className="absolute top-2 right-2 text-[9px] font-black uppercase tracking-wider bg-zinc-200 text-zinc-500 px-2 py-0.5 rounded-full">Soon</span>
+                            )}
+                            <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 ${comingSoon ? 'bg-zinc-100 text-zinc-400' : 'bg-emerald-50 text-emerald-600'}`}>
+                              <Icon className="w-7 h-7" />
+                            </div>
+                            <div className="text-sm font-black text-center leading-tight text-zinc-900">{v.label}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <button
+                      onClick={() => { setSelectedVertical(null); updateForm('subcategorySlug', ''); updateForm('categorySlug', ''); }}
+                      className="flex items-center gap-1 text-sm font-bold text-zinc-500 hover:text-zinc-800 mb-4"
+                    >
+                      <ArrowLeft className="w-4 h-4" /> {selectedVertical.label}
+                    </button>
+                    <h2 className="text-2xl font-black text-zinc-900 mb-2">Choose your type</h2>
+                    <p className="text-sm text-zinc-500 font-medium mb-6">Pick the option that best fits your business.</p>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {(selectedVertical.subcategories || []).map((sub: any) => {
+                        const Icon = IconMap[sub.icon] || Store;
+                        const isSelected = form.subcategorySlug === sub.slug;
+                        return (
+                          <button
+                            key={sub.slug}
+                            onClick={() => {
+                              updateForm('subcategorySlug', sub.slug);
+                              updateForm('categorySlug', sub.slug);
                             }}
                             className={`w-full flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all duration-200 ${
-                              isSelected 
-                                ? 'bg-emerald-50 border-emerald-500 shadow-md transform scale-[1.02]' 
+                              isSelected
+                                ? 'bg-emerald-50 border-emerald-500 shadow-md transform scale-[1.02]'
                                 : 'bg-white border-zinc-100 hover:border-emerald-200 hover:shadow-sm hover:bg-zinc-50'
                             }`}
                           >
-                            <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 transition-colors ${
-                              isSelected ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-zinc-100 text-zinc-500'
-                            }`}>
+                            <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 ${isSelected ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-zinc-100 text-zinc-500'}`}>
                               <Icon className="w-7 h-7" />
                             </div>
-                            <div className={`text-sm font-black text-center leading-tight mb-1 ${
-                              isSelected ? 'text-emerald-900' : 'text-zinc-900'
-                            }`}>
-                              {cat.name}
-                            </div>
-                            <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-center">
-                              {cat.archetype.replace('_', ' ')}
-                            </div>
+                            <div className={`text-sm font-black text-center leading-tight ${isSelected ? 'text-emerald-900' : 'text-zinc-900'}`}>{sub.label}</div>
                           </button>
-                        )
-                      })
-                    ) : (
-                      <div className="col-span-full p-12 text-center bg-zinc-50 rounded-2xl border border-zinc-100">
-                        <Search className="w-10 h-10 text-zinc-300 mx-auto mb-4" />
-                        <p className="text-zinc-500 font-bold text-lg">No categories found</p>
-                        <p className="text-zinc-400 text-sm mt-1">Try searching for something else</p>
-                      </div>
-                    )}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="space-y-4 pt-4 border-t border-zinc-100">

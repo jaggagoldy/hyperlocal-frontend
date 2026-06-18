@@ -139,6 +139,8 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
       
       const bizPayload = {
         businessType: initialData?.businessType || 'FOOD_BEVERAGE',
+        subcategorySlug: initialData?.subcategorySlug,
+        bookingMode: initialData?.bookingMode,
         businessName: name,
         localityName: address,
         cityName: city,
