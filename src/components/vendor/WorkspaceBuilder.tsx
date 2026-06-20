@@ -10,6 +10,7 @@ import DishModal from './DishModal';
 import apiClient from '@/lib/api-client';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store/useCartStore';
+import { useRegions, districtsForState } from '@/lib/useRegions';
 
 interface WorkspaceBuilderProps {
   onSuccess: () => void;
@@ -34,7 +35,11 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
   // Profile State
   const [name, setName] = useState(initialData?.businessName || '');
   const [address, setAddress] = useState(initialData?.address || initialData?.localityName || '');
-  const [city, setCity] = useState(initialData?.city || initialData?.cityName || '');
+  // Location: State + District (canonical PB/HR). In create mode these arrive as
+  // strings on initialData; in edit mode the business carries a `city` object.
+  const regionStates = useRegions();
+  const [stateName, setStateName] = useState<string>(initialData?.state || initialData?.city?.state || '');
+  const [district, setDistrict] = useState<string>(initialData?.district || initialData?.city?.district || '');
   const [pincode, setPincode] = useState(initialData?.pincode || '');
   const [description, setDescription] = useState(initialData?.description || '');
   const [dineIn, setDineIn] = useState(true);
@@ -132,7 +137,7 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
   }, [clearCart]);
 
   const handlePublish = async () => {
-    if (!name || !address || !city) return toast.error('Name, Address, and City are required!');
+    if (!name || !address || !stateName || !district) return toast.error('Name, Address, State, and District are required!');
     
     try {
       setIsPublishing(true);
@@ -143,7 +148,9 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
         bookingMode: initialData?.bookingMode,
         businessName: name,
         localityName: address,
-        cityName: city,
+        state: stateName,
+        district: district,
+        cityName: district,
         pincode: pincode || '000000',
         description: description,
         themeFlavor: themeId,
@@ -528,13 +535,36 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-zinc-700 mb-2">City <span className="text-red-500">*</span></label>
-                    <input type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="e.g. New Delhi" className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-medium text-base" />
+                    <label className="block text-sm font-bold text-zinc-700 mb-2">State <span className="text-red-500">*</span></label>
+                    <select
+                      value={stateName}
+                      onChange={e => { setStateName(e.target.value); setDistrict(''); }}
+                      className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-medium text-base"
+                    >
+                      <option value="" disabled>Select State</option>
+                      {regionStates.map((s) => (
+                        <option key={s.name} value={s.name}>{s.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-zinc-700 mb-2">Pincode</label>
-                    <input type="text" value={pincode} onChange={e => setPincode(e.target.value)} placeholder="e.g. 110001" className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-medium text-base" />
+                    <label className="block text-sm font-bold text-zinc-700 mb-2">District <span className="text-red-500">*</span></label>
+                    <select
+                      value={district}
+                      disabled={!stateName}
+                      onChange={e => setDistrict(e.target.value)}
+                      className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="" disabled>{stateName ? 'Select District' : 'Pick a state first'}</option>
+                      {districtsForState(regionStates, stateName).map((d) => (
+                        <option key={d.slug} value={d.name}>{d.name}</option>
+                      ))}
+                    </select>
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-zinc-700 mb-2">Pincode</label>
+                  <input type="text" value={pincode} onChange={e => setPincode(e.target.value)} placeholder="e.g. 110001" className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-medium text-base" />
                 </div>
               </div>
             )}

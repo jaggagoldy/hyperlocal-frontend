@@ -207,15 +207,13 @@ export default function FoodPage() {
     const fetchCities = async () => {
       try {
         const res = await apiClient.get('/search/cities');
+        // Full canonical PB+HR district list (every district always shown).
         const fetchedCities = res.data?.data || [];
-        const filteredCities = fetchedCities.filter((c: any) =>
-          ['fatehabad', 'hisar', 'sirsa'].includes(c.slug.toLowerCase())
-        );
-        setCities(filteredCities);
-        
-        // Ensure selectedCity is one of the valid Haryana cities
-        if (filteredCities.length > 0 && !filteredCities.some((c: any) => c.slug === selectedCity)) {
-          setCity(filteredCities[0].slug);
+        setCities(fetchedCities);
+
+        // Keep the current selection if it's a valid district; else fall back.
+        if (fetchedCities.length > 0 && !fetchedCities.some((c: any) => c.slug === selectedCity)) {
+          setCity(fetchedCities[0].slug);
         }
       } catch (err) {
         console.error('Failed to fetch cities list', err);
@@ -1039,17 +1037,12 @@ export default function FoodPage() {
 
             {/* Scrollable Cities List */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* Popular Cities Quick Links */}
-              {!citySearch && (
+              {/* Popular Cities Quick Links — districts that currently have listings */}
+              {!citySearch && cities.some((c: any) => c.hasVendors) && (
                 <div className="space-y-1.5">
                   <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">{t('popularCities')}</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {[
-                      { name: 'Noida', slug: 'noida' },
-                      { name: 'Dadri', slug: 'dadri' },
-                      { name: 'Fatehabad', slug: 'fatehabad' },
-                      { name: 'Hisar', slug: 'hisar' }
-                    ].map(city => {
+                    {cities.filter((c: any) => c.hasVendors).slice(0, 6).map((city: any) => {
                       const isCurrent = selectedCity === city.slug;
                       return (
                         <button

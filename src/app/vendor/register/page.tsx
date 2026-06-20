@@ -12,6 +12,7 @@ const IconMap: any = { Utensils, Car, Scissors, Home, Briefcase, Stethoscope, Pl
 // Layout Imports for Live Preview
 import { getTemplateComponent, getTemplatesForFamily, getDefaultTemplateId } from '@/lib/templateRegistry';
 import WorkspaceBuilder from '@/components/vendor/WorkspaceBuilder';
+import { useRegions, districtsForState } from '@/lib/useRegions';
 
 type BusinessType = 'FOOD_BEVERAGE' | 'CAB_TRANSPORT' | 'SALON_BEAUTY' | 'HOME_ESSENTIALS' | '';
 
@@ -35,6 +36,7 @@ const bookingToConnection = (mode: string) => (mode === 'DIRECT_BOOK' ? 'DIRECT'
 export default function VendorRegisterPage() {
   const [verticals, setVerticals] = useState<any[]>([]);
   const [selectedVertical, setSelectedVertical] = useState<any | null>(null);
+  const regionStates = useRegions();
   const router = useRouter();
   
   const { user, setActiveBusiness, setAuth, token } = useAuthStore();
@@ -93,6 +95,8 @@ export default function VendorRegisterPage() {
     selectedTemplateId: '',
     selectedCategoryId: '',
     businessName: '',
+    state: '',
+    district: '',
     city: '',
     address: '',
     description: '',
@@ -211,7 +215,8 @@ export default function VendorRegisterPage() {
       if (!form.businessType) return toast.error('Please select a business category');
       if (!form.subcategorySlug) return toast.error('Please choose your business type');
       if (!form.businessName) return toast.error('Please enter a business name');
-      if (!form.city) return toast.error('Please enter your city');
+      if (!form.state) return toast.error('Please select your state');
+      if (!form.district) return toast.error('Please select your district');
       // Food/Retail hand off to the WorkspaceBuilder takeover (rendered when step >= 2).
       // Service verticals walk the inline template → details → services → review flow,
       // so they get the storefront template picker at step 2 first.
@@ -267,7 +272,9 @@ export default function VendorRegisterPage() {
         subcategorySlug: form.subcategorySlug,
         bookingMode: form.bookingMode,
         localityName: form.address,
-        cityName: form.city,
+        state: form.state,
+        district: form.district,
+        cityName: form.district,
         description: form.description,
         pincode: '000000',
         locationType: 'Freelancer',
@@ -338,7 +345,7 @@ export default function VendorRegisterPage() {
   const previewBusiness: any = {
     businessName: form.businessName || 'Your Business Name',
     localityName: form.address || 'Your Business Address',
-    city: form.city || 'City',
+    city: form.district || 'City',
     description: form.description || 'Welcome to our business!',
     businessType: form.businessType || 'FOOD_BEVERAGE',
     connectionMode: form.connectionMode || 'REQUIRE_APPROVAL',
@@ -564,25 +571,52 @@ export default function VendorRegisterPage() {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-zinc-700">City *</label>
-                    <input 
-                      type="text" 
-                      value={form.city}
-                      onChange={(e) => updateForm('city', e.target.value)}
+                    <label className="text-xs font-bold text-zinc-700">State *</label>
+                    <select
+                      value={form.state}
+                      onChange={(e) => {
+                        updateForm('state', e.target.value);
+                        // Reset the district whenever the state changes.
+                        updateForm('district', '');
+                        updateForm('city', '');
+                      }}
                       className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
-                      placeholder="e.g. New Delhi"
-                    />
+                    >
+                      <option value="" disabled>Select State</option>
+                      {regionStates.map((s) => (
+                        <option key={s.name} value={s.name}>{s.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-zinc-700">Detailed Address</label>
-                    <input 
-                      type="text" 
-                      value={form.address}
-                      onChange={(e) => updateForm('address', e.target.value)}
-                      className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
-                      placeholder="Shop No. 8, Ground Floor..."
-                    />
+                    <label className="text-xs font-bold text-zinc-700">District *</label>
+                    <select
+                      value={form.district}
+                      disabled={!form.state}
+                      onChange={(e) => {
+                        updateForm('district', e.target.value);
+                        // City = district (no finer locality is captured here).
+                        updateForm('city', e.target.value);
+                      }}
+                      className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="" disabled>{form.state ? 'Select District' : 'Pick a state first'}</option>
+                      {districtsForState(regionStates, form.state).map((d) => (
+                        <option key={d.slug} value={d.name}>{d.name}</option>
+                      ))}
+                    </select>
                   </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-zinc-700">Detailed Address</label>
+                  <input
+                    type="text"
+                    value={form.address}
+                    onChange={(e) => updateForm('address', e.target.value)}
+                    className="w-full h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
+                    placeholder="Shop No. 8, Ground Floor..."
+                  />
                 </div>
 
                 <div className="space-y-1.5">
