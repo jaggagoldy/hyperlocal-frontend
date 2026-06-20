@@ -168,6 +168,42 @@ export const TEMPLATE_METADATA = [
   }
 ];
 
+// Maps a vertical's templateFamily (from GET /verticals: 'food' | 'retail' | 'vcard')
+// to the template archetype(s) eligible for that vertical, so the storefront picker
+// only offers on-brand templates (e.g. salons see vCard themes, not food menus).
+const FAMILY_ARCHETYPES: Record<string, string[]> = {
+  food: ['FOOD_BEVERAGE'],
+  retail: ['RETAIL'],
+  vcard: ['SERVICE'],
+};
+
+export const getTemplatesForFamily = (family?: string) => {
+  const archetypes = FAMILY_ARCHETYPES[(family || '').toLowerCase()];
+  if (!archetypes) return [];
+  return TEMPLATE_METADATA.filter(t => archetypes.includes(t.archetype));
+};
+
+// A polished, on-brand default template per business type so the onboarding
+// live-preview never falls back to the bare generic layout. Keyed by businessType
+// first, then by templateFamily, so new verticals still get a sensible default.
+const DEFAULT_TEMPLATE_BY_TYPE: Record<string, string> = {
+  FOOD_BEVERAGE: 'food-premium-light',
+  SALON_BEAUTY: 'vcard-salon-light',
+  DOCTOR: 'vcard-doctor-blue',
+  HOME_ESSENTIALS: 'vcard-salon-dark',
+  REAL_ESTATE: 'vcard-doctor-green',
+};
+const DEFAULT_TEMPLATE_BY_FAMILY: Record<string, string> = {
+  food: 'food-premium-light',
+  retail: 'retail-classic',
+  vcard: 'vcard-salon-light',
+};
+
+export const getDefaultTemplateId = (businessType?: string, family?: string): string =>
+  DEFAULT_TEMPLATE_BY_TYPE[(businessType || '').toUpperCase()]
+  || DEFAULT_TEMPLATE_BY_FAMILY[(family || '').toLowerCase()]
+  || '';
+
 export interface TemplateProps {
   business: BusinessProfile;
 }

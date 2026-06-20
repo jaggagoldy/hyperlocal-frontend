@@ -10,10 +10,27 @@ import { ChevronRight, ArrowLeft, CheckCircle2, Store, Utensils, Car, Scissors, 
 const IconMap: any = { Utensils, Car, Scissors, Home, Briefcase, Stethoscope, Plane, Heart, Dumbbell, GraduationCap, Truck, Wrench, Key, Banknote, Bed, Building };
 
 // Layout Imports for Live Preview
-import { getTemplateComponent, TEMPLATE_METADATA } from '@/lib/templateRegistry';
+import { getTemplateComponent, getTemplatesForFamily, getDefaultTemplateId } from '@/lib/templateRegistry';
 import WorkspaceBuilder from '@/components/vendor/WorkspaceBuilder';
 
 type BusinessType = 'FOOD_BEVERAGE' | 'CAB_TRANSPORT' | 'SALON_BEAUTY' | 'HOME_ESSENTIALS' | '';
+
+// Verticals whose storefront is built via the full WorkspaceBuilder takeover.
+// Everyone else (service/listing verticals) uses the inline template → details →
+// services → review flow below.
+const BUILDER_VERTICALS = ['FOOD_BEVERAGE', 'RETAIL'];
+
+// Friendly copy for each booking/fulfilment mode exposed by a vertical's
+// `bookingModes` (from GET /verticals). Drives the fulfilment step for services.
+const BOOKING_MODE_LABELS: Record<string, { title: string; desc: string }> = {
+  DIRECT_BOOK: { title: 'Instant Booking', desc: 'Customers book a slot or service directly — no approval needed.' },
+  REQUEST_TO_BOOK: { title: 'Request to Book', desc: 'Customers send a request; you confirm before it’s locked in. Contact stays hidden until you accept.' },
+  ORDER: { title: 'Direct Order', desc: 'Customers place orders directly from your menu.' },
+  CART: { title: 'Add to Cart', desc: 'Customers add items to a cart and check out.' },
+};
+
+// Booking modes map onto the legacy connectionMode the backend also stores.
+const bookingToConnection = (mode: string) => (mode === 'DIRECT_BOOK' ? 'DIRECT' : 'REQUIRE_APPROVAL');
 
 export default function VendorRegisterPage() {
   const [verticals, setVerticals] = useState<any[]>([]);
@@ -71,6 +88,7 @@ export default function VendorRegisterPage() {
     businessType: '',
     subcategorySlug: '',
     bookingMode: '',
+    templateFamily: '',
     categorySlug: '',
     selectedTemplateId: '',
     selectedCategoryId: '',
@@ -194,6 +212,16 @@ export default function VendorRegisterPage() {
       if (!form.subcategorySlug) return toast.error('Please choose your business type');
       if (!form.businessName) return toast.error('Please enter a business name');
       if (!form.city) return toast.error('Please enter your city');
+      // Food/Retail hand off to the WorkspaceBuilder takeover (rendered when step >= 2).
+      // Service verticals walk the inline template → details → services → review flow,
+      // so they get the storefront template picker at step 2 first.
+      if (BUILDER_VERTICALS.includes(form.businessType)) {
+        setStep(3);
+      } else {
+        setStep(2);
+      }
+    } else if (step === 2) {
+      if (!form.selectedTemplateId) return toast.error('Please pick a storefront design');
       setStep(3);
     } else if (step === 3) {
       setStep(4);
@@ -336,7 +364,7 @@ export default function VendorRegisterPage() {
 
   return (
     <>
-      {step >= 2 && ['FOOD_BEVERAGE', 'RETAIL'].includes(form.businessType) && !isSuccess ? (
+      {step >= 2 && BUILDER_VERTICALS.includes(form.businessType) && !isSuccess ? (
         <WorkspaceBuilder 
           initialData={form}
           onSuccess={() => {
@@ -441,7 +469,13 @@ export default function VendorRegisterPage() {
                               if (comingSoon) return;
                               setSelectedVertical(v);
                               updateForm('businessType', v.key);
-                              updateForm('bookingMode', (v.bookingModes && v.bookingModes[0]) || '');
+                              updateForm('templateFamily', v.templateFamily || '');
+                              // Seed a polished default template so the live preview (and the
+                              // pre-selected pick in step 2) looks good from the first moment.
+                              updateForm('selectedTemplateId', getDefaultTemplateId(v.key, v.templateFamily));
+                              const defaultMode = (v.bookingModes && v.bookingModes[0]) || '';
+                              updateForm('bookingMode', defaultMode);
+                              if (defaultMode) updateForm('connectionMode', bookingToConnection(defaultMode));
                             }}
                             className={`relative w-full flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all duration-200 ${
                               comingSoon
@@ -589,7 +623,7 @@ export default function VendorRegisterPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {TEMPLATE_METADATA.filter(t => t.archetype === form.businessType).map(template => {
+                {getTemplatesForFamily(form.templateFamily).map(template => {
                   const Icon = template.icon;
                   const isActive = form.selectedTemplateId === template.id;
                   
@@ -633,7 +667,7 @@ export default function VendorRegisterPage() {
               
               <div className="flex items-center gap-3 mb-6">
                 <button onClick={() => {
-                  const availableTemplates = TEMPLATE_METADATA.filter(t => t.archetype === form.businessType);
+                  const availableTemplates = getTemplatesForFamily(form.templateFamily);
                   if (availableTemplates.length <= 1) setStep(1); else setStep(2);
                 }} className="p-2 hover:bg-zinc-100 rounded-lg text-zinc-500">
                   <ArrowLeft className="w-5 h-5" />
@@ -825,43 +859,40 @@ export default function VendorRegisterPage() {
                   </div>
                 )}
 
-                {/* CONNECTION MODE (NON-FOOD) */}
-                {form.businessType !== 'FOOD_BEVERAGE' && (
+                {/* FULFILMENT / BOOKING MODE (service verticals) — driven by the vertical's bookingModes */}
+                {form.businessType !== 'FOOD_BEVERAGE' && (selectedVertical?.bookingModes?.length ?? 0) > 0 && (
                   <div className="space-y-4 pt-6 mt-6 border-t border-zinc-200">
                     <div>
-                      <label className="block text-sm font-bold text-zinc-700 mb-2">Lead Generation Mode</label>
-                      <p className="text-xs text-zinc-500 mb-4 font-medium">Choose how customers can contact you for your services.</p>
-                      
+                      <label className="block text-sm font-bold text-zinc-700 mb-2">How do customers book you?</label>
+                      <p className="text-xs text-zinc-500 mb-4 font-medium">Choose how customers reach you for your services.</p>
+
                       <div className="space-y-3">
-                        <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${form.connectionMode === 'DIRECT' ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-zinc-200 hover:bg-zinc-50'}`}>
-                          <input 
-                            type="radio" 
-                            name="connectionMode"
-                            value="DIRECT"
-                            checked={form.connectionMode === 'DIRECT'}
-                            onChange={(e) => updateForm('connectionMode', e.target.value)}
-                            className="mt-1 w-4 h-4 text-emerald-600 border-zinc-300 focus:ring-emerald-600"
-                          />
-                          <div>
-                            <span className="text-sm font-bold text-zinc-900 block">Direct Connect</span>
-                            <span className="text-xs font-medium text-zinc-500 block mt-0.5">Users can call or WhatsApp you instantly.</span>
-                          </div>
-                        </label>
-                        
-                        <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${form.connectionMode === 'REQUIRE_APPROVAL' ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-zinc-200 hover:bg-zinc-50'}`}>
-                          <input 
-                            type="radio" 
-                            name="connectionMode"
-                            value="REQUIRE_APPROVAL"
-                            checked={form.connectionMode === 'REQUIRE_APPROVAL'}
-                            onChange={(e) => updateForm('connectionMode', e.target.value)}
-                            className="mt-1 w-4 h-4 text-emerald-600 border-zinc-300 focus:ring-emerald-600"
-                          />
-                          <div>
-                            <span className="text-sm font-bold text-zinc-900 block">Require Approval (Recommended)</span>
-                            <span className="text-xs font-medium text-zinc-500 block mt-0.5">Users must send a booking request. Contact details remain hidden until you accept.</span>
-                          </div>
-                        </label>
+                        {selectedVertical.bookingModes.map((mode: string) => {
+                          const copy = BOOKING_MODE_LABELS[mode] || { title: mode, desc: '' };
+                          const isActive = form.bookingMode === mode;
+                          return (
+                            <label
+                              key={mode}
+                              className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${isActive ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-zinc-200 hover:bg-zinc-50'}`}
+                            >
+                              <input
+                                type="radio"
+                                name="bookingMode"
+                                value={mode}
+                                checked={isActive}
+                                onChange={() => {
+                                  updateForm('bookingMode', mode);
+                                  updateForm('connectionMode', bookingToConnection(mode));
+                                }}
+                                className="mt-1 w-4 h-4 text-emerald-600 border-zinc-300 focus:ring-emerald-600"
+                              />
+                              <div>
+                                <span className="text-sm font-bold text-zinc-900 block">{copy.title}</span>
+                                <span className="text-xs font-medium text-zinc-500 block mt-0.5">{copy.desc}</span>
+                              </div>
+                            </label>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -1174,13 +1205,12 @@ export default function VendorRegisterPage() {
         <div 
           className="relative w-full max-w-[350px] aspect-[9/19.5] max-h-[75vh] mx-auto overflow-hidden rounded-[40px] border-8 border-neutral-800 shadow-2xl bg-white flex flex-col"
         >
-          {/* Subtle Top Browser-like Header */}
-          <div className="h-8 bg-white/80 backdrop-blur border-b border-zinc-100 flex items-center justify-center px-4 relative z-50 shrink-0">
-             <div className="w-12 h-1.5 bg-zinc-200 rounded-full"></div>
-          </div>
-          
+          {/* Floating grabber pill — overlaid (not a flow row) so the storefront content
+              fills the whole frame and its top corners are clipped by the rounded bezel. */}
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-zinc-400/50 rounded-full z-50 pointer-events-none"></div>
+
           {/* Reactive Content Wrapper */}
-          <div className="flex-1 w-full h-full overflow-y-auto scrollbar-hide relative z-0">
+          <div className="flex-1 w-full min-h-0 overflow-y-auto scrollbar-hide relative z-0">
             {!form.businessType ? (
               <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-zinc-50">
                 <div className="w-20 h-20 rounded-3xl bg-emerald-50 flex items-center justify-center mb-6 shadow-sm border border-emerald-100">
