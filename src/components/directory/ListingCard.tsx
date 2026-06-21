@@ -1,4 +1,5 @@
-import { MapPin, Star, Phone } from 'lucide-react';
+import Link from 'next/link';
+import { MapPin, Star, Phone, BadgeCheck } from 'lucide-react';
 import { Listing, listingCtas, tierBadge, getCategoryByVertical } from '@/lib/directory';
 
 /**
@@ -70,6 +71,16 @@ export default function ListingCard({ listing }: { listing: Listing }) {
           ))
         )}
       </div>
+
+      {/* Claim affordance — unclaimed imported stubs only */}
+      {!listing.isClaimed && (
+        <Link
+          href={`/claim/${listing.id}?name=${encodeURIComponent(listing.businessName)}`}
+          className="flex items-center justify-center gap-1.5 border-t border-zinc-100 bg-zinc-50/60 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50"
+        >
+          <BadgeCheck className="h-3.5 w-3.5" /> Is this your business? Claim it
+        </Link>
+      )}
     </div>
   );
 }
