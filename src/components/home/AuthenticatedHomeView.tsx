@@ -310,7 +310,7 @@ export function AuthenticatedHomeView() {
                   className="bg-transparent border-none outline-none font-bold text-xs sm:text-sm text-zinc-800 w-full cursor-pointer appearance-none"
                 >
                   {cities.map((city) => (
-                    <option key={city.id} value={city.slug}>{city.name}</option>
+                    <option key={city.slug} value={city.slug}>{city.name}</option>
                   ))}
                 </select>
               </div>
