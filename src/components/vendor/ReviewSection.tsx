@@ -28,21 +28,57 @@ interface Review {
 }
 
 interface ReviewSectionProps {
-  vendorId: string;
-  ratingAvg: number;
-  reviewCount: number;
-  reviews: Review[];
+  vendorId: string;        // BusinessProfile id (API param is named vendorId for legacy reasons)
+  ratingAvg?: number;      // aggregate from BusinessProfile.rating; falls back to computed avg
 }
 
-export function ReviewSection({ vendorId, ratingAvg, reviewCount, reviews }: ReviewSectionProps) {
+// Backend GET /reviews/vendor/:id returns { id, rating, comment, createdAt, customer:{ name, customerName } }.
+// Normalise it to the shape this component renders.
+function mapReview(r: any): Review {
+  return {
+    id: r.id,
+    rating: r.rating ?? 0,
+    content: r.comment ?? r.content ?? '',
+    authorName: r.customer?.customerName || r.customer?.name || r.authorName || 'A customer',
+    createdAt: r.createdAt,
+  };
+}
+
+export function ReviewSection({ vendorId, ratingAvg }: ReviewSectionProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [isEligible, setIsEligible] = useState(false);
   const [checkingEligibility, setCheckingEligibility] = useState(true);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
+
+  // The review list (public — no auth required).
+  const loadReviews = async () => {
+    try {
+      const res = await apiClient.get(`/reviews/vendor/${vendorId}`);
+      const list = res.data?.data ?? res.data ?? [];
+      setReviews(Array.isArray(list) ? list.map(mapReview) : []);
+    } catch {
+      setReviews([]);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  useEffect(() => {
+    setLoadingReviews(true);
+    loadReviews();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendorId]);
+
+  // Review count + average derive from the fetched list (avg falls back to the prop).
+  const reviewCount = reviews.length;
+  const computedAvg = reviewCount > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / reviewCount : 0;
+  const displayAvg = ratingAvg && ratingAvg > 0 ? ratingAvg : computedAvg;
 
   useEffect(() => {
     const checkEligibility = async () => {
@@ -87,9 +123,16 @@ export function ReviewSection({ vendorId, ratingAvg, reviewCount, reviews }: Rev
       setIsOpen(false);
       setRating(0);
       setContent('');
-      // Ideally, the parent would refetch or append the new review here
+      await loadReviews(); // reflect the new review immediately
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to submit review.');
+      // 403 = backend gate (no COMPLETED order); show its message and lock the form.
+      if (error.response?.status === 403) {
+        setIsEligible(false);
+        setIsOpen(false);
+        toast.error(error.response?.data?.message || 'You can only review businesses you have ordered from.');
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to submit review.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -103,9 +146,9 @@ export function ReviewSection({ vendorId, ratingAvg, reviewCount, reviews }: Rev
           <div className="flex items-center gap-2 mt-1">
             <div className="flex items-center text-yellow-500">
               <Star className="w-5 h-5 fill-current" />
-              <span className="ml-1 font-bold text-lg">{ratingAvg.toFixed(1)}</span>
+              <span className="ml-1 font-bold text-lg">{displayAvg.toFixed(1)}</span>
             </div>
-            <span className="text-muted-foreground text-sm">({reviewCount} reviews)</span>
+            <span className="text-muted-foreground text-sm">({reviewCount} {reviewCount === 1 ? 'review' : 'reviews'})</span>
           </div>
         </div>
 
@@ -166,7 +209,13 @@ export function ReviewSection({ vendorId, ratingAvg, reviewCount, reviews }: Rev
       </div>
 
       <div className="space-y-4">
-        {reviews.length === 0 ? (
+        {loadingReviews ? (
+          <div className="space-y-3">
+            {[0, 1].map((i) => (
+              <div key={i} className="h-20 animate-pulse rounded-xl bg-muted/30" />
+            ))}
+          </div>
+        ) : reviews.length === 0 ? (
           <p className="text-muted-foreground text-sm text-center py-4 bg-muted/30 rounded-xl">
             No reviews yet. Be the first to review!
           </p>

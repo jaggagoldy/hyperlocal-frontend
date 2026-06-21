@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { notFound } from 'next/navigation';
 import { getTemplateComponent, TEMPLATE_METADATA } from '@/lib/templateRegistry';
+import { ReviewSection } from '@/components/vendor/ReviewSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,8 +18,9 @@ async function getBusinessBySlug(slug: string) {
   }
 }
 
-export default async function StorefrontPage({ params }: { params: { slug: string } }) {
-  const business = await getBusinessBySlug(params.slug);
+export default async function StorefrontPage({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
+  const { slug } = await params;
+  const business = await getBusinessBySlug(slug);
   
   if (!business) {
     notFound();
@@ -32,11 +34,18 @@ export default async function StorefrontPage({ params }: { params: { slug: strin
 
   // Retrieve the registered component for this template
   const StorefrontTemplate = getTemplateComponent(templateId, archetype);
-  const theme = TEMPLATE_METADATA.find(t => t.id === templateId) || TEMPLATE_METADATA[0];
+  // TEMPLATE_METADATA entries carry a lucide `icon` (a React component), which cannot be
+  // serialized across the Server→Client boundary. Strip it; templates only read serializable fields.
+  const { icon: _icon, ...theme } = TEMPLATE_METADATA.find(t => t.id === templateId) || TEMPLATE_METADATA[0];
 
   return (
     <div className="min-h-screen bg-zinc-50">
       <StorefrontTemplate business={business} theme={theme} />
+      {business.id && (
+        <div className="mx-auto max-w-3xl px-4 pb-12 sm:px-6">
+          <ReviewSection vendorId={business.id} ratingAvg={business.rating || 0} />
+        </div>
+      )}
     </div>
   );
 }

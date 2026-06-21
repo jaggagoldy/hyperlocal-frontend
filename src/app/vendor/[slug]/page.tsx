@@ -174,11 +174,9 @@ export default function VendorProfilePage() {
 
         {/* Reviews */}
         {business.businessType !== 'CAB_TRANSPORT' && (
-          <ReviewSection 
+          <ReviewSection
             vendorId={business.id}
             ratingAvg={business.rating || 0}
-            reviewCount={business.reviews?.length || 0}
-            reviews={business.reviews || []}
           />
         )}
       </main>
