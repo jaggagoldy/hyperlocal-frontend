@@ -1077,7 +1077,7 @@ export default function FoodPage() {
                     const isSelected = selectedCity === city.slug;
                     return (
                       <button
-                        key={city.id}
+                        key={city.slug}
                         onClick={() => {
                           setCity(city.slug);
                           setIsLocationModalOpen(false);
