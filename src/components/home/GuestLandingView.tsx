@@ -154,7 +154,7 @@ export function GuestLandingView() {
                 <h2 className="text-3xl font-black text-slate-900">Explore Services</h2>
                 <p className="text-slate-500 font-medium">Find exactly what you need in your neighborhood.</p>
               </div>
-              <Button variant="ghost" className="hidden sm:flex font-bold text-blue-600 hover:text-blue-700" onClick={() => router.push('/explore')}>
+              <Button variant="ghost" className="hidden sm:flex font-bold text-blue-600 hover:text-blue-700" onClick={() => router.push('/directory')}>
                 View All Categories <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
@@ -163,7 +163,7 @@ export function GuestLandingView() {
               {featuredCategories.map((cat) => (
                 <div 
                   key={cat.id}
-                  onClick={() => router.push('/explore')}
+                  onClick={() => router.push('/directory')}
                   className="bg-white border border-slate-200 rounded-2xl p-6 cursor-pointer hover:shadow-lg hover:border-blue-200 transition-all flex flex-col items-center text-center space-y-4 group"
                 >
                   <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-700 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
@@ -174,7 +174,7 @@ export function GuestLandingView() {
               ))}
             </div>
             
-            <Button variant="ghost" className="w-full mt-6 sm:hidden font-bold text-blue-600" onClick={() => router.push('/explore')}>
+            <Button variant="ghost" className="w-full mt-6 sm:hidden font-bold text-blue-600" onClick={() => router.push('/directory')}>
               View All Categories <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
