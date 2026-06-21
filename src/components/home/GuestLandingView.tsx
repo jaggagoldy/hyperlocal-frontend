@@ -1,319 +1,313 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import apiClient from '@/lib/api-client';
-import { 
-  Search, 
-  ShieldCheck, 
-  CheckCircle2,
-  Building,
-  Car,
-  Scissors,
-  Wrench,
-  ChevronRight,
-  MapPin,
-  ArrowRight,
-  Shield,
-  Zap,
-  Phone,
-  Check
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { AuthModal } from '@/components/shared/AuthModal';
+import Link from 'next/link';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Search,
+  MapPin,
+  Store,
+  Smartphone,
+  Download,
+  ArrowRight,
+  UtensilsCrossed,
+  Scissors,
+  Stethoscope,
+  Wrench,
+  ShieldCheck,
+  Zap,
+  X,
+} from 'lucide-react';
+import {
+  DIRECTORY_CATEGORIES,
+  fetchRegions,
+  fetchDirectoryListings,
+  type RegionState,
+  type Listing,
+} from '@/lib/directory';
+import ListingCard from '@/components/directory/ListingCard';
+
+const DISTRICT_KEY = 'nbb-district';
+const DEFAULT_DISTRICT = 'hisar';
+
+// Intent shortcuts → tap straight into a district×category spoke.
+const INTENTS = [
+  { label: 'Order Food', cat: 'food-beverage', icon: UtensilsCrossed, cls: 'bg-orange-50 text-orange-700 ring-orange-100' },
+  { label: 'Book a Salon', cat: 'salon-beauty', icon: Scissors, cls: 'bg-violet-50 text-violet-700 ring-violet-100' },
+  { label: 'Find a Doctor', cat: 'health-medical', icon: Stethoscope, cls: 'bg-sky-50 text-sky-700 ring-sky-100' },
+  { label: 'Home Repair', cat: 'home-repair', icon: Wrench, cls: 'bg-amber-50 text-amber-700 ring-amber-100' },
+];
+
+// Minimal shape of the beforeinstallprompt event (not in lib.dom yet).
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
 
 export function GuestLandingView() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [featuredProviders, setFeaturedProviders] = useState<any[]>([]);
-  const [loadingProviders, setLoadingProviders] = useState(true);
+  const [states, setStates] = useState<RegionState[]>([]);
+  const [districtSlug, setDistrictSlug] = useState(DEFAULT_DISTRICT);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loadingListings, setLoadingListings] = useState(true);
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [installDismissed, setInstallDismissed] = useState(true);
+
+  const allDistricts = states.flatMap((s) => s.districts);
+  const district = allDistricts.find((d) => d.slug === districtSlug);
+  const districtName = district?.name || 'your area';
+
+  // Restore the saved district before fetching regions so the picker doesn't flicker.
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem(DISTRICT_KEY) : null;
+    if (saved) setDistrictSlug(saved);
+  }, []);
+
+  // Load the PB+HR region registry once.
+  useEffect(() => {
+    fetchRegions().then((s) => {
+      setStates(s);
+      // If the saved/default district isn't valid, fall back to the first available.
+      const flat = s.flatMap((x) => x.districts);
+      setDistrictSlug((cur) => (flat.some((d) => d.slug === cur) ? cur : flat[0]?.slug || DEFAULT_DISTRICT));
+    });
+  }, []);
+
+  // Fetch nearby/featured listings for the chosen district (directory scope = all verticals).
+  const loadListings = useCallback((slug: string) => {
+    setLoadingListings(true);
+    fetchDirectoryListings(slug, 'any', { limit: 8 })
+      .then(({ listings }) => setListings(listings))
+      .catch(() => setListings([]))
+      .finally(() => setLoadingListings(false));
+  }, []);
 
   useEffect(() => {
-    const fetchProviders = async () => {
-      try {
-        const response = await apiClient.get('/search/explore/any/any?limit=4');
-        const data = response.data?.data || response.data;
-        if (data.data) {
-          setFeaturedProviders(data.data.slice(0, 4));
-        } else {
-          setFeaturedProviders(data.slice(0, 4));
-        }
-      } catch (error) {
-        console.error('Failed to fetch featured providers:', error);
-      } finally {
-        setLoadingProviders(false);
-      }
+    loadListings(districtSlug);
+  }, [districtSlug, loadListings]);
+
+  // PWA install affordance — capture the deferred prompt; hide if already installed.
+  useEffect(() => {
+    const onPrompt = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e as BeforeInstallPromptEvent);
+      setInstallDismissed(sessionStorage.getItem('nbb-install-dismissed') === '1');
     };
-    fetchProviders();
+    window.addEventListener('beforeinstallprompt', onPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', onPrompt);
   }, []);
+
+  const onDistrictChange = (slug: string) => {
+    setDistrictSlug(slug);
+    if (typeof window !== 'undefined') localStorage.setItem(DISTRICT_KEY, slug);
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/explore?q=${encodeURIComponent(searchQuery)}`);
-    } else {
-      router.push('/explore');
-    }
+    const base = `/explore?district=${districtSlug}`;
+    router.push(searchQuery.trim() ? `${base}&q=${encodeURIComponent(searchQuery.trim())}` : base);
   };
 
-  const featuredCategories = [
-    { id: 'electrician', name: 'Electricians & Plumbers', icon: Wrench },
-    { id: 'car-rental', name: 'Car Rentals', icon: Car },
-    { id: 'salon-booking', name: 'Salon & Beauty', icon: Scissors },
-    { id: 'real-estate', name: 'Real Estate Agents', icon: Building }
-  ];
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+  };
 
-  const steps = [
-    { title: 'Search Local Pros', desc: 'Find trusted professionals in your area.', icon: Search },
-    { title: 'Compare Profiles', desc: 'Check reviews and verified IDs.', icon: ShieldCheck },
-    { title: 'Connect directly', desc: 'Chat instantly via WhatsApp. Zero fees.', icon: Phone }
-  ];
+  const dismissInstall = () => {
+    setInstallDismissed(true);
+    sessionStorage.setItem('nbb-install-dismissed', '1');
+  };
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-blue-500/30">
-      
-      <main>
-        {/* ─── HERO SECTION (Clean & Corporate) ─── */}
-        <section className="bg-slate-50 border-b border-slate-200">
-          <div className="max-w-6xl mx-auto px-6 pt-12 pb-20 lg:pt-16 lg:pb-32 flex flex-col items-center text-center space-y-8">
-            <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-700 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide">
-              <Shield className="w-4 h-4" /> 100% Govt. ID Verified Pros
-            </div>
-            
-            <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight max-w-4xl leading-tight">
-              The smartest way to hire <span className="text-blue-600">local professionals.</span>
-            </h1>
-            
-            <p className="text-lg text-slate-600 font-medium max-w-2xl">
-              Connect directly with verified experts in your city. <span className="font-bold text-slate-900">₹0 Brokerage & 0% Commission.</span> Keep 100% of your peace of mind.
-            </p>
-
-            <form onSubmit={handleSearchSubmit} className="w-full max-w-2xl mt-8 flex flex-col sm:flex-row gap-3 bg-white p-3 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100">
-              <div className="flex-1 flex items-center px-4">
-                <Search className="w-5 h-5 text-slate-400 mr-3" />
-                <input 
-                  type="text"
-                  placeholder="What service do you need?"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-12 outline-none text-slate-900 font-medium placeholder-slate-400 bg-transparent"
-                />
-              </div>
-              <Button type="submit" className="h-12 px-8 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-500/20">
-                Search
-              </Button>
-            </form>
-
-            <div className="flex flex-wrap justify-center gap-6 mt-8 pt-4">
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-600">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> ₹0 Brokerage
-              </div>
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-600">
-                <Zap className="w-4 h-4 text-amber-500" /> Instant WhatsApp Connect
-              </div>
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-600">
-                <ShieldCheck className="w-4 h-4 text-blue-500" /> Secure & Verified
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ─── HOW IT WORKS (Consumers) ─── */}
-        <section className="py-24 bg-white">
-          <div className="max-w-6xl mx-auto px-6">
-            <div className="text-center space-y-4 mb-16">
-              <h2 className="text-3xl font-black text-slate-900">How NearBy Bazar Works</h2>
-              <p className="text-slate-500 font-medium">Three simple steps to get your job done right.</p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-12 text-center">
-              {steps.map((step, idx) => (
-                <div key={idx} className="space-y-4 flex flex-col items-center">
-                  <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 border border-blue-100 shadow-sm">
-                    <step.icon className="w-8 h-8" />
-                  </div>
-                  <h3 className="text-xl font-extrabold text-slate-900">{step.title}</h3>
-                  <p className="text-slate-500 font-medium max-w-xs">{step.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ─── FEATURED CATEGORIES ─── */}
-        <section className="py-24 bg-slate-50 border-y border-slate-200">
-          <div className="max-w-6xl mx-auto px-6">
-            <div className="flex justify-between items-end mb-12">
-              <div className="space-y-2">
-                <h2 className="text-3xl font-black text-slate-900">Explore Services</h2>
-                <p className="text-slate-500 font-medium">Find exactly what you need in your neighborhood.</p>
-              </div>
-              <Button variant="ghost" className="hidden sm:flex font-bold text-blue-600 hover:text-blue-700" onClick={() => router.push('/directory')}>
-                View All Categories <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-              {featuredCategories.map((cat) => (
-                <div 
-                  key={cat.id}
-                  onClick={() => router.push('/directory')}
-                  className="bg-white border border-slate-200 rounded-2xl p-6 cursor-pointer hover:shadow-lg hover:border-blue-200 transition-all flex flex-col items-center text-center space-y-4 group"
-                >
-                  <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-700 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-                    <cat.icon className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">{cat.name}</h3>
-                </div>
-              ))}
-            </div>
-            
-            <Button variant="ghost" className="w-full mt-6 sm:hidden font-bold text-blue-600" onClick={() => router.push('/directory')}>
-              View All Categories <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
-        </section>
-
-        {/* ─── FEATURED PROVIDERS ─── */}
-        <section className="py-24 bg-white border-y border-slate-200">
-          <div className="max-w-6xl mx-auto px-6">
-            <div className="flex justify-between items-end mb-12">
-              <div className="space-y-2">
-                <h2 className="text-3xl font-black text-slate-900">Featured Local Pros</h2>
-                <p className="text-slate-500 font-medium">Top-rated professionals currently serving your area.</p>
-              </div>
-              <Button variant="ghost" className="hidden sm:flex font-bold text-blue-600 hover:text-blue-700" onClick={() => router.push('/explore')}>
-                View All Pros <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-
-            {loadingProviders ? (
-              <div className="flex justify-center p-8">
-                <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
-              </div>
-            ) : featuredProviders.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {featuredProviders.map((provider) => (
-                  <div key={provider.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:border-blue-200 transition-all flex flex-col">
-                    <div className="p-5 border-b border-slate-100 flex-1">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-xl font-bold text-blue-600">
-                          {provider.businessName.charAt(0).toUpperCase()}
-                        </div>
-                        {provider.idVerified && (
-                          <div className="bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1">
-                            <ShieldCheck className="w-3 h-3" /> Verified
-                          </div>
-                        )}
-                      </div>
-                      <h3 className="font-extrabold text-lg text-slate-900 line-clamp-1">{provider.businessName}</h3>
-                      <div className="text-sm font-medium text-slate-500 mt-1 flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5" />
-                        <span className="line-clamp-1">{provider.localityName || provider.city?.name || 'Local'}</span>
-                      </div>
-                    </div>
-                    <div className="p-4 bg-slate-50">
-                      <Button 
-                        onClick={() => router.push('/login')}
-                        variant="outline" 
-                        className="w-full h-10 border-slate-300 text-slate-700 font-bold bg-white hover:bg-slate-100 hover:text-slate-900"
-                      >
-                        <Phone className="w-4 h-4 mr-2 text-slate-400" />
-                        View Contact Details
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center p-8 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500 font-medium">
-                No featured professionals found at the moment.
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ─── THE VENDOR ADVANTAGE ─── */}
-        <section className="py-24 bg-white">
-          <div className="max-w-6xl mx-auto px-6 flex flex-col lg:flex-row items-center gap-16">
-            <div className="flex-1 space-y-8">
-              <div className="inline-flex items-center gap-2 bg-[#25D366]/10 text-[#25D366] px-4 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase">
-                For Service Providers
-              </div>
-              <h2 className="text-3xl md:text-5xl font-black text-slate-900 leading-tight">
-                Grow your business with zero commission.
-              </h2>
-              <div className="space-y-4">
-                {[
-                  'Keep 100% of your earnings. No hidden fees.',
-                  'Get direct leads straight to your WhatsApp.',
-                  'Free professional digital catalog and booking dashboard.',
-                  'Build trust with verified badges and authentic reviews.'
-                ].map((benefit, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    </div>
-                    <span className="text-slate-600 font-medium">{benefit}</span>
-                  </div>
-                ))}
-              </div>
-              <Button 
-                onClick={() => router.push('/vendor/register')}
-                className="h-12 px-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-base shadow-lg"
+    <div className="min-h-screen bg-zinc-50 text-foreground">
+      {/* ─── HERO: district bar + search ─── */}
+      <section className="bg-gradient-to-b from-emerald-600 to-emerald-700 text-white">
+        <div className="mx-auto max-w-5xl px-4 pb-10 pt-8 sm:pt-12">
+          {/* District bar */}
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur ring-1 ring-white/25">
+              <MapPin className="h-4 w-4 shrink-0 text-white" />
+              <select
+                value={districtSlug}
+                onChange={(e) => onDistrictChange(e.target.value)}
+                className="bg-transparent text-sm font-bold text-white outline-none [&>optgroup]:text-zinc-900 [&>option]:text-zinc-900"
+                aria-label="Choose your district"
               >
-                Join as a Pro Today
-              </Button>
+                {states.length === 0 && <option value={districtSlug}>{districtName}</option>}
+                {states.map((s) => (
+                  <optgroup key={s.name} label={s.name}>
+                    {s.districts.map((d) => (
+                      <option key={d.slug} value={d.slug}>{d.name}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <h1 className="mt-6 max-w-2xl text-3xl font-black leading-tight tracking-tight sm:text-4xl">
+            Everything local in {districtName}, <span className="text-emerald-100">one tap away.</span>
+          </h1>
+          <p className="mt-2 max-w-xl text-sm font-medium text-emerald-50/90 sm:text-base">
+            Discover, call, book or order from trusted businesses near you — restaurants, salons, doctors, repairs &amp; more.
+          </p>
+
+          {/* Search */}
+          <form onSubmit={handleSearchSubmit} className="mt-5 flex max-w-2xl items-center gap-2 rounded-2xl bg-white p-2 shadow-xl shadow-emerald-900/20">
+            <div className="flex flex-1 items-center pl-3">
+              <Search className="mr-2 h-5 w-5 shrink-0 text-zinc-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search businesses, services, owners…"
+                className="h-10 w-full bg-transparent text-sm font-medium text-zinc-900 placeholder-zinc-400 outline-none"
+              />
             </div>
-            <div className="flex-1 w-full bg-slate-100 rounded-3xl p-8 lg:p-12 border border-slate-200 shadow-inner flex items-center justify-center min-h-[400px]">
-              {/* Abstract Representation of Vendor Dashboard */}
-              <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-                <div className="bg-slate-900 p-4 flex items-center justify-between">
-                  <div className="font-black text-white text-lg">Vendor OS</div>
-                  <div className="flex gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
-                  </div>
-                </div>
-                <div className="p-6 space-y-4">
-                  <div className="h-8 w-1/2 bg-slate-100 rounded-md" />
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="h-20 bg-slate-100 rounded-xl" />
-                    <div className="h-20 bg-slate-100 rounded-xl" />
-                  </div>
-                  <div className="h-12 bg-[#25D366]/10 rounded-xl border border-[#25D366]/20 flex items-center px-4 gap-3">
-                    <Phone className="w-5 h-5 text-[#25D366]" />
-                    <div className="h-3 w-1/2 bg-[#25D366]/30 rounded" />
-                  </div>
-                </div>
-              </div>
+            <button type="submit" className="h-10 shrink-0 rounded-xl bg-emerald-600 px-5 text-sm font-bold text-white shadow-sm shadow-emerald-700/30 transition-colors hover:bg-emerald-700">
+              Search
+            </button>
+          </form>
+
+          {/* Trust strip */}
+          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-bold text-emerald-50">
+            <span className="inline-flex items-center gap-1.5"><Zap className="h-3.5 w-3.5" /> Instant WhatsApp connect</span>
+            <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5" /> Verified local businesses</span>
+            <span className="inline-flex items-center gap-1.5">₹0 commission</span>
+          </div>
+        </div>
+      </section>
+
+      <div className="mx-auto max-w-5xl px-4">
+        {/* ─── INTENT SHORTCUTS ─── */}
+        <section className="-mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {INTENTS.map((i) => (
+            <Link
+              key={i.label}
+              href={`/${districtSlug}/${i.cat}`}
+              className="flex items-center gap-2.5 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ${i.cls}`}>
+                <i.icon className="h-5 w-5" />
+              </span>
+              <span className="text-sm font-extrabold leading-tight text-zinc-900">{i.label}</span>
+            </Link>
+          ))}
+        </section>
+
+        {/* ─── 16-CATEGORY GRID ─── */}
+        <section className="mt-9">
+          <div className="flex items-end justify-between">
+            <div>
+              <h2 className="text-lg font-black text-zinc-900">Browse categories</h2>
+              <p className="text-sm font-medium text-zinc-500">Explore {districtName} across 16 verticals.</p>
             </div>
+            <Link href={`/directory?district=${districtSlug}`} className="hidden shrink-0 items-center gap-1 text-sm font-bold text-emerald-700 hover:text-emerald-800 sm:flex">
+              All <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {DIRECTORY_CATEGORIES.map((c) => (
+              <Link
+                key={c.slug}
+                href={`/${districtSlug}/${c.slug}`}
+                className="group flex flex-col gap-1.5 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"
+              >
+                <span className="text-3xl">{c.icon}</span>
+                <span className="font-extrabold leading-tight text-zinc-900">{c.label}</span>
+                <span className="line-clamp-2 text-xs font-medium text-zinc-500">{c.blurb}</span>
+              </Link>
+            ))}
           </div>
         </section>
 
-        {/* ─── FOOTER CTA ─── */}
-        <section className="py-24 bg-blue-600">
-          <div className="max-w-4xl mx-auto px-6 text-center space-y-8">
-            <h2 className="text-4xl md:text-5xl font-black text-white">Ready to simplify your life?</h2>
-            <p className="text-blue-100 font-medium text-lg max-w-2xl mx-auto">
-              Join thousands of locals who trust NearBy Bazar to find the best professionals in the city.
-            </p>
-            <Button 
-              onClick={() => router.push('/login')}
-              className="h-14 px-10 rounded-xl bg-white text-blue-600 hover:bg-slate-50 font-black text-lg shadow-xl shadow-blue-900/20"
-            >
-              Get Started for Free
-            </Button>
+        {/* ─── NEARBY / FEATURED LISTINGS ─── */}
+        <section className="mt-10">
+          <div className="flex items-end justify-between">
+            <h2 className="text-lg font-black text-zinc-900">Popular in {districtName}</h2>
+            <Link href={`/directory?district=${districtSlug}`} className="shrink-0 text-sm font-bold text-emerald-700 hover:text-emerald-800">
+              See all
+            </Link>
+          </div>
+
+          {loadingListings ? (
+            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-40 animate-pulse rounded-2xl border border-zinc-200 bg-white" />
+              ))}
+            </div>
+          ) : listings.length > 0 ? (
+            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {listings.map((l) => (
+                <ListingCard key={l.id} listing={l} />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-3 rounded-2xl border-2 border-dashed border-zinc-200 bg-white p-8 text-center text-sm font-medium text-zinc-500">
+              No listings in {districtName} yet — try another district, or{' '}
+              <Link href="/vendor/register" className="font-bold text-emerald-700 hover:underline">list your business</Link>.
+            </div>
+          )}
+        </section>
+
+        {/* ─── DUAL VALUE STRIP ─── */}
+        <section className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Link href="/vendor/register" className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 transition-colors hover:bg-emerald-100/70">
+            <Store className="h-8 w-8 shrink-0 text-emerald-700" />
+            <div>
+              <p className="font-extrabold text-emerald-900">List your business — free</p>
+              <p className="text-xs font-medium text-emerald-700/80">Get discovered by customers nearby in minutes.</p>
+            </div>
+          </Link>
+          <Link href="/vendor/register" className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4 transition-colors hover:bg-zinc-50">
+            <Smartphone className="h-8 w-8 shrink-0 text-violet-600" />
+            <div>
+              <p className="font-extrabold text-zinc-900">Get your own ordering app</p>
+              <p className="text-xs font-medium text-zinc-500">Upgrade your listing into a storefront &amp; PWA.</p>
+            </div>
+          </Link>
+        </section>
+
+        {/* ─── SEO FOOTER: district × category links ─── */}
+        <section className="mt-12 border-t border-zinc-200 py-8">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-400">Popular searches in {districtName}</h2>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {DIRECTORY_CATEGORIES.map((c) => (
+              <Link
+                key={c.slug}
+                href={`/${districtSlug}/${c.slug}`}
+                className="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 transition-colors hover:border-emerald-300 hover:text-emerald-700"
+              >
+                {c.label} in {districtName}
+              </Link>
+            ))}
           </div>
         </section>
-      </main>
+      </div>
+
+      {/* ─── PWA INSTALL PROMPT (bottom sheet) ─── */}
+      {installPrompt && !installDismissed && (
+        <div className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-md p-3 sm:bottom-4">
+          <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-white p-3 shadow-2xl shadow-emerald-900/20">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+              <Download className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-extrabold text-zinc-900">Install NearByBazar</p>
+              <p className="truncate text-xs font-medium text-zinc-500">Add to your home screen for one-tap access.</p>
+            </div>
+            <button onClick={handleInstall} className="shrink-0 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-700">
+              Install
+            </button>
+            <button onClick={dismissInstall} aria-label="Dismiss" className="shrink-0 rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
