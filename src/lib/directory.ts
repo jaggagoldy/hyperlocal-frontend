@@ -158,3 +158,29 @@ export const tierBadge = (tier: ListingTier | null): { label: string; cls: strin
       return { label: 'Directory', cls: 'bg-zinc-100 text-zinc-600 border-zinc-200' };
   }
 };
+
+// ---- Tier upgrade paths (mirrors verticals.js upgradeableTo) --------------
+// Which higher tiers a vendor can activate for a given vertical — the "Activate
+// your storefront / your own app" upsell (Phase F5).
+export const UPGRADE_PATHS: Record<string, ListingTier[]> = {
+  RETAIL: ['COMMERCE'],
+  HEALTH_MEDICAL: ['BOOKABLE'],
+  HOME_ESSENTIALS: ['BOOKABLE'],
+  EDUCATION: ['BOOKABLE'],
+  HOTELS: ['BOOKABLE'],
+  EVENTS: ['BOOKABLE'],
+  PERSONAL_SERVICES: ['BOOKABLE'],
+};
+
+/** Upgrade tiers available for a business given its vertical + current tier. */
+export function getUpgradeOptions(vertical: string, current: ListingTier | null): ListingTier[] {
+  const paths = UPGRADE_PATHS[vertical] || [];
+  return paths.filter((t) => t !== current);
+}
+
+/** Marketing copy for the upsell button per target tier. */
+export function tierUpsellCopy(tier: ListingTier): { title: string; cta: string } {
+  if (tier === 'COMMERCE') return { title: 'Launch your own ordering app', cta: 'Activate your app' };
+  if (tier === 'BOOKABLE') return { title: 'Take online bookings', cta: 'Enable bookings' };
+  return { title: 'Get listed', cta: 'Activate' };
+}

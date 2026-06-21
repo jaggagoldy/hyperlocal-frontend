@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/authStore';
 import { Store, Car, Home, Scissors, Plus, ChevronRight, MapPin, Star, AlertCircle, Briefcase, Stethoscope, Plane, Heart, Dumbbell, GraduationCap, Truck, Wrench, Key, Banknote, Bed, Building, Utensils } from 'lucide-react';
+import TierUpsell from '@/components/vendor-dashboard/TierUpsell';
+import type { ListingTier } from '@/lib/directory';
 
 const IconMap: Record<string, any> = { Utensils, Car, Scissors, Home, Briefcase, Stethoscope, Plane, Heart, Dumbbell, GraduationCap, Truck, Wrench, Key, Banknote, Bed, Building, Store };
 
@@ -14,6 +16,7 @@ interface BusinessProfile {
   businessType: string;
   status: string;
   rating: number;
+  listingTier: ListingTier | null;
   city: { name: string } | null;
   localityName: string | null;
   categories: { category: { name: string, icon: string } }[];
@@ -127,6 +130,18 @@ export default function GlobalHubPage() {
                 )}
               </div>
               
+              {/* Tier badge + "Activate" upsell (Phase F5) */}
+              <div className="px-6 pb-4" onClick={(e) => e.stopPropagation()}>
+                <TierUpsell
+                  businessId={business.id}
+                  businessType={business.businessType}
+                  listingTier={business.listingTier ?? null}
+                  onUpgraded={(tier) =>
+                    setBusinesses((prev) => prev.map((b) => (b.id === business.id ? { ...b, listingTier: tier } : b)))
+                  }
+                />
+              </div>
+
               <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between group">
                 <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300">Open Workspace</span>
                 <ChevronRight className="w-5 h-5 text-indigo-500 group-hover:translate-x-1 transition-transform" />
