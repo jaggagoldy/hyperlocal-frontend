@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import PwaManifestInjector from '@/components/PwaManifestInjector';
+import PwaUpdatePrompt from '@/components/PwaUpdatePrompt';
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -53,6 +54,7 @@ export default function RootLayout({
             <Footer />
           </AuthGuard>
           <Toaster position="top-center" />
+          <PwaUpdatePrompt />
           <ErrorDiagnosticsModal />
         </GoogleAuthProvider>
       </body>
