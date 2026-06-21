@@ -21,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import DishModal from '@/components/vendor/DishModal';
 import { VendorTutorialModal } from '@/components/vendor-dashboard/VendorTutorialModal';
+import GrowthAnalytics from '@/components/vendor-dashboard/GrowthAnalytics';
 import {
   Drawer,
   DrawerClose,
@@ -104,6 +105,8 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
   // Vendor Profile & Stats
   const [vendor, setVendor] = useState<any>(null);
   const [analytics, setAnalytics] = useState<any>(null);
+  const [completeness, setCompleteness] = useState<any>(null);
+  const [funnel, setFunnel] = useState<any>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
@@ -209,6 +212,8 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
 
       setVendor(profileData.business);
       setAnalytics(profileData.analytics);
+      setCompleteness(profileData.completeness || null);
+      setFunnel(profileData.funnel || null);
       setLeads(profileData.leads || []);
       
       try {
@@ -630,7 +635,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
             </div>
             <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
               <p className="text-indigo-600/80 text-[10px] font-bold uppercase tracking-wider mb-1">Average Rating</p>
-              <p className="text-2xl font-black text-indigo-600">4.8 <span className="text-sm">★</span></p>
+              <p className="text-2xl font-black text-indigo-600">{(analytics?.rating || 0).toFixed(1)} <span className="text-sm">★</span></p>
             </div>
             <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
               <p className="text-emerald-600/80 text-[10px] font-bold uppercase tracking-wider mb-1">Total Revenue</p>
@@ -989,7 +994,22 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
                   </SelectContent>
                 </Select>
               </div>
-              
+
+              {/* Phase F5 — growth panel: completeness + 30-day activity + claim/upgrade funnel */}
+              {vendor?.id && (
+                <GrowthAnalytics
+                  completeness={completeness}
+                  funnel={funnel}
+                  businessId={vendor.id}
+                  businessType={vendor.businessType}
+                  last30Days={analytics?.last30Days}
+                  onUpgraded={(tier) => {
+                    setVendor((prev: any) => prev ? { ...prev, listingTier: tier } : prev);
+                    setFunnel((prev: any) => prev ? { ...prev, listingTier: tier } : prev);
+                  }}
+                />
+              )}
+
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm">
                   <div className="flex items-center gap-2 text-indigo-600 mb-2">
@@ -998,7 +1018,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
                   </div>
                   <p className="text-3xl font-black text-zinc-900">{analytics?.profileViews || 0}</p>
                   <p className="text-xs text-emerald-600 font-bold mt-2 flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" /> +12% this week
+                    <TrendingUp className="w-3 h-3" /> {analytics?.last30Days?.profileViews ?? 0} in last 30 days
                   </p>
                 </div>
 
@@ -1009,7 +1029,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
                   </div>
                   <p className="text-3xl font-black text-zinc-900">{analytics?.whatsappClicks || 0}</p>
                   <p className="text-xs text-emerald-600 font-bold mt-2 flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" /> +5% this week
+                    <TrendingUp className="w-3 h-3" /> {analytics?.last30Days?.whatsappClicks ?? 0} in last 30 days
                   </p>
                 </div>
 
@@ -1020,7 +1040,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
                   </div>
                   <p className="text-3xl font-black text-zinc-900">{analytics?.callClicks || 0}</p>
                   <p className="text-xs text-zinc-500 font-bold mt-2 flex items-center gap-1">
-                    Steady this week
+                    {analytics?.last30Days?.callClicks ?? 0} in last 30 days
                   </p>
                 </div>
 

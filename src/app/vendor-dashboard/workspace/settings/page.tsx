@@ -132,7 +132,7 @@ export default function WorkspaceSettingsPage() {
 
   // Derive the storefront URL - MUST match the /[slug] Next.js route!
   const storePath = `/${business.slug || business.id}`;
-  const storeUrl = `https://nearbybazar.com${storePath}`; // In dev, we can display this visually but it's mock
+  const storeUrl = `https://nearbybazar.in${storePath}`; // canonical consumer origin (matches NEXT_PUBLIC_SITE_URL)
   // For actual QR code, we'll use the window.location.origin
   const localStoreUrl = typeof window !== 'undefined' ? `${window.location.origin}${storePath}` : storeUrl;
 
