@@ -11,8 +11,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  /* Purple theme matching prototype */
-  --primary: #6a44fc;
+  /* NearByBazar brand — emerald (matches the Phase F directory/hub/storefront UI) */
+  --primary: #059669; /* emerald-600 */
   --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -24,7 +24,7 @@
   --destructive-foreground: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.5 0.1 200);
+  --ring: #10b981; /* emerald-500 focus ring */
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -48,8 +48,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.145 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: #8a6efd; /* lighter purple for dark mode */
-  --primary-foreground: #ffffff;
+  --primary: #34d399; /* emerald-400 — lighter for dark mode contrast */
+  --primary-foreground: #052e16; /* emerald-950 for text on the lighter brand */
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -60,7 +60,7 @@
   --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
-  --ring: oklch(0.6 0.1 200);
+  --ring: #10b981; /* emerald-500 focus ring */
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
