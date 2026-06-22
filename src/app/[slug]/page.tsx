@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 async function getBusinessBySlug(slug: string) {
   try {
     const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1'}/business/${slug}`;
-    const res = await axios.get(url);
+    const res = await axios.get(url, { timeout: 5000 });
     return res.data?.data || null;
   } catch (error) {
     console.error("Error fetching business by slug:", error);
@@ -21,6 +21,13 @@ async function getBusinessBySlug(slug: string) {
 
 export default async function StorefrontPage({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
   const { slug } = await params;
+  
+  // Guard: If the slug contains a dot, it is a request for a missing static file
+  // (e.g. /favicon.ico, /icon-192x192.png) falling through. Reject immediately.
+  if (slug.includes('.')) {
+    notFound();
+  }
+
   const business = await getBusinessBySlug(slug);
   
   if (!business) {
