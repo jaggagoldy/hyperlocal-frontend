@@ -127,7 +127,7 @@ export function GuestLandingView() {
       <section className="bg-gradient-to-b from-emerald-600 to-emerald-700 text-white">
         <div className="mx-auto max-w-5xl px-4 pb-10 pt-8 sm:pt-12">
           {/* District bar */}
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-2">
             <label className="flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur ring-1 ring-white/25">
               <MapPin className="h-4 w-4 shrink-0 text-white" />
               <select
@@ -146,12 +146,6 @@ export function GuestLandingView() {
                 ))}
               </select>
             </label>
-
-            <Link href="/login">
-              <button className="rounded-full bg-white/15 px-4 py-1.5 text-sm font-bold text-white backdrop-blur ring-1 ring-white/25 hover:bg-white/25 transition-all">
-                Sign In
-              </button>
-            </Link>
           </div>
 
           <h1 className="mt-6 max-w-2xl text-3xl font-black leading-tight tracking-tight sm:text-4xl">
