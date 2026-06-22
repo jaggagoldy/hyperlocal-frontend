@@ -54,9 +54,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [mounted, _hasHydrated, pathname, router]);
 
-  if (!mounted) {
-    return null; // Avoid hydration mismatch on initial render
-  }
-
+  // Always render children so every route server-renders its content into the initial
+  // HTML (SEO: directory/storefront markup + schema.org JSON-LD land in the document,
+  // not only the RSC flight payload). Auth-based redirects still run in the effect above
+  // once mounted + hydrated; protected pages remain gated client-side.
   return <>{children}</>;
 }
