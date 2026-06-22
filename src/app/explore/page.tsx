@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { 
   Search, 
   MapPin, 
@@ -87,7 +87,11 @@ const VERTICALS = [
   }
 ];
 
-export default function ExplorePage() {
+// Search-driven page (reads useSearchParams) — render on demand, not statically
+// prerendered, so the build doesn't bail out now that AuthGuard no longer blanks SSR.
+export const dynamic = 'force-dynamic';
+
+function ExplorePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t, language } = useTranslation();
@@ -1166,5 +1170,13 @@ export default function ExplorePage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function ExplorePage() {
+  return (
+    <Suspense fallback={null}>
+      <ExplorePageContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { 
   Search, 
   MapPin, 
@@ -57,7 +57,11 @@ const FOOD_VERTICALS = [
   }
 ];
 
-export default function FoodPage() {
+// Search-driven page (reads useSearchParams) — render on demand, not statically
+// prerendered, so the build doesn't bail out now that AuthGuard no longer blanks SSR.
+export const dynamic = 'force-dynamic';
+
+function FoodPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t, language } = useTranslation();
@@ -1123,5 +1127,13 @@ export default function FoodPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function FoodPage() {
+  return (
+    <Suspense fallback={null}>
+      <FoodPageContent />
+    </Suspense>
   );
 }

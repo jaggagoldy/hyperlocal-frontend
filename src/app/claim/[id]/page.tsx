@@ -13,6 +13,10 @@ import { useAuthStore } from '@/store/authStore';
  * listed (or owner-asserted) phone, verifies it, assigns ownership, and routes the
  * new vendor to their dashboard. Requires the visitor to be logged in.
  */
+// Login-gated claim flow (reads useSearchParams) — render on demand, not statically
+// prerendered, so the build doesn't bail out now that AuthGuard no longer blanks SSR.
+export const dynamic = 'force-dynamic';
+
 export default function ClaimPage() {
   const { id } = useParams<{ id: string }>();
   const search = useSearchParams();
