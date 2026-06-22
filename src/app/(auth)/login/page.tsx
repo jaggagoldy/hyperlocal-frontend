@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -17,10 +17,12 @@ import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'fi
 
 type LoginMode = 'email' | 'phone' | 'otp' | 'onboard';
 
-export default function LoginPage() {
+export function LoginForm() {
   const [mode, setMode] = useState<LoginMode>('email');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect');
   const { setAuth } = useAuthStore();
   const recaptchaRef = React.useRef<HTMLDivElement>(null);
 
@@ -70,7 +72,9 @@ export default function LoginPage() {
       const { token, user } = response.data?.data || response.data;
       setAuth(token, user);
       toast.success('Successfully logged in!');
-      if (user?.role === 'vendor') {
+      if (redirect) {
+        router.push(redirect);
+      } else if (user?.role === 'vendor') {
         router.push('/vendor-dashboard');
       } else {
         router.push('/');
@@ -139,11 +143,12 @@ export default function LoginPage() {
       } else if (!user?.name) {
         setAuth(token, user);
         toast.success('Successfully logged in! Redirecting to setup...');
-        router.push('/onboarding');
+        router.push(redirect ? `/onboarding?redirect=${encodeURIComponent(redirect)}` : '/onboarding');
       } else {
         setAuth(token, user);
         toast.success('Successfully logged in!');
-        if (user.role === 'vendor') router.push('/vendor-dashboard');
+        if (redirect) router.push(redirect);
+        else if (user.role === 'vendor') router.push('/vendor-dashboard');
         else router.push('/');
       }
     } catch (error: any) {
@@ -180,7 +185,11 @@ export default function LoginPage() {
       const { token, user } = response.data?.data || response.data;
       setAuth(token, user);
       toast.success('Account created successfully!');
-      router.push('/');
+      if (redirect) {
+        router.push(redirect);
+      } else {
+        router.push('/');
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to create account.');
     } finally {
@@ -209,7 +218,9 @@ export default function LoginPage() {
           toast.success('Successfully logged in with Google!');
           
           if (!user?.name) {
-            router.push('/onboarding');
+            router.push(redirect ? `/onboarding?redirect=${encodeURIComponent(redirect)}` : '/onboarding');
+          } else if (redirect) {
+            router.push(redirect);
           } else {
             router.push('/');
           }
@@ -443,11 +454,22 @@ export default function LoginPage() {
       {(mode === 'email' || mode === 'phone') && (
         <div className="mt-8 text-center text-sm text-muted-foreground">
           Don't have an account?{' '}
-          <Link href="/register" className="font-semibold text-primary hover:underline">
+          <Link 
+            href={redirect ? `/register?redirect=${encodeURIComponent(redirect)}` : '/register'} 
+            className="font-semibold text-primary hover:underline"
+          >
             Sign up
           </Link>
         </div>
       )}
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[300px] text-zinc-500 font-medium">Loading...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

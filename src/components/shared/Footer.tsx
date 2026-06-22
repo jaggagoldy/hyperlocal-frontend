@@ -7,7 +7,15 @@ import { usePathname } from 'next/navigation';
 export function Footer() {
   const pathname = usePathname();
 
-  if (pathname.startsWith('/vendor-dashboard') || pathname.startsWith('/admin')) {
+  const segments = pathname.split('/').filter(Boolean);
+  const isStorefront = segments.length === 1 && ![
+    'explore', 'food', 'login', 'register', 'vendor', 
+    'admin', 'vendor-dashboard', 'directory', 'pro', 
+    'onboarding', 'profile', 'create-consumer-profile',
+    'reset-password', 'forgot-password', 'sw-reset', 'claim'
+  ].includes(segments[0]);
+
+  if (isStorefront || pathname.startsWith('/vendor-dashboard') || pathname.startsWith('/admin')) {
     return null;
   }
 

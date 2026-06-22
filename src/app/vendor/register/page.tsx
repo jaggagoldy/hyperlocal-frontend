@@ -39,7 +39,7 @@ export default function VendorRegisterPage() {
   const regionStates = useRegions();
   const router = useRouter();
   
-  const { user, setActiveBusiness, setAuth, token } = useAuthStore();
+  const { user, setActiveBusiness, setAuth, token, isAuthenticated } = useAuthStore();
   
   // Onboarding user details
   const [onboardingToken, setOnboardingToken] = useState<string | null>(null);
@@ -52,6 +52,11 @@ export default function VendorRegisterPage() {
   const [personalDob, setPersonalDob] = useState('');
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login?redirect=/vendor/register');
+      return;
+    }
+
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get('onboardingToken');
@@ -60,7 +65,7 @@ export default function VendorRegisterPage() {
       setIsGoogle(google);
     }
     apiClient.get('/verticals').then(res => setVerticals(res.data.data || [])).catch(console.error);
-  }, []);
+  }, [isAuthenticated, router]);
 
   
   const [step, setStep] = useState(1);

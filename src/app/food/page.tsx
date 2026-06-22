@@ -65,7 +65,7 @@ function FoodPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t, language } = useTranslation();
-  const { user, activeContext, updateToken } = useAuthStore();
+  const { user, activeContext, updateToken, isAuthenticated } = useAuthStore();
   const { 
     selectedCity, 
     selectedCategory, 
@@ -118,6 +118,10 @@ function FoodPageContent() {
   const isVendorContext = activeContext === 'vendor';
   
   const handleProCta = async () => {
+    if (!isAuthenticated) {
+      router.push('/login?redirect=/vendor/register');
+      return;
+    }
     if (isDualProfile) {
       try {
         const res = await apiClient.post('/auth/switch-context', { targetContext: 'vendor' });

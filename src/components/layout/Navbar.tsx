@@ -43,8 +43,16 @@ export function Navbar() {
     logout();
     router.push('/login');
   };
+  
+  const segments = pathname.split('/').filter(Boolean);
+  const isStorefront = segments.length === 1 && ![
+    'explore', 'food', 'login', 'register', 'vendor', 
+    'admin', 'vendor-dashboard', 'directory', 'pro', 
+    'onboarding', 'profile', 'create-consumer-profile',
+    'reset-password', 'forgot-password', 'sw-reset', 'claim'
+  ].includes(segments[0]);
 
-  if (pathname.startsWith('/vendor-dashboard') || pathname.startsWith('/admin')) {
+  if (isStorefront || pathname.startsWith('/vendor-dashboard') || pathname.startsWith('/admin')) {
     return null;
   }
 

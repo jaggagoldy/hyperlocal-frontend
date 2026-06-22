@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Phone, Lock, Eye, EyeOff, User } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -12,9 +12,11 @@ import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-export default function RegisterPage() {
+export function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect');
   const { setAuth } = useAuthStore();
 
   const [name, setName] = useState('');
@@ -40,8 +42,12 @@ export default function RegisterPage() {
       setAuth(token, user);
       toast.success('Account created successfully!');
       // New users (no name set by backend yet) → onboarding wizard
-      // Email register always sends name, so go straight to profile
-      router.push('/profile');
+      // Email register always sends name, so go straight to profile/redirect
+      if (redirect) {
+        router.push(redirect);
+      } else {
+        router.push('/profile');
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Registration failed. Try again.');
     } finally {
@@ -70,7 +76,11 @@ export default function RegisterPage() {
       const { token, user } = response.data?.data || response.data;
       setAuth(token, user);
       toast.success('Account created successfully!');
-      router.push('/');
+      if (redirect) {
+        router.push(redirect);
+      } else {
+        router.push('/');
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to create account.');
     } finally {
@@ -99,7 +109,9 @@ export default function RegisterPage() {
           toast.success('Account created successfully!');
           
           if (!user?.name) {
-            router.push('/onboarding');
+            router.push(redirect ? `/onboarding?redirect=${encodeURIComponent(redirect)}` : '/onboarding');
+          } else if (redirect) {
+            router.push(redirect);
           } else {
             router.push('/');
           }
@@ -254,11 +266,22 @@ export default function RegisterPage() {
       {mode === 'register' && (
         <div className="mt-8 text-center text-sm text-muted-foreground">
           Already have an account?{' '}
-          <Link href="/login" className="font-semibold text-primary hover:underline">
+          <Link 
+            href={redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login'} 
+            className="font-semibold text-primary hover:underline"
+          >
             Log in
           </Link>
         </div>
       )}
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[300px] text-zinc-500 font-medium">Loading...</div>}>
+      <RegisterForm />
+    </Suspense>
   );
 }
