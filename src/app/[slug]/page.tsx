@@ -2,6 +2,7 @@ import axios from 'axios';
 import { notFound } from 'next/navigation';
 import { getTemplateComponent, TEMPLATE_METADATA } from '@/lib/templateRegistry';
 import { ReviewSection } from '@/components/vendor/ReviewSection';
+import TrackProfileView from '@/components/TrackProfileView';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +41,7 @@ export default async function StorefrontPage({ params }: { params: Promise<{ slu
 
   return (
     <div className="min-h-screen bg-zinc-50">
+      {business.id && <TrackProfileView businessProfileId={business.id} />}
       <StorefrontTemplate business={business} theme={theme} />
       {business.id && (
         <div className="mx-auto max-w-3xl px-4 pb-12 sm:px-6">

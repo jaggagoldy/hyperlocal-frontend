@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { MapPin, Star, Phone, BadgeCheck } from 'lucide-react';
+import { MapPin, Star, BadgeCheck } from 'lucide-react';
 import { Listing, listingCtas, tierBadge, getCategoryByVertical } from '@/lib/directory';
+import ListingCtas from './ListingCtas';
 
 /**
  * Tier-aware directory listing card (server component — plain anchors, no hooks).
@@ -48,28 +49,9 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         </div>
       </div>
 
-      {/* Tier-aware CTAs */}
+      {/* Tier-aware CTAs (client component — logs call/whatsapp/directions clicks) */}
       <div className="mt-auto flex gap-2 border-t border-zinc-100 p-3">
-        {ctas.length === 0 ? (
-          <span className="flex-1 text-center text-xs font-semibold text-zinc-400 py-2">Details coming soon</span>
-        ) : (
-          ctas.slice(0, 3).map((c) => (
-            <a
-              key={c.label}
-              href={c.href}
-              target={c.href.startsWith('http') ? '_blank' : undefined}
-              rel={c.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-              className={
-                c.kind === 'primary'
-                  ? 'flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-bold text-white shadow-sm shadow-emerald-600/20 hover:bg-emerald-700 transition-colors'
-                  : 'flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-bold text-zinc-700 hover:bg-zinc-100 transition-colors'
-              }
-            >
-              {c.label === 'Call' && <Phone className="h-3.5 w-3.5" />}
-              {c.label}
-            </a>
-          ))
-        )}
+        <ListingCtas ctas={ctas} businessProfileId={listing.id} />
       </div>
 
       {/* Claim affordance — unclaimed imported stubs only */}
