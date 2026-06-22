@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Lock, ArrowLeft, KeyRound } from 'lucide-react';
+import { Lock, ArrowLeft, KeyRound, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 import apiClient from '@/lib/api-client';
@@ -13,24 +13,28 @@ import { Input } from '@/components/ui/input';
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const defaultPhone = searchParams.get('phone') || '';
   
+  const queryEmail = searchParams.get('email') || '';
+  const queryToken = searchParams.get('token') || '';
+
   const [loading, setLoading] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState(defaultPhone);
-  const [otpCode, setOtpCode] = useState('');
+  const [email, setEmail] = useState(queryEmail);
+  const [token, setToken] = useState(queryToken);
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneNumber) return toast.error('Phone number is required');
-    if (!otpCode || otpCode.length !== 6) return toast.error('Please enter the 6-digit OTP');
+    if (!email) return toast.error('Email address is required');
+    if (!token) return toast.error('Reset token is required');
     if (newPassword.length < 6) return toast.error('Password must be at least 6 characters');
+    if (newPassword !== confirmPassword) return toast.error('Passwords do not match');
 
     setLoading(true);
     try {
       await apiClient.post('/auth/reset-password', {
-        phoneNumber,
-        otpCode,
+        email,
+        token,
         newPassword
       });
       toast.success('Password reset successful! You can now log in.');
@@ -53,27 +57,38 @@ function ResetPasswordForm() {
           Set New Password
         </h1>
         <p className="text-muted-foreground text-sm">
-          Please enter the OTP sent to your WhatsApp and your new password.
+          Please enter your email, reset token, and your new password.
         </p>
       </div>
 
-      <form onSubmit={handleReset} className="space-y-6">
-        {/* Hidden Phone Field for submission context */}
-        <input type="hidden" value={phoneNumber} />
+      <form onSubmit={handleReset} className="space-y-5">
+        <div className="space-y-1">
+          <label className="text-sm font-medium">Email Address</label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              type="email"
+              placeholder="you@example.com"
+              className="h-12 pl-10 bg-muted/30 focus-visible:bg-background"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={!!queryEmail}
+              required
+            />
+          </div>
+        </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium">WhatsApp OTP</label>
+          <label className="text-sm font-medium">Reset Token</label>
           <div className="relative">
             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
-              type="tel"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              placeholder="123456"
-              maxLength={6}
-              className="h-12 pl-10 bg-muted/30 focus-visible:bg-background tracking-widest font-mono text-center"
-              value={otpCode}
-              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+              type="text"
+              placeholder="Enter your reset token"
+              className="h-12 pl-10 bg-muted/30 focus-visible:bg-background"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              disabled={!!queryToken}
               required
             />
           </div>
@@ -94,7 +109,22 @@ function ResetPasswordForm() {
           </div>
         </div>
 
-        <Button type="submit" className="w-full h-12 text-base font-bold" disabled={loading || otpCode.length !== 6 || newPassword.length < 6}>
+        <div className="space-y-1">
+          <label className="text-sm font-medium">Confirm New Password</label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              type="password"
+              placeholder="••••••••"
+              className="h-12 pl-10 bg-muted/30 focus-visible:bg-background"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+
+        <Button type="submit" className="w-full h-12 text-base font-bold mt-2" disabled={loading}>
           {loading ? 'Resetting...' : 'Reset Password'}
         </Button>
       </form>
@@ -104,7 +134,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[300px] text-zinc-500 font-medium">Loading...</div>}>
       <ResetPasswordForm />
     </Suspense>
   );

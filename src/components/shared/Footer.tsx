@@ -15,7 +15,18 @@ export function Footer() {
     'reset-password', 'forgot-password', 'sw-reset', 'claim'
   ].includes(segments[0]);
 
-  if (isStorefront || pathname.startsWith('/vendor-dashboard') || pathname.startsWith('/admin')) {
+  const shouldHideFooter =
+    isStorefront ||
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname === '/vendor/login' ||
+    pathname === '/vendor/register' ||
+    pathname === '/forgot-password' ||
+    pathname === '/reset-password' ||
+    pathname.startsWith('/vendor-dashboard') ||
+    pathname.startsWith('/admin');
+
+  if (shouldHideFooter) {
     return null;
   }
 
