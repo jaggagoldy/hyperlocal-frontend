@@ -91,6 +91,24 @@ interface CatalogForm {
   variants?: any;
 }
 
+const formatDateShort = (dateStr: string) => {
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+  } catch (e) {
+    return dateStr;
+  }
+};
+
+const formatDateLabel = (dateStr: string) => {
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  } catch (e) {
+    return dateStr;
+  }
+};
+
 interface VendorDashboardClientProps {
   defaultTab?: 'leads' | 'services' | 'analytics' | 'settings';
 }
@@ -1056,22 +1074,80 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
                 </div>
               </div>
 
-              {/* Charts Placeholder */}
+              {/* Charts */}
               <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm mt-6">
-                <h3 className="font-bold text-lg text-zinc-900 mb-4">Traffic Overview</h3>
-                <div className="h-64 flex items-end justify-between gap-2 border-b border-l border-zinc-100 p-4 pb-0 relative">
-                  {[40, 25, 60, 45, 80, 55, 90].map((h, i) => (
-                    <div key={i} className="w-full max-w-[40px] bg-indigo-100 rounded-t-lg relative group">
-                      <div className="absolute bottom-0 w-full bg-indigo-600 rounded-t-lg transition-all duration-500" style={{ height: `${h}%` }}></div>
-                      <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-zinc-800 text-white text-[10px] font-bold px-2 py-1 rounded">
-                        {h} Views
-                      </div>
-                    </div>
-                  ))}
-                  <div className="absolute bottom-0 left-0 w-full flex justify-between text-[10px] text-zinc-400 font-bold mt-2 translate-y-6 px-4">
-                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-lg text-zinc-900">Traffic Overview</h3>
+                  <div className="flex gap-4 text-xs font-semibold">
+                    <span className="flex items-center gap-1.5 text-emerald-600">
+                      <span className="w-3 h-3 bg-emerald-500 rounded-full inline-block"></span>
+                      Views
+                    </span>
+                    <span className="flex items-center gap-1.5 text-emerald-800">
+                      <span className="w-3 h-3 bg-emerald-700 rounded-full inline-block"></span>
+                      Leads
+                    </span>
                   </div>
                 </div>
+
+                {(() => {
+                  const dailySeries = analytics?.dailySeries || [];
+                  const maxVal = Math.max(...dailySeries.map((d: any) => d.views + d.leads), 1);
+                  return (
+                    <>
+                      <div className="h-64 flex items-end justify-between gap-1 md:gap-2 border-b border-l border-zinc-200 p-4 pb-0 relative">
+                        {dailySeries.map((d: any) => {
+                          const totalVal = d.views + d.leads;
+                          const viewsPercent = totalVal > 0 ? (d.views / maxVal) * 100 : 0;
+                          const leadsPercent = totalVal > 0 ? (d.leads / maxVal) * 100 : 0;
+
+                          return (
+                            <div key={d.date} className="flex-1 flex flex-col justify-end h-full items-center relative group min-w-[12px] max-w-[40px]">
+                              <div className="w-full bg-emerald-50/30 dark:bg-zinc-800/20 rounded-t-lg h-full flex flex-col justify-end overflow-hidden relative">
+                                {/* Leads portion (top) */}
+                                {leadsPercent > 0 && (
+                                  <div
+                                    className="bg-emerald-700 w-full transition-all duration-500"
+                                    style={{ height: `${leadsPercent}%` }}
+                                  />
+                                )}
+                                {/* Views portion (bottom) */}
+                                {viewsPercent > 0 && (
+                                  <div
+                                    className="bg-emerald-500 w-full transition-all duration-500"
+                                    style={{ height: `${viewsPercent}%` }}
+                                  />
+                                )}
+                              </div>
+
+                              {/* Hover Tooltip */}
+                              <div className="opacity-0 group-hover:opacity-100 pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-zinc-950 text-white text-[11px] font-bold p-2.5 rounded-xl shadow-xl transition-all duration-200 z-20 whitespace-nowrap min-w-[120px] border border-zinc-800">
+                                <p className="text-zinc-400 mb-1 border-b border-zinc-800 pb-1">{formatDateLabel(d.date)}</p>
+                                <div className="flex justify-between gap-4 mb-0.5">
+                                  <span className="text-zinc-400 font-normal">Views:</span>
+                                  <span className="text-emerald-400">{d.views}</span>
+                                </div>
+                                <div className="flex justify-between gap-4">
+                                  <span className="text-zinc-400 font-normal">Leads:</span>
+                                  <span className="text-emerald-300 font-bold">{d.leads}</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* X-Axis labels below the chart */}
+                      <div className="flex justify-between text-[10px] text-zinc-400 font-bold mt-2 px-4">
+                        {dailySeries.map((d: any) => (
+                          <span key={d.date} className="flex-1 text-center truncate max-w-[40px] text-[9px] md:text-[10px]">
+                            {formatDateShort(d.date)}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           )}
