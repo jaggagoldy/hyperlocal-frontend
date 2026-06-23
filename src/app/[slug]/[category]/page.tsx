@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronRight, ShieldCheck, Phone, CalendarCheck, ShoppingBag } from 'lucide-react';
 import {
   DIRECTORY_CATEGORIES,
   getCategoryBySlug,
@@ -69,16 +69,29 @@ export default async function DirectoryCategoryPage({ params }: { params: Promis
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       {/* Header */}
-      <div className="bg-gradient-to-b from-emerald-600 to-emerald-700 text-white">
-        <div className="mx-auto max-w-5xl px-4 py-6">
-          <Link href="/directory" className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-50/90 hover:text-white">
-            <ChevronLeft className="h-4 w-4" /> All categories
-          </Link>
-          <div className="mt-3 flex items-center gap-3">
-            <span className="text-4xl">{cat.icon}</span>
-            <div>
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 to-emerald-800 text-white">
+        {/* subtle decorative glow */}
+        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative mx-auto max-w-5xl px-4 py-7">
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1.5 text-xs font-semibold text-emerald-50/80" aria-label="Breadcrumb">
+            <Link href="/directory" className="hover:text-white">Directory</Link>
+            <ChevronRight className="h-3.5 w-3.5 opacity-60" />
+            <Link href={`/directory?district=${slug}`} className="hover:text-white">{district.name}</Link>
+            <ChevronRight className="h-3.5 w-3.5 opacity-60" />
+            <span className="text-white">{cat.label}</span>
+          </nav>
+
+          <div className="mt-4 flex items-start gap-4">
+            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-4xl ring-1 ring-white/25 backdrop-blur">
+              {cat.icon}
+            </span>
+            <div className="min-w-0">
               <h1 className="text-2xl font-black leading-tight sm:text-3xl">{cat.label} in {district.name}</h1>
-              <p className="text-sm font-medium text-emerald-50/90">{total} listing{total === 1 ? '' : 's'} · {district.state}</p>
+              <p className="mt-0.5 text-sm font-medium text-emerald-50/90">{cat.blurb}</p>
+              <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-xs font-bold text-white ring-1 ring-white/20">
+                <ShieldCheck className="h-3.5 w-3.5" /> {total} verified listing{total === 1 ? '' : 's'} · {district.state}
+              </p>
             </div>
           </div>
         </div>
@@ -86,6 +99,19 @@ export default async function DirectoryCategoryPage({ params }: { params: Promis
 
       {/* Listings */}
       <div className="mx-auto max-w-5xl px-4 py-6">
+        {listings.length > 0 && (
+          /* Results + tier legend so the card badges make sense at a glance */
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 pb-4">
+            <p className="text-sm font-bold text-zinc-700">
+              Showing <span className="text-emerald-700">{listings.length}</span> of {total}
+            </p>
+            <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+              <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-orange-700"><ShoppingBag className="h-3 w-3" /> Order online</span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-violet-700"><CalendarCheck className="h-3 w-3" /> Bookable</span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-zinc-600"><Phone className="h-3 w-3" /> Directory</span>
+            </div>
+          </div>
+        )}
         {listings.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-10 text-center">
             <p className="text-lg font-bold text-zinc-800">No {cat.label.toLowerCase()} listed in {district.name} yet</p>
