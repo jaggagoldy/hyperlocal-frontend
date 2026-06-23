@@ -186,7 +186,15 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
         for (const item of catalog) {
           const formData = new FormData();
           formData.append('title', item.title);
-          formData.append('price', item.price.toString());
+          if (item.price !== undefined && item.price !== null) {
+            formData.append('price', item.price.toString());
+          }
+          if (item.variants) {
+            formData.append('variants', JSON.stringify(item.variants));
+          }
+          if (item.metaData) {
+            formData.append('metaData', JSON.stringify(item.metaData));
+          }
           formData.append('description', item.description || '');
           formData.append('foodCategory', Array.isArray(item.foodCategory) ? item.foodCategory.join(', ') : (item.foodCategory || 'Main Course'));
           formData.append('isActive', String(item.isActive));
@@ -217,7 +225,15 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
         for (const item of catalog) {
           const formData = new FormData();
           formData.append('title', item.title);
-          formData.append('price', item.price.toString());
+          if (item.price !== undefined && item.price !== null) {
+            formData.append('price', item.price.toString());
+          }
+          if (item.variants) {
+            formData.append('variants', JSON.stringify(item.variants));
+          }
+          if (item.metaData) {
+            formData.append('metaData', JSON.stringify(item.metaData));
+          }
           formData.append('description', item.description || '');
           formData.append('foodCategory', Array.isArray(item.foodCategory) ? item.foodCategory.join(', ') : (item.foodCategory || 'Main Course'));
           formData.append('isActive', String(item.isActive));
