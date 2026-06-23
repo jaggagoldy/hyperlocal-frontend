@@ -24,7 +24,7 @@ import {
   LayoutGrid,
   List
 } from 'lucide-react';
-import { VendorCard } from '@/components/shared/VendorCard';
+import ListingCard from '@/components/directory/ListingCard';
 import { useSearchStore } from '@/store/searchStore';
 import { useAuthStore } from '@/store/authStore';
 import apiClient from '@/lib/api-client';
@@ -826,17 +826,27 @@ function ExplorePageContent() {
             )}
 
             {loading && page === 1 ? (
-              // Skeleton Loaders
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              // Skeleton Loaders matching ListingCard
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-xs animate-pulse flex flex-col h-[320px]">
-                    <div className="h-44 bg-zinc-100 w-full"></div>
-                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                      <div className="space-y-2">
-                        <div className="h-4 bg-zinc-150 rounded w-3/4" />
+                  <div key={i} className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-xs animate-pulse flex flex-col h-[280px]">
+                    <div className="h-36 bg-zinc-100 w-full border-b border-zinc-100" />
+                    <div className="p-4 flex gap-3 flex-1">
+                      <div className="h-14 w-14 bg-zinc-100 rounded-xl shrink-0" />
+                      <div className="flex-1 space-y-3">
+                        <div className="space-y-2">
+                          <div className="h-4.5 bg-zinc-100 rounded w-3/4" />
+                          <div className="flex gap-2">
+                            <div className="h-4 bg-zinc-150 rounded w-16" />
+                            <div className="h-4 bg-zinc-100 rounded w-20" />
+                          </div>
+                        </div>
                         <div className="h-3.5 bg-zinc-100 rounded w-1/2" />
                       </div>
-                      <div className="h-10 bg-zinc-150 rounded-xl w-full" />
+                    </div>
+                    <div className="mt-auto border-t border-zinc-100 p-3 flex gap-2">
+                      <div className="h-9 bg-zinc-100 rounded-xl flex-1" />
+                      <div className="h-9 bg-zinc-100 rounded-xl flex-1" />
                     </div>
                   </div>
                 ))}
@@ -958,13 +968,65 @@ function ExplorePageContent() {
               // Product Grid Layout
               <div className="flex flex-col xl:flex-row gap-6 items-start">
                 <div className="flex-1 w-full min-w-0">
+                  {/* Filter Chips */}
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                    <button
+                      onClick={() => setVerifiedOnly(!verifiedOnly)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                        verifiedOnly
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm ring-1 ring-emerald-500'
+                          : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                      }`}
+                    >
+                      {verifiedOnly && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                      Verified Only
+                    </button>
+
+                    <button
+                      onClick={() => setFilters({ openNow: !openNow })}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                        openNow
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm ring-1 ring-emerald-500'
+                          : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                      }`}
+                    >
+                      {openNow && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                      Open Now
+                    </button>
+
+                    <button
+                      onClick={() => setFilters({ minRating: minRating === '4.0' ? '' : '4.0' })}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                        minRating === '4.0'
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm ring-1 ring-emerald-500'
+                          : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                      }`}
+                    >
+                      {minRating === '4.0' && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                      Top Rated (4.0+)
+                    </button>
+
+                    {(verifiedOnly || openNow || minRating) && (
+                      <button
+                        onClick={() => {
+                          setVerifiedOnly(false);
+                          setFilters({ minRating: '', openNow: false });
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-zinc-555 hover:text-zinc-900 hover:bg-zinc-100 transition-all border border-transparent"
+                      >
+                        Clear All
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
                   <div className={
                     viewMode === 'list'
                       ? "flex flex-col gap-4"
                       : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4"
                   }>
                     {items.map((vendor, i) => (
-                      <VendorCard key={`${vendor.id}-${i}`} vendor={vendor} viewMode={viewMode as any} />
+                      <ListingCard key={`${vendor.id}-${i}`} listing={vendor as any} />
                     ))}
                   </div>
                   

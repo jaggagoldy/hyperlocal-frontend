@@ -5,6 +5,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { AuthGuard } from "@/components/shared/AuthGuard";
 import { Footer } from "@/components/shared/Footer";
 import { Toaster } from "@/components/ui/sonner";
@@ -48,9 +49,10 @@ export default function RootLayout({
           <AuthGuard>
             <TutorialModal />
             <Navbar />
-            <main className="flex-1">
+            <main className="flex-1 pb-16 md:pb-0">
               {children}
             </main>
+            <BottomNav />
             <Footer />
           </AuthGuard>
           <Toaster position="top-center" />

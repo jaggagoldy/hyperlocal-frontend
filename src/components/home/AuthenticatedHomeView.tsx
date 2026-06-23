@@ -28,11 +28,12 @@ import { useTranslation } from '@/lib/translations';
 import { useSearchStore } from '@/store/searchStore';
 import apiClient from '@/lib/api-client';
 import { toast } from 'sonner';
-import { ServiceSidebar } from '@/components/shared/ServiceSidebar';
 import { useAuthStore } from '@/store/authStore';
 import { AuthModal } from '@/components/shared/AuthModal';
 import Link from 'next/link';
 import Image from 'next/image';
+import { DIRECTORY_CATEGORIES } from '@/lib/directory';
+import ListingCard from '@/components/directory/ListingCard';
 
 export function AuthenticatedHomeView() {
   const router = useRouter();
@@ -65,35 +66,42 @@ export function AuthenticatedHomeView() {
   const [showcaseItems, setShowcaseItems] = useState<any[]>([]);
   const [loadingShowcase, setLoadingShowcase] = useState(true);
 
-  // Fetch cities and showcase items on mount
+  // Fetch cities once on mount
   useEffect(() => {
-    const initPage = async () => {
+    const fetchCities = async () => {
       try {
-        const [citiesRes, catalogRes] = await Promise.all([
-          apiClient.get('/search/cities'),
-          apiClient.get('/catalog/explore', { params: { limit: 6 } })
-        ]);
+        const res = await apiClient.get('/search/cities');
+        const fetchedCities = res.data?.data || [];
+        setCities(fetchedCities);
         
-        const fetchedCities = citiesRes.data?.data || [];
-        const filteredCities = fetchedCities.filter((c: any) =>
-          ['fatehabad', 'hisar', 'sirsa'].includes(c.slug.toLowerCase())
-        );
-        setCities(filteredCities);
-        
-        // Ensure selectedCity is one of the valid Haryana cities
-        if (filteredCities.length > 0 && !filteredCities.some((c: any) => c.slug === selectedCity)) {
-          setCity(filteredCities[0].slug);
+        // Ensure selectedCity is one of the fetched cities
+        if (fetchedCities.length > 0 && !fetchedCities.some((c: any) => c.slug === selectedCity)) {
+          const defaultCityCandidate = fetchedCities.find((c: any) => c.slug === 'karnal') || fetchedCities[0];
+          setCity(defaultCityCandidate.slug);
         }
-
-        setShowcaseItems(catalogRes.data?.data || []);
       } catch (err) {
-        console.error('Failed to initialize homepage data', err);
+        console.error('Failed to fetch cities', err);
+      }
+    };
+    fetchCities();
+  }, [setCity]);
+
+  // Fetch active directory listings whenever selectedCity changes
+  useEffect(() => {
+    const fetchShowcase = async () => {
+      if (!selectedCity) return;
+      setLoadingShowcase(true);
+      try {
+        const res = await apiClient.get(`/search/explore/${selectedCity}/any?scope=directory&limit=6`);
+        setShowcaseItems(res.data?.data || []);
+      } catch (err) {
+        console.error('Failed to fetch showcase items', err);
       } finally {
         setLoadingShowcase(false);
       }
     };
-    initPage();
-  }, [selectedCity, setCity]);
+    fetchShowcase();
+  }, [selectedCity]);
 
   // Live Search Effect
   useEffect(() => {
@@ -309,9 +317,41 @@ export function AuthenticatedHomeView() {
                   onChange={(e) => setCity(e.target.value)}
                   className="bg-transparent border-none outline-none font-bold text-xs sm:text-sm text-zinc-800 w-full cursor-pointer appearance-none"
                 >
-                  {cities.map((city) => (
-                    <option key={city.slug} value={city.slug}>{city.name}</option>
-                  ))}
+                  {(() => {
+                    const sortedCities = [...cities].sort((a, b) => a.name.localeCompare(b.name));
+                    const haryana = sortedCities.filter(c => c.state?.toLowerCase() === 'haryana');
+                    const punjab = sortedCities.filter(c => c.state?.toLowerCase() === 'punjab');
+                    const others = sortedCities.filter(c => c.state?.toLowerCase() !== 'haryana' && c.state?.toLowerCase() !== 'punjab');
+
+                    return (
+                      <>
+                        {haryana.length > 0 && (
+                          <optgroup label="Haryana">
+                            {haryana.map((city) => (
+                              <option key={city.slug} value={city.slug}>{city.name}</option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {punjab.length > 0 && (
+                          <optgroup label="Punjab">
+                            {punjab.map((city) => (
+                              <option key={city.slug} value={city.slug}>{city.name}</option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {others.length > 0 && (
+                          <optgroup label="Other Locations">
+                            {others.map((city) => (
+                              <option key={city.slug} value={city.slug}>{city.name}</option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {haryana.length === 0 && punjab.length === 0 && others.length === 0 && (
+                          <option value="">No locations available</option>
+                        )}
+                      </>
+                    );
+                  })()}
                 </select>
               </div>
               
@@ -407,105 +447,117 @@ export function AuthenticatedHomeView() {
             </p>
           </div>
 
-          {(() => {
-            const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_APP_ENV === 'production';
-            return (
-              <div className={`grid grid-cols-2 gap-4 ${isProduction ? 'md:grid-cols-2 max-w-2xl mx-auto' : 'md:grid-cols-4'}`}>
-                {(() => {
-                  return [
-                    ...(isProduction ? [] : [
-                      { id: 'electrician', name: t('homeMaintenance'), icon: Wrench, count: 6, gradient: 'from-blue-500 to-indigo-600' },
-                      { id: 'car-rental', name: t('carRental'), icon: Car, count: 2, gradient: 'from-teal-500 to-emerald-600' },
-                    ]),
-                    ...(isProduction ? [
-                      { id: 'restaurant-cafe', name: language === 'hi' ? 'रेस्टोरेंट और कैफ़े' : 'Restaurant & Cafe', icon: Utensils, count: 1, gradient: 'from-orange-500 to-red-600' }
-                    ] : []),
-                    { id: 'salon-booking', name: t('salonBooking'), icon: Scissors, count: 2, gradient: 'from-rose-500 to-pink-600' },
-                    ...(isProduction ? [] : [
-                      { id: 'real-estate', name: t('realEstate'), icon: Building, count: 1, gradient: 'from-amber-500 to-orange-600' }
-                    ])
-                  ];
-                })().map(vert => (
-                  <div 
-                    key={vert.id}
-                    onClick={() => handleVerticalClick(vert.id)}
-                    className="group bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:border-primary/20 hover:scale-[1.02] cursor-pointer transition-all duration-300 flex flex-col justify-between min-h-[160px]"
-                  >
-                    <div className={`w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br ${vert.gradient} text-white flex items-center justify-center shadow-xs transition-transform group-hover:scale-105`}>
-                      <vert.icon className="w-5.5 h-5.5" />
-                    </div>
-                    <div className="mt-4">
-                      <h3 className="font-extrabold text-zinc-800 text-sm group-hover:text-primary transition-colors whitespace-normal leading-tight">
-                        {vert.name}
-                      </h3>
-                      <div className="flex items-center justify-between text-[10px] text-zinc-400 mt-2 font-bold">
-                        <span>{vert.count} PROS ACTIVE</span>
-                        <ChevronRight className="w-4 h-4 text-zinc-300 shrink-0 group-hover:text-primary transition-colors group-hover:translate-x-0.5" />
-                      </div>
-                    </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-4">
+            {DIRECTORY_CATEGORIES.map((vert) => {
+              // Custom gradient mapping for beautiful aesthetics
+              const gradientMap: Record<string, string> = {
+                'food-beverage': 'from-orange-400 to-red-500',
+                'grocery': 'from-emerald-400 to-teal-500',
+                'shops-retail': 'from-blue-400 to-indigo-500',
+                'salon-beauty': 'from-rose-400 to-pink-500',
+                'health-medical': 'from-red-400 to-rose-500',
+                'home-repair': 'from-amber-400 to-orange-500',
+                'professional-services': 'from-violet-400 to-purple-500',
+                'education': 'from-sky-400 to-blue-500',
+                'fitness': 'from-rose-500 to-orange-500',
+                'automotive': 'from-yellow-400 to-amber-500',
+                'real-estate': 'from-cyan-400 to-blue-500',
+                'hotels': 'from-violet-500 to-fuchsia-500',
+                'events': 'from-pink-400 to-rose-500',
+                'personal-services': 'from-teal-400 to-emerald-500',
+                'travel': 'from-cyan-500 to-blue-500',
+                'financial': 'from-emerald-500 to-green-600',
+              };
+              const gradient = gradientMap[vert.slug] || 'from-zinc-400 to-zinc-500';
+
+              return (
+                <div 
+                  key={vert.slug}
+                  onClick={() => handleVerticalClick(vert.slug)}
+                  className="group bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm hover:shadow-lg hover:border-emerald-500/20 hover:scale-[1.02] cursor-pointer transition-all duration-300 flex flex-col items-center justify-between text-center min-h-[140px]"
+                >
+                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center text-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}>
+                    {vert.icon}
                   </div>
-                ))}
-              </div>
-            );
-          })()}
+                  <div className="mt-3 flex-1 flex flex-col justify-between">
+                    <h3 className="font-extrabold text-zinc-800 text-xs sm:text-xs group-hover:text-emerald-700 transition-colors leading-tight">
+                      {vert.label}
+                    </h3>
+                    <p className="text-[10px] text-zinc-400 font-semibold line-clamp-2 mt-1 leading-normal">
+                      {vert.blurb}
+                    </p>
+                    <p className="text-[9px] text-zinc-400 mt-2 font-bold tracking-wide uppercase group-hover:text-emerald-600 transition-colors">
+                      {vert.defaultTier === 'COMMERCE' ? 'Order' : vert.defaultTier === 'BOOKABLE' ? 'Book' : 'Explore'}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </section>
 
         {/* ─── VERIFIED PROS CAROUSEL SHOWCASE ─── */}
-        {!loadingShowcase && showcaseItems.length > 0 && (
-          <section className="space-y-6 relative z-10">
-            <div className="flex items-end justify-between border-b border-zinc-200 pb-2">
-              <div>
-                <h2 className="text-lg sm:text-xl font-black text-zinc-900 tracking-tight">
-                  {t('topRatedTitle')}
-                </h2>
-                <p className="text-[10px] sm:text-xs text-zinc-500 font-bold">
-                  {t('topRatedSubtitle')}
-                </p>
-              </div>
-              <Link 
-                href="/explore" 
-                className="text-xs font-black text-primary hover:text-primary/80 flex items-center gap-0.5 shrink-0"
-              >
-                {language === 'hi' ? 'सभी देखें' : 'View All'}
-                <ChevronRight className="w-4 h-4" />
-              </Link>
+        <section className="space-y-6 relative z-10">
+          <div className="flex items-end justify-between border-b border-zinc-200 pb-2">
+            <div>
+              <h2 className="text-lg sm:text-xl font-black text-zinc-900 tracking-tight">
+                {t('topRatedTitle')}
+              </h2>
+              <p className="text-[10px] sm:text-xs text-zinc-500 font-bold">
+                {t('topRatedSubtitle')}
+              </p>
             </div>
+            <Link 
+              href="/explore" 
+              className="text-xs font-black text-primary hover:text-primary/80 flex items-center gap-0.5 shrink-0"
+            >
+              {language === 'hi' ? 'सभी देखें' : 'View All'}
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
 
-            <div className="flex overflow-x-auto gap-4 pb-6 custom-scrollbar -mx-4 px-4">
-              {showcaseItems.map((item, i) => (
-                <div 
-                  key={i} 
-                  className="bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow shrink-0 w-64 flex flex-col justify-between min-h-[192px]"
-                >
-                  <div className="space-y-1.5 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="bg-emerald-50 text-emerald-700 text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border border-emerald-100 flex items-center gap-0.5">
-                        <ShieldCheck className="w-3.5 h-3.5 fill-emerald-500 text-white" />
-                        {t('verified')}
-                      </span>
-                      {item.vendor?.rating > 0 && (
-                        <div className="flex items-center gap-0.5 text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-extrabold border border-amber-100">
-                          <Star className="w-3 h-3 fill-current" />
-                          {item.vendor.rating.toFixed(1)}
+          {loadingShowcase ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-xs animate-pulse flex flex-col h-[280px]">
+                  <div className="h-36 bg-zinc-100 w-full border-b border-zinc-100" />
+                  <div className="p-4 flex gap-3 flex-1">
+                    <div className="h-14 w-14 bg-zinc-100 rounded-xl shrink-0" />
+                    <div className="flex-1 space-y-3">
+                      <div className="space-y-2">
+                        <div className="h-4.5 bg-zinc-100 rounded w-3/4" />
+                        <div className="flex gap-2">
+                          <div className="h-4 bg-zinc-150 rounded w-16" />
+                          <div className="h-4 bg-zinc-100 rounded w-20" />
                         </div>
-                      )}
+                      </div>
+                      <div className="h-3.5 bg-zinc-100 rounded w-1/2" />
                     </div>
-                    
-                    <h3 className="font-extrabold text-zinc-900 text-sm whitespace-normal leading-tight">{item.title}</h3>
-                    <p className="text-[11px] font-semibold text-zinc-500 whitespace-normal leading-tight">{item.vendor?.businessName}</p>
-                    <p className="text-[11px] text-zinc-400 font-medium line-clamp-2 leading-relaxed">
-                      {item.description || 'No description provided.'}
-                    </p>
                   </div>
-
-                  <div className="pt-2">
-                    <ServiceSidebar item={item} vendorName={item.vendor?.businessName || 'the provider'} />
+                  <div className="mt-auto border-t border-zinc-100 p-3 flex gap-2">
+                    <div className="h-9 bg-zinc-100 rounded-xl flex-1" />
+                    <div className="h-9 bg-zinc-100 rounded-xl flex-1" />
                   </div>
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          ) : showcaseItems.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {showcaseItems.map((item, i) => (
+                <ListingCard key={`${item.id}-${i}`} listing={item} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-zinc-50 rounded-2xl border border-zinc-200">
+              <p className="text-zinc-500 font-bold text-sm">
+                {language === 'hi' ? 'इस क्षेत्र में कोई सक्रिय लिस्टिंग्स नहीं मिली।' : 'No active listings found in this region.'}
+              </p>
+              <p className="text-zinc-400 text-xs mt-1">
+                {language === 'hi' ? 'जल्द ही और अधिक व्यवसाय जोड़े जाएंगे!' : 'More businesses will be added soon!'}
+              </p>
+            </div>
+          )}
+        </section>
 
         {/* ─── VALUE PROPOSITION CARDS (Zero-Brokerage / Direct Connect) ─── */}
         <section className="max-w-6xl mx-auto px-4 lg:px-0 mb-8">

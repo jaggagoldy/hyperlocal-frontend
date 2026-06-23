@@ -44,6 +44,12 @@ export function Navbar() {
     router.push('/login');
   };
   
+  // Hide navbar on landing page and all auth screens
+  const authPaths = ['/', '/login', '/register', '/vendor/login', '/vendor/register', '/forgot-password', '/reset-password'];
+  if (authPaths.includes(pathname)) {
+    return null;
+  }
+
   const segments = pathname.split('/').filter(Boolean);
   const isStorefront = segments.length === 1 && ![
     'explore', 'food', 'login', 'register', 'vendor', 

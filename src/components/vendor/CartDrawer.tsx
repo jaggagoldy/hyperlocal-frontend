@@ -17,7 +17,7 @@ interface CartDrawerProps {
 
 export default function CartDrawer({ vendor, theme }: CartDrawerProps) {
   const router = useRouter();
-  const { cartItems, getTotalValue, clearCart } = useCartStore();
+  const { cartItems, vendorId, getTotalValue, clearCart } = useCartStore();
   const [isOpen, setIsOpen] = useState(false);
   
   // Form State
@@ -37,7 +37,7 @@ export default function CartDrawer({ vendor, theme }: CartDrawerProps) {
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  if (itemCount === 0) return null;
+  if (itemCount === 0 || (vendorId && vendorId !== vendor.id)) return null;
 
   const handleApplyCoupon = (e: React.MouseEvent) => {
     e.preventDefault();

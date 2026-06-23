@@ -53,14 +53,39 @@ export const getTaxonomyForCategory = (categorySlug: string): TaxonomyField[] =>
   let slug = categorySlug || '';
   
   // Normalize category slugs / map aliases
-  if (slug === 'salon-spa' || slug === 'salon') {
+  const foodSlugs = ['restaurant', 'cafe', 'cloud-kitchen', 'street-food', 'bakery', 'mithai', 'tiffin', 'food-dining', 'food-beverage', 'restaurant-cafe'];
+  if (foodSlugs.includes(slug)) {
+    slug = 'restaurant-cafe';
+  }
+
+  const retailSlugs = ['kirana', 'supermarket', 'dairy', 'retail-grocery', 'retail-shop', 'fashion', 'electronics', 'optical', 'gift-shop', 'mobile-electronics', 'apparel', 'footwear', 'jewellery', 'hardware', 'stationery'];
+  if (retailSlugs.includes(slug)) {
+    slug = 'retail-grocery';
+  }
+
+  const salonSlugs = ['haircut', 'massage', 'bridal-makeup', 'nails', 'salon-beauty', 'salon-spa', 'salon', 'salon-booking'];
+  if (salonSlugs.includes(slug)) {
     slug = 'salon-beauty';
-  } else if (slug === 'doctors-clinics' || slug === 'clinic' || slug === 'doctor') {
+  }
+
+  const healthSlugs = ['pharmacy', 'general-physician', 'dentist', 'diagnostic-lab', 'hospital', 'vet', 'doctors', 'health-medical', 'doctors-clinics', 'clinic', 'doctor'];
+  if (healthSlugs.includes(slug)) {
     slug = 'doctors';
-  } else if (slug === 'education-tutors' || slug === 'tutor') {
-    slug = 'education';
-  } else if (slug === 'repairs-plumbers' || slug === 'plumber') {
+  }
+
+  const repairSlugs = ['ac-repair', 'ro-repair', 'electrician', 'plumber', 'carpenter', 'repairs-services', 'repairs-plumbers'];
+  if (repairSlugs.includes(slug)) {
     slug = 'repairs-services';
+  }
+
+  const homeSlugs = ['cleaning', 'pest-control', 'home-services'];
+  if (homeSlugs.includes(slug)) {
+    slug = 'home-services';
+  }
+
+  const eduSlugs = ['ca-accountant', 'lawyer', 'insurance-advisor', 'consultant', 'architect', 'it-services', 'education', 'education-tutors', 'tutor'];
+  if (eduSlugs.includes(slug)) {
+    slug = 'education';
   }
 
   return CATEGORY_TAXONOMY_SCHEMA[slug] || [];

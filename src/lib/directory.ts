@@ -82,6 +82,7 @@ export interface Listing {
   longitude: number | null;
   city?: { name: string; district: string | null };
   metaData?: { osm?: { contactPhone?: string | null; website?: string | null; subcategory?: string | null } };
+  media?: { type: string; secureUrl: string }[];
 }
 
 /** Fetch directory listings for a district + vertical (directory scope, ISR-cached). */

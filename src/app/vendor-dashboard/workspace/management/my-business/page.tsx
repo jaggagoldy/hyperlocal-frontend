@@ -929,6 +929,7 @@ export default function MyBusinessWizardPage() {
         {/* Responsive constraints instead of hardcoded transform scale */}
         <div 
           className="relative w-full max-w-[350px] aspect-[9/19.5] max-h-[75vh] mx-auto overflow-hidden rounded-[40px] border-8 border-neutral-800 shadow-2xl bg-white flex flex-col"
+          style={{ transform: 'translate3d(0, 0, 0)' }}
         >
           {/* Subtle Top Browser-like Header */}
           <div className="h-8 bg-white/80 backdrop-blur border-b border-zinc-100 flex items-center justify-center px-4 relative z-50 shrink-0">

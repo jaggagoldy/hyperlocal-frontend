@@ -90,7 +90,7 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
     setTaxonomySelections(prev => ({ ...prev, [fieldId]: option }));
   };
 
-  const [customTags, setCustomTags] = useState<string[]>([]);
+  const [customTags, setCustomTags] = useState<string[]>(initialData?.metaData?.customTags || []);
   const [customTagInput, setCustomTagInput] = useState('');
   
   const addCustomTag = () => {
@@ -207,7 +207,7 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
           }
         }
 
-        toast.success('Restaurant App Updated!');
+        toast.success('Storefront App Updated!');
         if (onExit) onExit();
         else onSuccess();
       } else {
@@ -234,13 +234,13 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
           });
         }
 
-        toast.success('Restaurant App Built & Published!');
+        toast.success('Storefront App Built & Published!');
         onSuccess();
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error('Failed to publish restaurant.');
+      toast.error(error.response?.data?.message || error.message || 'Failed to publish storefront app.');
     } finally {
       setIsPublishing(false);
     }
@@ -1089,7 +1089,17 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
           }
           setEditItem(null);
         }}
-        availableCategories={(taxonomySelections.cuisines && taxonomySelections.cuisines.length > 0) ? taxonomySelections.cuisines : [isService ? 'General' : (isRetail ? 'General' : 'Mains')]}
+        availableCategories={(() => {
+          const categoryKeys = ['cuisines', 'product_types', 'expertise', 'speciality', 'subjects', 'services', 'property_type'];
+          const selectedCategories: string[] = [];
+          categoryKeys.forEach(key => {
+            if (Array.isArray(taxonomySelections[key])) {
+              selectedCategories.push(...taxonomySelections[key]);
+            }
+          });
+          const allOptions = [...selectedCategories, ...customTags];
+          return allOptions.length > 0 ? allOptions : [isService ? 'General' : (isRetail ? 'General' : 'Mains')];
+        })()}
         editItem={editItem}
         isRetail={isRetail}
         isService={isService}

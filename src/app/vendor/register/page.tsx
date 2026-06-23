@@ -1245,6 +1245,7 @@ export default function VendorRegisterPage() {
         {/* Responsive constraints instead of hardcoded transform scale */}
         <div 
           className="relative w-full max-w-[350px] aspect-[9/19.5] max-h-[75vh] mx-auto overflow-hidden rounded-[40px] border-8 border-neutral-800 shadow-2xl bg-white flex flex-col"
+          style={{ transform: 'translate3d(0, 0, 0)' }}
         >
           {/* Floating grabber pill — overlaid (not a flow row) so the storefront content
               fills the whole frame and its top corners are clipped by the rounded bezel. */}
