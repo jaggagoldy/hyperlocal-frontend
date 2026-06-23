@@ -22,9 +22,17 @@ import {
   Check,
   Loader2,
   LayoutGrid,
-  List
+  List,
+  Compass
 } from 'lucide-react';
-import ListingCard from '@/components/directory/ListingCard';
+import SearchCardSelector from '@/components/directory/SearchCardSelector';
+import FoodDishCard from '@/components/directory/FoodDishCard';
+import RetailProductCard from '@/components/directory/RetailProductCard';
+import ProximityMap from '@/components/directory/ProximityMap';
+import QuickBookingDrawer from '@/components/directory/QuickBookingDrawer';
+import CartDrawer from '@/components/vendor/CartDrawer';
+import { useCartStore } from '@/store/useCartStore';
+import { Listing } from '@/lib/directory';
 import { useSearchStore } from '@/store/searchStore';
 import { useAuthStore } from '@/store/authStore';
 import apiClient from '@/lib/api-client';
@@ -96,6 +104,7 @@ function ExplorePageContent() {
   const searchParams = useSearchParams();
   const { t, language } = useTranslation();
   const { user, activeContext, updateToken, isAuthenticated } = useAuthStore();
+  const { cartItems, vendorId } = useCartStore();
   const { 
     selectedCity, 
     selectedCategory, 
@@ -177,6 +186,28 @@ function ExplorePageContent() {
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+
+  // Resolve layout mode (food / retail / service / generic)
+  const getSearchMode = (catSlug: string, btFilter: string) => {
+    const bt = (btFilter || '').toUpperCase();
+    if (catSlug === 'food-beverage' || bt.includes('FOOD_BEVERAGE')) return 'food';
+    if (catSlug === 'grocery' || catSlug === 'shops-retail' || bt.includes('GROCERY') || bt.includes('RETAIL')) return 'retail';
+    if (catSlug && catSlug !== '') return 'service';
+    return 'generic';
+  };
+  const searchMode = getSearchMode(selectedCategory, businessType);
+
+  const [searchTab, setSearchTab] = useState<'vendors' | 'items'>('vendors');
+  const [catalogItems, setCatalogItems] = useState<any[]>([]);
+  const [selectedBookVendor, setSelectedBookVendor] = useState<Listing | null>(null);
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [showRadarMap, setShowRadarMap] = useState(false);
+
+  // Automatically reset searchTab to vendors when category switches
+  useEffect(() => {
+    setSearchTab('vendors');
+    setShowRadarMap(false);
+  }, [selectedCategory]);
 
   // Cities List (Fetched dynamically from backend)
   const [cities, setCities] = useState<any[]>([]);
@@ -294,7 +325,7 @@ function ExplorePageContent() {
           page: reset ? 1 : page, 
           limit: 10,
           verifiedOnly,
-          businessType,
+          businessType: businessType || '', 
           minRating,
           openNow
         }
@@ -309,21 +340,53 @@ function ExplorePageContent() {
     } finally {
       setLoading(false);
     }
+  }, [selectedCity, selectedCategory, debouncedQuery, page, verifiedOnly, businessType, minRating, openNow]);
+
+  // Fetch catalog items for search
+  const fetchCatalogItems = useCallback(async (reset = false) => {
+    try {
+      setLoading(true);
+      const res = await apiClient.get('/catalog/explore', {
+        params: {
+          citySlug: selectedCity,
+          categorySlug: selectedCategory || undefined,
+          searchQuery: debouncedQuery || undefined,
+          page: reset ? 1 : page,
+          limit: 10
+        }
+      });
+      const newItems = res.data?.data || [];
+      setCatalogItems(prev => reset ? newItems : [...prev, ...newItems]);
+      setHasMore(newItems.length === 10);
+    } catch (error) {
+      console.error('Failed to fetch catalog items', error);
+      if (reset) setCatalogItems([]);
+    } finally {
+      setLoading(false);
+    }
   }, [selectedCity, selectedCategory, debouncedQuery, page]);
 
-  // Refetch when filters change
+  // Refetch when filters or tabs change
   useEffect(() => {
-    fetchItems(true);
-  }, [selectedCity, selectedCategory, debouncedQuery, verifiedOnly, businessType, minRating, openNow, fetchItems]);
+    if (searchTab === 'items') {
+      fetchCatalogItems(true);
+    } else {
+      fetchItems(true);
+    }
+  }, [selectedCity, selectedCategory, debouncedQuery, verifiedOnly, businessType, minRating, openNow, searchTab, fetchItems, fetchCatalogItems]);
 
   // Load page
   useEffect(() => {
     if (page > 1) {
-      fetchItems(true);
+      if (searchTab === 'items') {
+        fetchCatalogItems(false);
+      } else {
+        fetchItems(false);
+      }
       const grid = document.getElementById('explore-grid');
       if (grid) grid.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [page, fetchItems]);
+  }, [page, searchTab, fetchItems, fetchCatalogItems]);
 
   const handleNotifySubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -499,7 +562,16 @@ function ExplorePageContent() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-zinc-50/30 pb-24 font-sans">
+    <div 
+      className="flex flex-col min-h-screen bg-zinc-50/30 pb-24 font-sans"
+      style={{
+        '--primary': searchMode === 'food' 
+          ? '#e11d48' 
+          : searchMode === 'retail' 
+            ? '#0891b2' 
+            : '#10b981'
+      } as React.CSSProperties}
+    >
       
       {/* ─── STICKY HEADER ─── */}
       <header className="sticky top-0 z-40 bg-white border-b border-zinc-200/80 px-4 py-3 shadow-xs">
@@ -793,6 +865,20 @@ function ExplorePageContent() {
                     </DrawerContent>
                   </Drawer>
 
+                  {searchMode === 'service' && (
+                    <button
+                      onClick={() => setShowRadarMap(!showRadarMap)}
+                      className={`h-9 px-4.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+                        showRadarMap
+                          ? 'bg-emerald-600 border-emerald-700 text-white font-black'
+                          : 'bg-white border-zinc-250 hover:bg-zinc-50 text-zinc-700'
+                      }`}
+                    >
+                      <Compass className={`w-4 h-4 ${showRadarMap ? 'animate-spin' : ''}`} style={{ animationDuration: '6s' }} />
+                      {showRadarMap ? 'Close Map' : 'Radar Map'}
+                    </button>
+                  )}
+
                   <div className="h-4 w-px bg-zinc-300 hidden sm:block"></div>
                   <div className="flex items-center gap-3">
                     <span className="hidden sm:inline-block">View By</span>
@@ -968,67 +1054,135 @@ function ExplorePageContent() {
               // Product Grid Layout
               <div className="flex flex-col xl:flex-row gap-6 items-start">
                 <div className="flex-1 w-full min-w-0">
-                  {/* Filter Chips */}
-                  <div className="flex flex-wrap items-center gap-2 mb-4">
-                    <button
-                      onClick={() => setVerifiedOnly(!verifiedOnly)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                        verifiedOnly
-                          ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm ring-1 ring-emerald-500'
-                          : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
-                      }`}
-                    >
-                      {verifiedOnly && <Check className="w-3.5 h-3.5 text-emerald-600" />}
-                      Verified Only
-                    </button>
-
-                    <button
-                      onClick={() => setFilters({ openNow: !openNow })}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                        openNow
-                          ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm ring-1 ring-emerald-500'
-                          : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
-                      }`}
-                    >
-                      {openNow && <Check className="w-3.5 h-3.5 text-emerald-600" />}
-                      Open Now
-                    </button>
-
-                    <button
-                      onClick={() => setFilters({ minRating: minRating === '4.0' ? '' : '4.0' })}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                        minRating === '4.0'
-                          ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm ring-1 ring-emerald-500'
-                          : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
-                      }`}
-                    >
-                      {minRating === '4.0' && <Check className="w-3.5 h-3.5 text-emerald-600" />}
-                      Top Rated (4.0+)
-                    </button>
-
-                    {(verifiedOnly || openNow || minRating) && (
+                  
+                  {/* Domain Tab Selector (Food & Retail) */}
+                  {(searchMode === 'food' || searchMode === 'retail') && (
+                    <div className="flex border-b border-zinc-200 gap-6 mb-5">
                       <button
-                        onClick={() => {
-                          setVerifiedOnly(false);
-                          setFilters({ minRating: '', openNow: false });
-                        }}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-zinc-555 hover:text-zinc-900 hover:bg-zinc-100 transition-all border border-transparent"
+                        onClick={() => setSearchTab('vendors')}
+                        className={`pb-3.5 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+                          searchTab === 'vendors'
+                            ? 'border-primary text-zinc-955 font-black'
+                            : 'border-transparent text-zinc-400 hover:text-zinc-650'
+                        }`}
                       >
-                        Clear All
-                        <X className="w-3.5 h-3.5" />
+                        {searchMode === 'food' ? 'Restaurants & Cafes' : 'Shops & Supermarkets'}
                       </button>
-                    )}
-                  </div>
+                      <button
+                        onClick={() => setSearchTab('items')}
+                        className={`pb-3.5 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+                          searchTab === 'items'
+                            ? 'border-primary text-zinc-955 font-black'
+                            : 'border-transparent text-zinc-400 hover:text-zinc-650'
+                        }`}
+                      >
+                        {searchMode === 'food' ? 'Dishes & Meals' : 'Products & Goods'}
+                      </button>
+                    </div>
+                  )}
 
-                  <div className={
-                    viewMode === 'list'
-                      ? "flex flex-col gap-4"
-                      : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4"
-                  }>
-                    {items.map((vendor, i) => (
-                      <ListingCard key={`${vendor.id}-${i}`} listing={vendor as any} />
-                    ))}
-                  </div>
+                  {/* Filter Chips (Hidden when searching specific items) */}
+                  {searchTab === 'vendors' && (
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <button
+                        onClick={() => setVerifiedOnly(!verifiedOnly)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                          verifiedOnly
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm ring-1 ring-emerald-500'
+                            : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                        }`}
+                      >
+                        {verifiedOnly && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                        Verified Only
+                      </button>
+
+                      <button
+                        onClick={() => setFilters({ openNow: !openNow })}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                          openNow
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm ring-1 ring-emerald-500'
+                            : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                        }`}
+                      >
+                        {openNow && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                        Open Now
+                      </button>
+
+                      <button
+                        onClick={() => setFilters({ minRating: minRating === '4.0' ? '' : '4.0' })}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                          minRating === '4.0'
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm ring-1 ring-emerald-500'
+                            : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                        }`}
+                      >
+                        {minRating === '4.0' && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                        Top Rated (4.0+)
+                      </button>
+
+                      {(verifiedOnly || openNow || minRating) && (
+                        <button
+                          onClick={() => {
+                            setVerifiedOnly(false);
+                            setFilters({ minRating: '', openNow: false });
+                          }}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-zinc-555 hover:text-zinc-900 hover:bg-zinc-100 transition-all border border-transparent"
+                        >
+                          Clear All
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Proximity Map Overlay */}
+                  {showRadarMap && searchMode === 'service' && (
+                    <div className="mb-6 animate-in fade-in zoom-in-98 duration-300">
+                      <ProximityMap 
+                        items={items as any[]} 
+                        cityName={getCityNameBySlug(selectedCity)} 
+                        onClose={() => setShowRadarMap(false)} 
+                      />
+                    </div>
+                  )}
+
+                  {searchTab === 'items' ? (
+                    // Dishes / Products Search Grid
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {catalogItems.length === 0 && !loading ? (
+                        <div className="col-span-2 py-16 text-center text-zinc-400 font-bold text-xs border border-dashed rounded-3xl border-zinc-200 bg-white">
+                          No dishes or products match your search.
+                        </div>
+                      ) : (
+                        catalogItems.map((item, i) => (
+                          searchMode === 'food' ? (
+                            <FoodDishCard key={`${item.id}-${i}`} dish={item} />
+                          ) : (
+                            <RetailProductCard key={`${item.id}-${i}`} product={item} />
+                          )
+                        ))
+                      )}
+                    </div>
+                  ) : (
+                    // Regular Listings (Vendors) Grid
+                    <div className={
+                      viewMode === 'list'
+                        ? "flex flex-col gap-4"
+                        : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4"
+                    }>
+                      {items.map((vendor, i) => (
+                        <SearchCardSelector 
+                          key={`${vendor.id}-${i}`} 
+                          listing={vendor as any} 
+                          mode={searchMode}
+                          onBookTrigger={(listing) => {
+                            setSelectedBookVendor(listing);
+                            setIsBookingOpen(true);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
                   
                   {/* Numbered Pagination */}
                   {(page > 1 || hasMore) && (
@@ -1224,6 +1378,36 @@ function ExplorePageContent() {
           </div>
         </div>
       )}
+
+      {/* ─── QUICK BOOKING & CART DRAWER OVERLAYS ─── */}
+      <QuickBookingDrawer
+        vendor={selectedBookVendor}
+        isOpen={isBookingOpen}
+        onClose={() => {
+          setIsBookingOpen(false);
+          setSelectedBookVendor(null);
+        }}
+      />
+
+      {(() => {
+        const activeCartItem = cartItems[0];
+        const cartVendor = activeCartItem 
+          ? ((activeCartItem.catalogItem as any).businessProfile || { id: vendorId, businessName: 'Storefront', metaData: {} })
+          : vendorId ? { id: vendorId, businessName: 'Storefront', metaData: {} } : null;
+        
+        const mockCartTheme = {
+          colors: {
+            primary: searchMode === 'food' ? 'bg-rose-600' : 'bg-zinc-900',
+          }
+        };
+
+        return cartVendor ? (
+          <CartDrawer
+            vendor={cartVendor as any}
+            theme={mockCartTheme}
+          />
+        ) : null;
+      })()}
 
       {/* Global CSS scrollbar styling */}
       <style jsx global>{`

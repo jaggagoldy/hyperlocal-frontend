@@ -9,7 +9,7 @@ import {
   fetchDirectoryListings,
   API_BASE,
 } from '@/lib/directory';
-import ListingCard from '@/components/directory/ListingCard';
+import SearchCardSelector from '@/components/directory/SearchCardSelector';
 
 // ISR: SEO pages stay cached and fast, refreshed periodically as supply changes.
 export const revalidate = 1800;
@@ -36,11 +36,41 @@ export default async function DirectoryCategoryPage({ params }: { params: Promis
   const cat = getCategoryBySlug(category);
   const district = await resolveDistrict(slug);
 
-  // A 2-segment URL whose first part isn't a real district, or unknown category,
-  // is not a directory page — 404 (the 1-segment /[slug] storefront route is separate).
   if (!cat || !district) notFound();
 
   const { listings, total } = await fetchDirectoryListings(slug, cat.vertical);
+
+  const getSearchMode = (vertical: string) => {
+    const v = (vertical || '').toUpperCase();
+    if (v === 'FOOD_BEVERAGE') return 'food';
+    if (['RETAIL', 'GROCERY'].includes(v)) return 'retail';
+    return 'service';
+  };
+  const searchMode = getSearchMode(cat.vertical);
+
+  const headerGradient = searchMode === 'food'
+    ? 'from-rose-600 to-rose-750'
+    : searchMode === 'retail'
+      ? 'from-cyan-600 to-cyan-755'
+      : 'from-emerald-600 to-emerald-755';
+
+  const textPrimary = searchMode === 'food'
+    ? 'text-rose-750 font-black'
+    : searchMode === 'retail'
+      ? 'text-cyan-755 font-black'
+      : 'text-emerald-755 font-black';
+
+  const ctaButtonCls = searchMode === 'food'
+    ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/10'
+    : searchMode === 'retail'
+      ? 'bg-cyan-600 hover:bg-cyan-700 shadow-cyan-600/10'
+      : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/10';
+
+  const siblingHoverCls = searchMode === 'food'
+    ? 'hover:border-rose-300 hover:text-rose-700'
+    : searchMode === 'retail'
+      ? 'hover:border-cyan-300 hover:text-cyan-700'
+      : 'hover:border-emerald-300 hover:text-emerald-700';
 
   // schema.org ItemList of LocalBusiness for rich results.
   const jsonLd = {
@@ -69,7 +99,7 @@ export default async function DirectoryCategoryPage({ params }: { params: Promis
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 to-emerald-800 text-white">
+      <div className={`relative overflow-hidden bg-gradient-to-br ${headerGradient} text-white`}>
         {/* subtle decorative glow */}
         <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
         <div className="relative mx-auto max-w-5xl px-4 py-7">
@@ -103,7 +133,7 @@ export default async function DirectoryCategoryPage({ params }: { params: Promis
           /* Results + tier legend so the card badges make sense at a glance */
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 pb-4">
             <p className="text-sm font-bold text-zinc-700">
-              Showing <span className="text-emerald-700">{listings.length}</span> of {total}
+              Showing <span className={textPrimary}>{listings.length}</span> of {total}
             </p>
             <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
               <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-orange-700"><ShoppingBag className="h-3 w-3" /> Order online</span>
@@ -116,14 +146,14 @@ export default async function DirectoryCategoryPage({ params }: { params: Promis
           <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-10 text-center">
             <p className="text-lg font-bold text-zinc-800">No {cat.label.toLowerCase()} listed in {district.name} yet</p>
             <p className="mt-1 text-sm font-medium text-zinc-500">Own a business here? Be the first to get listed — it&apos;s free.</p>
-            <Link href="/vendor/register" className="mt-4 inline-block rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700">
+            <Link href="/vendor/register" className={`mt-4 inline-block rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all shadow-md ${ctaButtonCls}`}>
               List your business
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {listings.map((l) => (
-              <ListingCard key={l.id} listing={l} />
+              <SearchCardSelector key={l.id} listing={l} mode={searchMode} />
             ))}
           </div>
         )}
@@ -136,7 +166,7 @@ export default async function DirectoryCategoryPage({ params }: { params: Promis
               <Link
                 key={c.slug}
                 href={`/${slug}/${c.slug}`}
-                className="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-sm font-semibold text-zinc-700 hover:border-emerald-300 hover:text-emerald-700"
+                className={`rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-sm font-semibold text-zinc-700 transition-all ${siblingHoverCls}`}
               >
                 {c.icon} {c.label}
               </Link>
