@@ -1,4 +1,4 @@
-export type ThemeFlavor = 'trust-utility' | 'vibrant-local' | 'premium-wellness' | 'eco-fresh';
+export type ThemeFlavor = 'trust-utility' | 'vibrant-local' | 'premium-wellness' | 'eco-fresh' | 'academic-indigo' | 'soft-rose';
 
 export interface ThemeConfig {
   id: ThemeFlavor;
@@ -65,6 +65,32 @@ export const THEME_FLAVORS: Record<ThemeFlavor, ThemeConfig> = {
       headerGradient: 'from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40',
       badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
       button: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200 dark:shadow-none',
+    }
+  },
+  'academic-indigo': {
+    id: 'academic-indigo',
+    name: 'Academic Indigo (Indigo/Slate)',
+    isPro: false,
+    colors: {
+      primary: 'text-indigo-600 dark:text-indigo-400',
+      secondary: 'text-slate-500 dark:text-slate-400',
+      background: 'bg-indigo-50/20 dark:bg-indigo-950/10',
+      headerGradient: 'from-indigo-50 to-slate-100 dark:from-indigo-950/40 dark:to-slate-900',
+      badge: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
+      button: 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 dark:shadow-none',
+    }
+  },
+  'soft-rose': {
+    id: 'soft-rose',
+    name: 'Soft Rose (Pink/Purple)',
+    isPro: true,
+    colors: {
+      primary: 'text-pink-600 dark:text-pink-400',
+      secondary: 'text-purple-500 dark:text-purple-400',
+      background: 'bg-pink-50/20 dark:bg-pink-950/10',
+      headerGradient: 'from-pink-50 to-purple-50 dark:from-pink-950/40 dark:to-purple-950/40',
+      badge: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300 border-pink-200 dark:border-pink-800',
+      button: 'bg-pink-600 hover:bg-pink-700 text-white shadow-pink-200 dark:shadow-none',
     }
   }
 };

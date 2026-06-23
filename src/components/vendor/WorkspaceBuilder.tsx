@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, ChevronUp, Check, Plus, Trash2, MapPin, Store, Palette, Utensils, Image as ImageIcon, Tag, Tags, Upload, Edit, GripVertical, ChevronRight, ChevronLeft, Menu, Briefcase, FileText, X } from 'lucide-react';
-import { TEMPLATE_METADATA, getTemplateComponent, getTemplateArchetype } from '@/lib/templateRegistry';
+import { TEMPLATE_METADATA, getTemplateComponent, getTemplateArchetype, getDefaultTemplateId } from '@/lib/templateRegistry';
 import { getBlueprintForArchetype } from '@/lib/blueprints';
 import { getTaxonomyForCategory } from '@/lib/taxonomy';
 import DishModal from './DishModal';
@@ -52,23 +52,19 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
   const [contactPhone, setContactPhone] = useState(initialData?.metaData?.contactPhone || '');
   const [contactEmail, setContactEmail] = useState(initialData?.metaData?.contactEmail || '');
   const [enableServiceSelection, setEnableServiceSelection] = useState(initialData?.metaData?.enableServiceSelection ?? true);
-  const defaultTheme = isRetail ? 'retail-classic' : (isService ? 'service-classic' : 'food-immersive');
+  const defaultTheme = getDefaultTemplateId(initialData?.businessType) || (isRetail ? 'retail-classic' : (isService ? 'service-classic' : 'food-immersive'));
   const [themeId, setThemeId] = useState(initialData?.themeFlavor || defaultTheme);
   
   // Category/Taxonomy State
   const getCategorySlugFromBusinessType = (type: string) => {
-    switch (type) {
-      case 'SALON_BEAUTY': return 'salon-beauty';
-      case 'DOCTOR_CLINIC': return 'doctors';
-      case 'TUTOR_ACADEMY': return 'education';
-      case 'HOME_SERVICES': return 'home-services';
-      case 'REPAIRS_SERVICES': return 'repairs-services';
-      case 'RETAIL': return 'retail-grocery';
-      case 'SERVICE_BOOKING': return 'salon-beauty';
-      case 'SERVICE_LEADGEN': return 'home-services';
-      case 'FOOD_BEVERAGE':
-      default: return 'restaurant-cafe';
-    }
+    const t = type?.toUpperCase() || '';
+    if (['FOOD_BEVERAGE', 'RESTAURANT', 'CAFE', 'FOOD', 'RESTAURANT_CAFE', 'RESTAURANT / CAFE'].includes(t)) return 'restaurant-cafe';
+    if (['RETAIL', 'GROCERY'].includes(t)) return 'retail-grocery';
+    if (['SALON_BEAUTY', 'SALON', 'SALON_BOOKING'].includes(t)) return 'salon-beauty';
+    if (['HEALTH_MEDICAL', 'DOCTOR', 'DOCTOR_CLINIC'].includes(t)) return 'doctors';
+    if (['EDUCATION', 'TUTOR', 'TUTOR_ACADEMY'].includes(t)) return 'education';
+    if (['HOME_ESSENTIALS', 'REPAIR_SERVICE', 'PLUMBER', 'ELECTRICIAN', 'HOME_SERVICES', 'REPAIRS_SERVICES', 'REPAIRS_PLUMBERS'].includes(t)) return 'repairs-services';
+    return 'restaurant-cafe';
   };
   const categorySlug = initialData?.categorySlug 
     || initialData?.categories?.[0]?.category?.slug 

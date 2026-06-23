@@ -26,9 +26,12 @@ export const getBlueprintForArchetype = (archetype: string): ModuleConfig => {
       
     case 'SERVICE_BOOKING':
     case 'DOCTOR':
+    case 'HEALTH_MEDICAL':
     case 'SALON_BEAUTY':
     case 'GYM':
+    case 'FITNESS':
     case 'TUTOR':
+    case 'EDUCATION':
       return { commerce: false, scheduling: true, leadGen: false, estimation: false };
       
     case 'SERVICE_LEADGEN':
@@ -39,6 +42,13 @@ export const getBlueprintForArchetype = (archetype: string): ModuleConfig => {
     case 'REPAIR_SERVICE':
     case 'PLUMBER':
     case 'ELECTRICIAN':
+    case 'PROFESSIONAL_SERVICES':
+    case 'AUTOMOTIVE':
+    case 'HOTELS':
+    case 'EVENTS':
+    case 'PERSONAL_SERVICES':
+    case 'TRAVEL':
+    case 'FINANCIAL_SERVICES':
       return { commerce: false, scheduling: false, leadGen: true, estimation: true };
       
     default:

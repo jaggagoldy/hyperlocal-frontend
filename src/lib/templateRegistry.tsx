@@ -16,9 +16,15 @@ import VCardDoctorBlue from '@/components/templates/VCardDoctorBlue';
 import VCardDoctorGreen from '@/components/templates/VCardDoctorGreen';
 import VCardTutorVibrant from '@/components/templates/VCardTutorVibrant';
 import VCardTutorClean from '@/components/templates/VCardTutorClean';
+
+// New vCard Templates
+import VCardWellnessClassic from '@/components/templates/VCardWellnessClassic';
+import VCardProClassic from '@/components/templates/VCardProClassic';
+import VCardPortfolioClassic from '@/components/templates/VCardPortfolioClassic';
+import VCardRealEstateClassic from '@/components/templates/VCardRealEstateClassic';
+import VCardHotelClassic from '@/components/templates/VCardHotelClassic';
+
 import { BusinessProfile } from '@/types/models';
-
-
 import { LayoutTemplate, Smartphone, Grid, Store, Car, Briefcase, Sparkles, ShoppingBag, Zap } from 'lucide-react';
 
 export const TEMPLATE_METADATA = [
@@ -112,7 +118,7 @@ export const TEMPLATE_METADATA = [
   },
   {
     id: 'listing-classic',
-    archetype: 'LISTING',
+    archetype: 'SERVICE',
     name: 'Listing Standard',
     description: 'Default layout for listings.',
     icon: Store,
@@ -122,7 +128,7 @@ export const TEMPLATE_METADATA = [
     id: 'vcard-salon-dark',
     archetype: 'SERVICE',
     name: 'Luxe Dark (Salon/Spa)',
-    description: 'A sleek, premium dark theme with gold accents. Perfect for high-end salons and spas.',
+    description: 'A sleek, premium dark theme with gold accents. Perfect for salons and spas.',
     icon: Sparkles,
     color: 'bg-zinc-900 text-yellow-500 border-yellow-500/50'
   },
@@ -165,12 +171,49 @@ export const TEMPLATE_METADATA = [
     description: 'Clean, focused academic theme with soft gray and bright blue.',
     icon: Briefcase,
     color: 'bg-slate-50 text-slate-600 border-slate-200'
+  },
+  {
+    id: 'vcard-wellness-classic',
+    archetype: 'SERVICE',
+    name: 'Wellness Hub (Fitness)',
+    description: 'Dynamic schedule and package showcase. Ideal for gyms, personal trainers, and yoga teachers.',
+    icon: Sparkles,
+    color: 'bg-emerald-50 text-emerald-600 border-emerald-200'
+  },
+  {
+    id: 'vcard-pro-classic',
+    archetype: 'SERVICE',
+    name: 'Pro CV (Professional)',
+    description: 'Clean resume format showcasing credentials, specialties, and professional background.',
+    icon: Briefcase,
+    color: 'bg-slate-50 text-slate-600 border-slate-200'
+  },
+  {
+    id: 'vcard-portfolio-classic',
+    archetype: 'SERVICE',
+    name: 'Visual Portfolio (Events)',
+    description: 'Beautiful image gallery showcase for wedding planners, caterers, and decorators.',
+    icon: Sparkles,
+    color: 'bg-pink-50 text-pink-600 border-pink-200'
+  },
+  {
+    id: 'vcard-realestate-classic',
+    archetype: 'SERVICE',
+    name: 'Premium Listing (Real Estate)',
+    description: 'Property highlights, location advantages, and unit lists with visit scheduling.',
+    icon: Store,
+    color: 'bg-blue-50 text-blue-600 border-blue-200'
+  },
+  {
+    id: 'vcard-hotel-classic',
+    archetype: 'SERVICE',
+    name: 'Hotels & Banquets Standard',
+    description: 'Room rates, package structures, amenities lists, and availability checker.',
+    icon: Store,
+    color: 'bg-indigo-50 text-indigo-600 border-indigo-200'
   }
 ];
 
-// Maps a vertical's templateFamily (from GET /verticals: 'food' | 'retail' | 'vcard')
-// to the template archetype(s) eligible for that vertical, so the storefront picker
-// only offers on-brand templates (e.g. salons see vCard themes, not food menus).
 const FAMILY_ARCHETYPES: Record<string, string[]> = {
   food: ['FOOD_BEVERAGE'],
   retail: ['RETAIL'],
@@ -183,16 +226,27 @@ export const getTemplatesForFamily = (family?: string) => {
   return TEMPLATE_METADATA.filter(t => archetypes.includes(t.archetype));
 };
 
-// A polished, on-brand default template per business type so the onboarding
-// live-preview never falls back to the bare generic layout. Keyed by businessType
-// first, then by templateFamily, so new verticals still get a sensible default.
 const DEFAULT_TEMPLATE_BY_TYPE: Record<string, string> = {
   FOOD_BEVERAGE: 'food-premium-light',
+  GROCERY: 'retail-grocery',
+  RETAIL: 'retail-classic',
   SALON_BEAUTY: 'vcard-salon-light',
+  HEALTH_MEDICAL: 'vcard-doctor-blue',
   DOCTOR: 'vcard-doctor-blue',
-  HOME_ESSENTIALS: 'vcard-salon-dark',
-  REAL_ESTATE: 'vcard-doctor-green',
+  HOME_ESSENTIALS: 'service-classic',
+  PROFESSIONAL_SERVICES: 'vcard-pro-classic',
+  EDUCATION: 'vcard-tutor-vibrant',
+  TUTOR: 'vcard-tutor-vibrant',
+  FITNESS: 'vcard-wellness-classic',
+  AUTOMOTIVE: 'service-classic',
+  REAL_ESTATE: 'vcard-realestate-classic',
+  HOTELS: 'vcard-hotel-classic',
+  EVENTS: 'vcard-portfolio-classic',
+  PERSONAL_SERVICES: 'service-classic',
+  TRAVEL: 'service-classic',
+  FINANCIAL_SERVICES: 'vcard-pro-classic',
 };
+
 const DEFAULT_TEMPLATE_BY_FAMILY: Record<string, string> = {
   food: 'food-premium-light',
   retail: 'retail-classic',
@@ -222,7 +276,7 @@ export const TemplateRegistry: Record<string, React.ComponentType<any>> = {
   'retail-grocery': RetailGrocery,
   'retail-tech': RetailTech,
   
-  // Base fallbacks mapping back to existing templates for other Archetypes
+  // Base fallbacks
   'cab-classic': CabTransportLayout,
   'service-classic': HomeServicesLayout,
   'listing-classic': HomeServicesLayout,
@@ -234,6 +288,11 @@ export const TemplateRegistry: Record<string, React.ComponentType<any>> = {
   'vcard-doctor-green': VCardDoctorGreen,
   'vcard-tutor-vibrant': VCardTutorVibrant,
   'vcard-tutor-clean': VCardTutorClean,
+  'vcard-wellness-classic': VCardWellnessClassic,
+  'vcard-pro-classic': VCardProClassic,
+  'vcard-portfolio-classic': VCardPortfolioClassic,
+  'vcard-realestate-classic': VCardRealEstateClassic,
+  'vcard-hotel-classic': VCardHotelClassic,
 };
 
 export const getTemplateArchetype = (type?: string): string => {
@@ -241,7 +300,7 @@ export const getTemplateArchetype = (type?: string): string => {
   if (['FOOD_BEVERAGE', 'RESTAURANT', 'CAFE', 'FOOD', 'RESTAURANT_CAFE', 'RESTAURANT / CAFE'].includes(t)) return 'FOOD_BEVERAGE';
   if (['RETAIL', 'GROCERY'].includes(t)) return 'RETAIL';
   if (['CAB_TRANSPORT'].includes(t)) return 'CAB_TRANSPORT';
-  if (['SERVICE_BOOKING', 'SERVICE_LEADGEN', 'SERVICE', 'REAL_ESTATE', 'INFLUENCER', 'PG_HOSTEL', 'DOCTOR', 'SALON_BEAUTY', 'GYM', 'TUTOR', 'HOME_ESSENTIALS', 'REPAIR_SERVICE', 'PLUMBER', 'ELECTRICIAN', 'LISTING'].includes(t)) return 'SERVICE';
+  if (['SERVICE_BOOKING', 'SERVICE_LEADGEN', 'SERVICE', 'REAL_ESTATE', 'INFLUENCER', 'PG_HOSTEL', 'DOCTOR', 'SALON_BEAUTY', 'GYM', 'TUTOR', 'HOME_ESSENTIALS', 'REPAIR_SERVICE', 'PLUMBER', 'ELECTRICIAN', 'LISTING', 'HEALTH_MEDICAL', 'PROFESSIONAL_SERVICES', 'EDUCATION', 'FITNESS', 'AUTOMOTIVE', 'HOTELS', 'EVENTS', 'PERSONAL_SERVICES', 'TRAVEL', 'FINANCIAL_SERVICES'].includes(t)) return 'SERVICE';
   return 'FOOD_BEVERAGE';
 };
 
