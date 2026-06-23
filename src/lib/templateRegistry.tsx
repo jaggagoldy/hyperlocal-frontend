@@ -24,6 +24,23 @@ import VCardPortfolioClassic from '@/components/templates/VCardPortfolioClassic'
 import VCardRealEstateClassic from '@/components/templates/VCardRealEstateClassic';
 import VCardHotelClassic from '@/components/templates/VCardHotelClassic';
 
+// Newly added vCard Variations
+import VCardSalonModern from '@/components/templates/VCardSalonModern';
+import VCardDoctorMinimal from '@/components/templates/VCardDoctorMinimal';
+import VCardTutorDark from '@/components/templates/VCardTutorDark';
+import VCardWellnessDark from '@/components/templates/VCardWellnessDark';
+import VCardWellnessMinimal from '@/components/templates/VCardWellnessMinimal';
+import VCardProDark from '@/components/templates/VCardProDark';
+import VCardProModern from '@/components/templates/VCardProModern';
+import VCardPortfolioDark from '@/components/templates/VCardPortfolioDark';
+import VCardPortfolioLuxury from '@/components/templates/VCardPortfolioLuxury';
+import VCardRealEstateDark from '@/components/templates/VCardRealEstateDark';
+import VCardRealEstateLuxury from '@/components/templates/VCardRealEstateLuxury';
+import VCardHotelLuxury from '@/components/templates/VCardHotelLuxury';
+import VCardHotelResort from '@/components/templates/VCardHotelResort';
+import VCardRepairVibrant from '@/components/templates/VCardRepairVibrant';
+import VCardRepairClean from '@/components/templates/VCardRepairClean';
+
 import { BusinessProfile } from '@/types/models';
 import { LayoutTemplate, Smartphone, Grid, Store, Car, Briefcase, Sparkles, ShoppingBag, Zap } from 'lucide-react';
 
@@ -141,6 +158,14 @@ export const TEMPLATE_METADATA = [
     color: 'bg-pink-50 text-pink-600 border-pink-200'
   },
   {
+    id: 'vcard-salon-modern',
+    archetype: 'SERVICE',
+    name: 'Modern Glass (Salon/Spa)',
+    description: 'Gold-and-gold glassmorphism grid layout. Ultra-premium look.',
+    icon: Sparkles,
+    color: 'bg-stone-900 text-amber-400 border-amber-400/20'
+  },
+  {
     id: 'vcard-doctor-blue',
     archetype: 'SERVICE',
     name: 'Trust Blue (Doctor/Clinic)',
@@ -155,6 +180,14 @@ export const TEMPLATE_METADATA = [
     description: 'Calming holistic green and earth tones. Warm, inviting, trustworthy.',
     icon: Briefcase,
     color: 'bg-green-50 text-green-600 border-green-200'
+  },
+  {
+    id: 'vcard-doctor-minimal',
+    archetype: 'SERVICE',
+    name: 'Minimal White (Doctor/Clinic)',
+    description: 'Clean medical details focused layout with soft grid accents.',
+    icon: Briefcase,
+    color: 'bg-slate-50 text-blue-600 border-slate-200'
   },
   {
     id: 'vcard-tutor-vibrant',
@@ -173,12 +206,36 @@ export const TEMPLATE_METADATA = [
     color: 'bg-slate-50 text-slate-600 border-slate-200'
   },
   {
+    id: 'vcard-tutor-dark',
+    archetype: 'SERVICE',
+    name: 'Obsidian Dashboard (Tutor)',
+    description: 'A premium dark-mode dashboard look for tuition schedules and courses.',
+    icon: Briefcase,
+    color: 'bg-slate-950 text-indigo-400 border-slate-800'
+  },
+  {
     id: 'vcard-wellness-classic',
     archetype: 'SERVICE',
     name: 'Wellness Hub (Fitness)',
     description: 'Dynamic schedule and package showcase. Ideal for gyms, personal trainers, and yoga teachers.',
     icon: Sparkles,
     color: 'bg-emerald-50 text-emerald-600 border-emerald-200'
+  },
+  {
+    id: 'vcard-wellness-dark',
+    archetype: 'SERVICE',
+    name: 'Neon Gym (Fitness)',
+    description: 'High-contrast charcoal and neon green style for active fitness coaching.',
+    icon: Sparkles,
+    color: 'bg-zinc-950 text-lime-400 border-zinc-800'
+  },
+  {
+    id: 'vcard-wellness-minimal',
+    archetype: 'SERVICE',
+    name: 'Soft Yoga (Fitness)',
+    description: 'Soft sage and beige organic aesthetic for yoga and pilates studios.',
+    icon: Sparkles,
+    color: 'bg-stone-50 text-emerald-800 border-stone-200'
   },
   {
     id: 'vcard-pro-classic',
@@ -189,12 +246,44 @@ export const TEMPLATE_METADATA = [
     color: 'bg-slate-50 text-slate-600 border-slate-200'
   },
   {
+    id: 'vcard-pro-dark',
+    archetype: 'SERVICE',
+    name: 'Corporate Obsidian (Professional)',
+    description: 'Sleek dark corporate look for consultants, CAs, and legal advisors.',
+    icon: Briefcase,
+    color: 'bg-slate-950 text-slate-350 border-slate-850'
+  },
+  {
+    id: 'vcard-pro-modern',
+    archetype: 'SERVICE',
+    name: 'Editorial Grid (Professional)',
+    description: 'Dynamic editorial layout with heavy typography and modular blocks.',
+    icon: Briefcase,
+    color: 'bg-white text-zinc-900 border-zinc-200'
+  },
+  {
     id: 'vcard-portfolio-classic',
     archetype: 'SERVICE',
     name: 'Visual Portfolio (Events)',
     description: 'Beautiful image gallery showcase for wedding planners, caterers, and decorators.',
     icon: Sparkles,
     color: 'bg-pink-50 text-pink-600 border-pink-200'
+  },
+  {
+    id: 'vcard-portfolio-dark',
+    archetype: 'SERVICE',
+    name: 'Cinematic Dark (Events)',
+    description: 'A dark gallery look that makes event portfolio images stand out.',
+    icon: Sparkles,
+    color: 'bg-stone-955 text-pink-400 border-stone-850'
+  },
+  {
+    id: 'vcard-portfolio-luxury',
+    archetype: 'SERVICE',
+    name: 'Luxury Serif (Events)',
+    description: 'High-end gold serif layout with classic borders and premium margins.',
+    icon: Sparkles,
+    color: 'bg-stone-50 text-amber-700 border-stone-200'
   },
   {
     id: 'vcard-realestate-classic',
@@ -205,12 +294,60 @@ export const TEMPLATE_METADATA = [
     color: 'bg-blue-50 text-blue-600 border-blue-200'
   },
   {
+    id: 'vcard-realestate-dark',
+    archetype: 'SERVICE',
+    name: 'Charcoal Realty (Real Estate)',
+    description: 'Sleek dark layout with highlighted property parameters and site visit form.',
+    icon: Store,
+    color: 'bg-neutral-900 text-blue-400 border-stone-750'
+  },
+  {
+    id: 'vcard-realestate-luxury',
+    archetype: 'SERVICE',
+    name: 'Emerald Prestige (Real Estate)',
+    description: 'Luxurious emerald green property showcase. Great for high-end builders and PGs.',
+    icon: Store,
+    color: 'bg-emerald-50/20 text-emerald-700 border-emerald-100'
+  },
+  {
     id: 'vcard-hotel-classic',
     archetype: 'SERVICE',
     name: 'Hotels & Banquets Standard',
     description: 'Room rates, package structures, amenities lists, and availability checker.',
     icon: Store,
     color: 'bg-indigo-50 text-indigo-600 border-indigo-200'
+  },
+  {
+    id: 'vcard-hotel-luxury',
+    archetype: 'SERVICE',
+    name: 'Royal Boutique (Hotels)',
+    description: 'Royal boutique gold-on-black theme for high-end banquets and suites.',
+    icon: Store,
+    color: 'bg-stone-950 text-amber-400 border-stone-850'
+  },
+  {
+    id: 'vcard-hotel-resort',
+    archetype: 'SERVICE',
+    name: 'Palms Resort (Hotels)',
+    description: 'Tropical terracotta beach look, ideal for resorts and banquets.',
+    icon: Store,
+    color: 'bg-[#faf7f2] text-orange-700 border-orange-200'
+  },
+  {
+    id: 'vcard-repair-vibrant',
+    archetype: 'SERVICE',
+    name: 'On-Call Repairs (Repair)',
+    description: 'Warning yellow and black high-contrast layout for rapid service booking.',
+    icon: Briefcase,
+    color: 'bg-stone-900 text-yellow-450 border-yellow-500/20'
+  },
+  {
+    id: 'vcard-repair-clean',
+    archetype: 'SERVICE',
+    name: 'Pro Maintenance (Repair)',
+    description: 'Clean slate theme for facilities management, repairs, and sanitization.',
+    icon: Briefcase,
+    color: 'bg-white text-slate-800 border-slate-205'
   }
 ];
 
@@ -233,16 +370,16 @@ const DEFAULT_TEMPLATE_BY_TYPE: Record<string, string> = {
   SALON_BEAUTY: 'vcard-salon-light',
   HEALTH_MEDICAL: 'vcard-doctor-blue',
   DOCTOR: 'vcard-doctor-blue',
-  HOME_ESSENTIALS: 'service-classic',
+  HOME_ESSENTIALS: 'vcard-repair-clean',
   PROFESSIONAL_SERVICES: 'vcard-pro-classic',
   EDUCATION: 'vcard-tutor-vibrant',
   TUTOR: 'vcard-tutor-vibrant',
   FITNESS: 'vcard-wellness-classic',
-  AUTOMOTIVE: 'service-classic',
+  AUTOMOTIVE: 'vcard-repair-clean',
   REAL_ESTATE: 'vcard-realestate-classic',
   HOTELS: 'vcard-hotel-classic',
   EVENTS: 'vcard-portfolio-classic',
-  PERSONAL_SERVICES: 'service-classic',
+  PERSONAL_SERVICES: 'vcard-repair-clean',
   TRAVEL: 'service-classic',
   FINANCIAL_SERVICES: 'vcard-pro-classic',
 };
@@ -284,15 +421,30 @@ export const TemplateRegistry: Record<string, React.ComponentType<any>> = {
   // vCard Themes
   'vcard-salon-dark': VCardSalonDark,
   'vcard-salon-light': VCardSalonLight,
+  'vcard-salon-modern': VCardSalonModern,
   'vcard-doctor-blue': VCardDoctorBlue,
   'vcard-doctor-green': VCardDoctorGreen,
+  'vcard-doctor-minimal': VCardDoctorMinimal,
   'vcard-tutor-vibrant': VCardTutorVibrant,
   'vcard-tutor-clean': VCardTutorClean,
+  'vcard-tutor-dark': VCardTutorDark,
   'vcard-wellness-classic': VCardWellnessClassic,
+  'vcard-wellness-dark': VCardWellnessDark,
+  'vcard-wellness-minimal': VCardWellnessMinimal,
   'vcard-pro-classic': VCardProClassic,
+  'vcard-pro-dark': VCardProDark,
+  'vcard-pro-modern': VCardProModern,
   'vcard-portfolio-classic': VCardPortfolioClassic,
+  'vcard-portfolio-dark': VCardPortfolioDark,
+  'vcard-portfolio-luxury': VCardPortfolioLuxury,
   'vcard-realestate-classic': VCardRealEstateClassic,
+  'vcard-realestate-dark': VCardRealEstateDark,
+  'vcard-realestate-luxury': VCardRealEstateLuxury,
   'vcard-hotel-classic': VCardHotelClassic,
+  'vcard-hotel-luxury': VCardHotelLuxury,
+  'vcard-hotel-resort': VCardHotelResort,
+  'vcard-repair-vibrant': VCardRepairVibrant,
+  'vcard-repair-clean': VCardRepairClean,
 };
 
 export const getTemplateArchetype = (type?: string): string => {
