@@ -3,35 +3,62 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Home, Search, Moon, Target, User, LogOut, LayoutDashboard,
-  Briefcase, ChevronDown, ArrowLeftRight, UserPlus, Coffee
+  Moon, Target, User, LogOut, LayoutDashboard,
+  Briefcase, ChevronDown, ArrowLeftRight, UserPlus, Sparkles,
+  Compass, LayoutGrid,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
 import { useLanguageStore } from "@/store/languageStore";
+import { useSearchStore } from "@/store/searchStore";
 import { useState, useRef, useEffect } from "react";
 import apiClient from "@/lib/api-client";
 import { toast } from "sonner";
 
+const NAV_CATEGORIES = [
+  { slug: 'food-beverage',        label: 'Food & Drinks',    emoji: '🍽️' },
+  { slug: 'grocery',              label: 'Grocery',          emoji: '🛒' },
+  { slug: 'salon-beauty',         label: 'Salon & Beauty',   emoji: '✂️' },
+  { slug: 'health-medical',       label: 'Health & Medical', emoji: '🏥' },
+  { slug: 'fitness',              label: 'Fitness',          emoji: '💪' },
+  { slug: 'shops-retail',         label: 'Shops & Retail',   emoji: '🛍️' },
+  { slug: 'home-repair',          label: 'Home Repair',      emoji: '🔧' },
+  { slug: 'professional-services',label: 'Professional',     emoji: '💼' },
+  { slug: 'automotive',           label: 'Automotive',       emoji: '🚗' },
+  { slug: 'education',            label: 'Education',        emoji: '📚' },
+];
+
 export function Navbar() {
   const { isAuthenticated, logout, user, activeContext, updateToken } = useAuthStore();
   const { language, setLanguage } = useLanguageStore();
+  const { selectedCity } = useSearchStore();
   const router = useRouter();
   const pathname = usePathname();
   const isProMode = activeContext === 'vendor';
+  const citySlug = selectedCity || 'hisar';
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const categoriesRef = useRef<HTMLDivElement>(null);
 
-  // Dual-profile user detection
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const isDualProfile = user?.hasCustomerProfile && user?.hasVendorProfile;
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setProfileMenuOpen(false);
+      }
+      if (categoriesRef.current && !categoriesRef.current.contains(e.target as Node)) {
+        setCategoriesOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -43,17 +70,14 @@ export function Navbar() {
     logout();
     router.push('/login');
   };
-  
-  // Hide navbar on landing page and all auth screens
-  const authPaths = ['/', '/login', '/register', '/vendor/login', '/vendor/register', '/forgot-password', '/reset-password'];
-  if (authPaths.includes(pathname)) {
-    return null;
-  }
+
+  const authPaths = ['/login', '/register', '/vendor/login', '/vendor/register', '/forgot-password', '/reset-password'];
+  if (authPaths.includes(pathname)) return null;
 
   const segments = pathname.split('/').filter(Boolean);
   const isStorefront = segments.length === 1 && ![
-    'explore', 'food', 'login', 'register', 'vendor', 
-    'admin', 'vendor-dashboard', 'directory', 'pro', 
+    'explore', 'food', 'login', 'register', 'vendor',
+    'admin', 'vendor-dashboard', 'directory', 'pro',
     'onboarding', 'profile', 'create-consumer-profile',
     'reset-password', 'forgot-password', 'sw-reset', 'claim'
   ].includes(segments[0]);
@@ -83,51 +107,126 @@ export function Navbar() {
     }
   };
 
+  const navLinkClass = (active: boolean) =>
+    `flex items-center gap-1.5 h-10 px-3.5 rounded-xl font-bold text-sm transition-all ${
+      active
+        ? 'bg-white/[0.08] text-white'
+        : 'text-zinc-400 hover:text-white hover:bg-white/[0.05]'
+    }`;
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/85 backdrop-blur-xl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <header className={`sticky top-0 z-50 w-full border-b border-white/[0.05] bg-[#020617]/90 backdrop-blur-xl transition-shadow duration-200 ${scrolled ? 'shadow-sm' : ''}`}>
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
 
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
+        <Link href="/" className="flex items-center gap-2.5 group shrink-0">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-[#F43F5E] text-white flex items-center justify-center group-hover:shadow-lg group-hover:shadow-primary/25 transition-all">
             <Target className="w-5 h-5" />
           </div>
-          <span className="font-extrabold text-xl tracking-tight text-zinc-900" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <span className="font-extrabold text-xl tracking-tight text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
             NearByBazar
           </span>
         </Link>
 
-        {/* Center Nav Links */}
-        <nav className="hidden md:flex items-center gap-2">
-          {isAuthenticated && isProMode && (
-            <Link href="/vendor-dashboard">
-              <Button variant="ghost" className={`${pathname.startsWith('/vendor-dashboard') ? 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'} font-bold h-10 px-4 rounded-xl gap-2`}>
-                <LayoutDashboard className="w-4 h-4" />
-                Dashboard
-              </Button>
+        {/* Center Nav */}
+        <nav className="hidden md:flex items-center gap-1">
+          {isProMode ? (
+            /* Vendor pro mode — just the dashboard link */
+            <Link href="/vendor-dashboard" className={navLinkClass(pathname.startsWith('/vendor-dashboard'))}>
+              <LayoutDashboard className="w-4 h-4" />
+              Dashboard
             </Link>
+          ) : (
+            <>
+              {/* Explore */}
+              <Link href="/explore" className={navLinkClass(pathname.startsWith('/explore'))}>
+                <Compass className="w-4 h-4" />
+                Explore
+              </Link>
+
+              {/* Categories dropdown */}
+              <div className="relative" ref={categoriesRef}>
+                <button
+                  onClick={() => setCategoriesOpen(prev => !prev)}
+                  className={navLinkClass(categoriesOpen)}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                  Categories
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${categoriesOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {categoriesOpen && (
+                  <div className="absolute left-0 top-full mt-2 w-72 bg-[#0f172a] border border-white/[0.08] rounded-2xl shadow-xl shadow-black/80 overflow-hidden z-50 animate-in fade-in-0 zoom-in-95 duration-150 p-2">
+                    <p className="text-[9px] font-black uppercase tracking-[0.18em] px-2 pt-1 pb-2" style={{ color: '#334155' }}>
+                      Browse by category
+                    </p>
+                    <div className="grid grid-cols-2 gap-1">
+                      {NAV_CATEGORIES.map(cat => (
+                        <Link
+                          key={cat.slug}
+                          href={`/${citySlug}/${cat.slug}`}
+                          onClick={() => setCategoriesOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-colors hover:bg-white/[0.06] group"
+                        >
+                          <span className="text-base leading-none">{cat.emoji}</span>
+                          <span className="text-xs font-semibold text-zinc-300 group-hover:text-white transition-colors truncate">
+                            {cat.label}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* For Business — guests and customer-only accounts */}
+              {!user?.hasVendorProfile && (
+                <Link href="/vendor/register" className={navLinkClass(pathname.startsWith('/vendor/register'))}>
+                  <Briefcase className="w-4 h-4" />
+                  For Business
+                </Link>
+              )}
+            </>
           )}
         </nav>
 
         {/* Right Actions */}
         <div className="flex items-center gap-2">
+          {/* What's New */}
+          <Link
+            href="/whats-new"
+            aria-label="What's New"
+            className={`relative flex items-center gap-1.5 h-10 px-2.5 sm:px-3 rounded-xl border font-bold text-sm transition-all active:scale-[0.97] ${
+              pathname.startsWith('/whats-new')
+                ? 'bg-primary/15 border-primary/30 text-primary'
+                : 'bg-white/[0.04] border-white/[0.08] text-zinc-300 hover:bg-white/[0.08] hover:border-white/[0.15]'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-emerald-400" />
+            <span className="hidden md:inline">What&apos;s New</span>
+            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-60 animate-ping" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
+            </span>
+          </Link>
+
           {/* Language Switcher */}
-          <div className="bg-zinc-100 p-0.5 rounded-lg flex gap-0.5 items-center border border-zinc-200/50 shadow-inner text-[10px] font-black select-none">
+          <div className="bg-white/[0.05] p-0.5 rounded-lg flex gap-0.5 items-center border border-white/[0.08] shadow-inner text-[10px] font-black select-none">
             <button
               onClick={() => setLanguage('en')}
-              className={`px-2 py-1 rounded transition-all cursor-pointer font-bold ${language === 'en' ? 'bg-white text-primary shadow-2xs font-extrabold' : 'text-zinc-500 hover:text-zinc-700'}`}
+              className={`px-2 py-1 rounded transition-all cursor-pointer font-bold ${language === 'en' ? 'bg-white/10 text-[#34d399] shadow-2xs font-extrabold' : 'text-zinc-400 hover:text-white'}`}
             >
               EN
             </button>
             <button
               onClick={() => setLanguage('hi')}
-              className={`px-2 py-1 rounded transition-all cursor-pointer font-bold ${language === 'hi' ? 'bg-white text-primary shadow-2xs font-extrabold' : 'text-zinc-500 hover:text-zinc-700'}`}
+              className={`px-2 py-1 rounded transition-all cursor-pointer font-bold ${language === 'hi' ? 'bg-white/10 text-[#34d399] shadow-2xs font-extrabold' : 'text-zinc-400 hover:text-white'}`}
             >
-              हिन्दी
+              हि
             </button>
           </div>
 
-          <Button variant="outline" size="icon" className="hidden md:flex rounded-xl border-zinc-200 text-zinc-600 hover:bg-zinc-100 h-10 w-10">
+          <Button variant="ghost" size="icon" className="hidden md:flex rounded-xl border border-white/[0.08] bg-[#0f172a] text-zinc-400 hover:bg-white/[0.05] h-10 w-10 hover:text-white">
             <Moon className="w-4 h-4" />
           </Button>
 
@@ -138,16 +237,15 @@ export function Navbar() {
                 onClick={() => setProfileMenuOpen(prev => !prev)}
                 className={`flex items-center gap-2 pl-3 pr-2.5 py-2 rounded-xl border transition-all font-bold text-sm ${
                   profileMenuOpen
-                    ? 'bg-zinc-100 border-zinc-300 text-zinc-900'
-                    : 'bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300'
+                    ? 'bg-white/[0.08] border-white/[0.15] text-white'
+                    : 'bg-[#0f172a] border-white/[0.06] text-zinc-300 hover:bg-white/[0.04] hover:border-white/[0.1]'
                 }`}
               >
-                {/* Avatar */}
                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black ${isProMode ? 'bg-amber-500' : 'bg-primary'}`}>
                   {user?.name?.[0]?.toUpperCase() || <User className="w-4 h-4" />}
                 </div>
                 <div className="hidden sm:flex flex-col items-start leading-none">
-                  <span className="text-xs font-extrabold text-zinc-800">{user?.name || 'Account'}</span>
+                  <span className="text-xs font-extrabold text-white">{user?.name || 'Account'}</span>
                   <span className={`text-[9px] font-bold uppercase tracking-wider ${isProMode ? 'text-amber-500' : 'text-primary'}`}>
                     {isProMode ? '🔧 Pro Mode' : '👤 Consumer'}
                   </span>
@@ -155,27 +253,25 @@ export function Navbar() {
                 <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform ${profileMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* Dropdown Menu */}
               {profileMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-zinc-200 rounded-2xl shadow-xl shadow-zinc-200/50 overflow-hidden z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+                <div className="absolute right-0 top-full mt-2 w-64 bg-[#0f172a] border border-white/[0.08] rounded-2xl shadow-xl shadow-black/80 overflow-hidden z-50 animate-in fade-in-0 zoom-in-95 duration-150">
 
-                  {/* Context Switcher — only for dual-profile users */}
                   {isDualProfile && (
                     <button
                       onClick={handleContextSwitch}
                       disabled={isSwitching}
-                      className={`w-full flex items-center gap-3 px-4 py-3.5 border-b border-zinc-100 transition-all text-left ${
+                      className={`w-full flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.05] transition-all text-left ${
                         isProMode
-                          ? 'bg-blue-50 hover:bg-blue-100 text-blue-700'
-                          : 'bg-amber-50 hover:bg-amber-100 text-amber-700'
+                          ? 'bg-blue-950/40 hover:bg-blue-900/40 text-blue-300'
+                          : 'bg-amber-950/40 hover:bg-amber-900/40 text-amber-300'
                       }`}
                     >
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isProMode ? 'bg-blue-100' : 'bg-amber-100'}`}>
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isProMode ? 'bg-blue-900/40' : 'bg-amber-900/40'}`}>
                         <ArrowLeftRight className="w-4 h-4" />
                       </div>
                       <div className="flex flex-col">
                         <span className="text-sm font-extrabold">
-                          {isSwitching ? 'Switching...' : isProMode ? '🏠 Switch to Consumer App' : '🔧 Switch to Pro Dashboard'}
+                          {isSwitching ? 'Switching...' : isProMode ? '🏠 Switch to Consumer' : '🔧 Switch to Pro Dashboard'}
                         </span>
                         <span className="text-[10px] font-semibold opacity-70">
                           {isProMode ? 'Browse services as a customer' : 'Manage your business'}
@@ -184,80 +280,83 @@ export function Navbar() {
                     </button>
                   )}
 
-                  {/* Register as Vendor CTA — for customer-only users */}
                   {user?.hasCustomerProfile && !user?.hasVendorProfile && (
                     <button
                       onClick={() => { setProfileMenuOpen(false); router.push('/vendor/register'); }}
-                      className="w-full flex items-center gap-3 px-4 py-3 border-b border-zinc-100 hover:bg-emerald-50 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-3 border-b border-white/[0.05] hover:bg-white/[0.04] transition-colors text-left"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                        <Briefcase className="w-4 h-4 text-emerald-600" />
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                        <Briefcase className="w-4 h-4 text-emerald-400" />
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-sm font-bold text-emerald-700">Register as a Pro</span>
+                        <span className="text-sm font-bold text-emerald-400">Register as a Pro</span>
                         <span className="text-[10px] text-zinc-500 font-semibold">List your services & earn more</span>
                       </div>
                     </button>
                   )}
 
-                  {/* Register as Consumer CTA — for vendor-only users */}
                   {user?.hasVendorProfile && !user?.hasCustomerProfile && (
                     <button
                       onClick={() => { setProfileMenuOpen(false); router.push('/create-consumer-profile'); }}
-                      className="w-full flex items-center gap-3 px-4 py-3 border-b border-zinc-100 hover:bg-blue-50 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-3 border-b border-white/[0.05] hover:bg-white/[0.04] transition-colors text-left"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <UserPlus className="w-4 h-4 text-blue-600" />
+                      <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                        <UserPlus className="w-4 h-4 text-blue-400" />
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-sm font-bold text-blue-700">Create Consumer Account</span>
+                        <span className="text-sm font-bold text-blue-400">Create Consumer Account</span>
                         <span className="text-[10px] text-zinc-500 font-semibold">Book services without logging out</span>
                       </div>
                     </button>
                   )}
 
-                  {/* Profile Link */}
                   {!isProMode && (
                     <Link href="/profile" onClick={() => setProfileMenuOpen(false)}>
-                      <div className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-50 transition-colors cursor-pointer">
-                        <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center">
-                          <User className="w-4 h-4 text-zinc-600" />
+                      <div className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.04] transition-colors cursor-pointer">
+                        <div className="w-8 h-8 rounded-lg bg-white/[0.05] flex items-center justify-center">
+                          <User className="w-4 h-4 text-zinc-300" />
                         </div>
-                        <span className="text-sm font-bold text-zinc-700">My Profile</span>
+                        <span className="text-sm font-bold text-zinc-300">My Profile</span>
                       </div>
                     </Link>
                   )}
 
                   {isProMode && (
                     <Link href="/vendor-dashboard" onClick={() => setProfileMenuOpen(false)}>
-                      <div className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-50 transition-colors cursor-pointer">
-                        <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center">
-                          <LayoutDashboard className="w-4 h-4 text-zinc-600" />
+                      <div className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.04] transition-colors cursor-pointer">
+                        <div className="w-8 h-8 rounded-lg bg-white/[0.05] flex items-center justify-center">
+                          <LayoutDashboard className="w-4 h-4 text-zinc-300" />
                         </div>
-                        <span className="text-sm font-bold text-zinc-700">Vendor Dashboard</span>
+                        <span className="text-sm font-bold text-zinc-300">Vendor Dashboard</span>
                       </div>
                     </Link>
                   )}
 
-                  {/* Logout */}
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left border-t border-zinc-100"
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 transition-colors text-left border-t border-white/[0.05]"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
-                      <LogOut className="w-4 h-4 text-red-500" />
+                    <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                      <LogOut className="w-4 h-4 text-red-400" />
                     </div>
-                    <span className="text-sm font-bold text-red-600">Logout</span>
+                    <span className="text-sm font-bold text-red-400">Logout</span>
                   </button>
                 </div>
               )}
             </div>
           ) : (
-            <Link href="/login">
-              <Button variant="outline" className="rounded-xl border-zinc-200 text-zinc-700 hover:bg-zinc-100 font-bold h-10 px-5">
-                Sign In
-              </Button>
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link href="/login">
+                <Button variant="ghost" className="rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.04] font-bold h-10 px-4">
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/vendor/register">
+                <Button className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black h-10 px-4 shadow-lg shadow-emerald-500/10">
+                  List Business Free
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
 

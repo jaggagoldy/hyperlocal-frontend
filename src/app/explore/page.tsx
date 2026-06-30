@@ -563,7 +563,7 @@ function ExplorePageContent() {
 
   return (
     <div 
-      className="flex flex-col min-h-screen bg-zinc-50/30 pb-24 font-sans"
+      className="flex flex-col min-h-screen bg-[#020617] pb-24 font-sans text-white"
       style={{
         '--primary': searchMode === 'food' 
           ? '#e11d48' 
@@ -574,19 +574,19 @@ function ExplorePageContent() {
     >
       
       {/* ─── STICKY HEADER ─── */}
-      <header className="sticky top-0 z-40 bg-white border-b border-zinc-200/80 px-4 py-3 shadow-xs">
-        <div className="max-w-7xl mx-auto flex items-center gap-3">
+      <header className="sticky top-0 z-40 bg-[#020617]/95 border-b border-white/[0.05] px-4 py-3 shadow-xs backdrop-blur-xl">
+        <div className="max-w-screen-2xl mx-auto flex items-center gap-3">
           
           {/* Unified Search Bar */}
-          <div className="flex-1 flex items-center bg-white border border-zinc-300 rounded-full shadow-sm overflow-hidden h-12 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+          <div className="flex-1 flex items-center bg-[#0f172a] border border-white/[0.08] rounded-full shadow-sm overflow-hidden h-12 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
             
             {/* Location Section */}
             <button 
               onClick={() => setIsLocationModalOpen(true)}
-              className="flex items-center gap-2 px-4 md:px-5 h-full bg-zinc-50 hover:bg-zinc-100 transition-colors border-r border-zinc-200 shrink-0"
+              className="flex items-center gap-2 px-4 md:px-5 h-full bg-white/[0.02] hover:bg-white/[0.05] transition-colors border-r border-white/[0.08] shrink-0 text-white"
             >
               <MapPin className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-zinc-800 truncate max-w-[80px] md:max-w-[120px]">{getCityNameBySlug(selectedCity) || 'Location'}</span>
+              <span className="text-sm font-semibold text-white truncate max-w-[80px] md:max-w-[120px]">{getCityNameBySlug(selectedCity) || 'Location'}</span>
               <ChevronDown className="w-4 h-4 text-zinc-400 hidden sm:block" />
             </button>
 
@@ -595,13 +595,13 @@ function ExplorePageContent() {
               <input 
                 type="text"
                 placeholder={t('searchPlaceholder')}
-                className="w-full h-full pl-4 pr-10 text-sm outline-none bg-transparent text-zinc-800 placeholder-zinc-400"
+                className="w-full h-full pl-4 pr-10 text-sm outline-none bg-transparent text-white placeholder-zinc-500"
                 value={localQuery}
                 onChange={(e) => setLocalQuery(e.target.value)}
               />
               {localQuery && (
                 <button 
-                  className="absolute right-3 text-zinc-400 hover:text-zinc-700 bg-zinc-100 hover:bg-zinc-200 p-1 rounded-full transition-colors"
+                  className="absolute right-3 text-zinc-400 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] p-1 rounded-full transition-colors"
                   onClick={() => setLocalQuery('')}
                 >
                   <X className="w-3.5 h-3.5" />
@@ -610,12 +610,12 @@ function ExplorePageContent() {
             </div>
 
             {/* Search Button (Desktop) */}
-            <button className="hidden sm:flex h-full px-8 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 text-sm font-bold transition-colors items-center justify-center">
+            <button className="hidden sm:flex h-full px-8 bg-[#1e293b] hover:bg-[#293548] text-white text-sm font-bold transition-colors items-center justify-center">
               {language === 'hi' ? 'खोजें' : 'Search'}
             </button>
 
             {/* Search Button (Mobile Icon) */}
-            <button className="sm:hidden h-full px-4 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 flex items-center justify-center transition-colors">
+            <button className="sm:hidden h-full px-4 bg-[#1e293b] hover:bg-[#293548] text-white flex items-center justify-center transition-colors">
               <Search className="w-4 h-4" />
             </button>
           </div>
@@ -625,17 +625,17 @@ function ExplorePageContent() {
             <DrawerTrigger asChild>
               <Button 
                 variant="outline" 
-                className="md:hidden shrink-0 rounded-full w-12 h-12 p-0 border-zinc-300 text-zinc-700 bg-white shadow-sm"
+                className="md:hidden shrink-0 rounded-full w-12 h-12 p-0 border-white/[0.08] text-white bg-[#0f172a] hover:bg-[#1e293b] shadow-sm"
               >
-                <SlidersHorizontal className="w-5 h-5 text-zinc-700" />
+                <SlidersHorizontal className="w-5 h-5 text-white" />
               </Button>
             </DrawerTrigger>
-            <DrawerContent className="p-5 max-h-[80vh] flex flex-col">
-              <DrawerHeader className="px-0 pt-0 text-left border-b border-zinc-100 pb-2.5 mb-4">
-                <DrawerTitle className="text-base font-bold text-zinc-900">
+            <DrawerContent className="p-5 max-h-[80vh] flex flex-col bg-[#0f172a] border-white/[0.08] text-white">
+              <DrawerHeader className="px-0 pt-0 text-left border-b border-white/[0.05] pb-2.5 mb-4">
+                <DrawerTitle className="text-base font-bold text-white">
                   {language === 'hi' ? 'श्रेणी से फ़िल्टर करें' : 'Filter by Category'}
                 </DrawerTitle>
-                <DrawerDescription className="text-xs">
+                <DrawerDescription className="text-xs text-zinc-400">
                   {language === 'hi' ? 'मार्केटप्लेस में सेवाओं को देखने के लिए श्रेणी चुनें।' : 'Select a business vertical below to filter services.'}
                 </DrawerDescription>
               </DrawerHeader>
@@ -649,7 +649,7 @@ function ExplorePageContent() {
       </header>
 
       {/* ─── MAIN RESPONSIVE CONTAINER ─── */}
-      <div className="max-w-7xl mx-auto w-full px-4 py-6 flex gap-6 flex-1">
+      <div className="max-w-screen-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex gap-6 flex-1">
         
         {/* Left Sidebar Category Filter (Desktop Only) */}
         <aside className="hidden lg:block w-64 shrink-0 self-start sticky top-28 space-y-6">
@@ -913,7 +913,7 @@ function ExplorePageContent() {
 
             {loading && page === 1 ? (
               // Skeleton Loaders matching ListingCard
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-xs animate-pulse flex flex-col h-[280px]">
                     <div className="h-36 bg-zinc-100 w-full border-b border-zinc-100" />
@@ -1148,7 +1148,7 @@ function ExplorePageContent() {
 
                   {searchTab === 'items' ? (
                     // Dishes / Products Search Grid
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {catalogItems.length === 0 && !loading ? (
                         <div className="col-span-2 py-16 text-center text-zinc-400 font-bold text-xs border border-dashed rounded-3xl border-zinc-200 bg-white">
                           No dishes or products match your search.
@@ -1168,7 +1168,7 @@ function ExplorePageContent() {
                     <div className={
                       viewMode === 'list'
                         ? "flex flex-col gap-4"
-                        : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4"
+                        : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
                     }>
                       {items.map((vendor, i) => (
                         <SearchCardSelector 

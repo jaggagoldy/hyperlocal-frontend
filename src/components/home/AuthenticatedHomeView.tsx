@@ -179,7 +179,9 @@ export function AuthenticatedHomeView() {
 
   const handleVerticalClick = (catSlug: string) => {
     setCategory(catSlug);
-    router.push('/explore');
+    // Open the dedicated per-service experience for this district, not the
+    // generic vertical-sidebar page.
+    router.push(`/${selectedCity || 'fatehabad'}/${catSlug}`);
   };
 
   const handleRfqSubmit = async (e?: React.FormEvent) => {
@@ -282,7 +284,7 @@ export function AuthenticatedHomeView() {
       <div className="absolute top-[5%] left-[-150px] w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
       <div className="absolute top-[20%] right-[-150px] w-[600px] h-[600px] rounded-full bg-rose-500/5 blur-[120px] pointer-events-none" />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 md:pt-16 space-y-16">
+      <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 md:pt-16 space-y-16">
         
         {/* ─── HERO & HEADER SEARCH SECTION ─── */}
         <section className="text-center max-w-4xl mx-auto space-y-6 relative z-30 min-h-[160px]">
@@ -560,7 +562,7 @@ export function AuthenticatedHomeView() {
         </section>
 
         {/* ─── VALUE PROPOSITION CARDS (Zero-Brokerage / Direct Connect) ─── */}
-        <section className="max-w-6xl mx-auto px-4 lg:px-0 mb-8">
+        <section className="max-w-screen-2xl mx-auto px-4 lg:px-0 mb-8">
           <div className="bg-white border border-zinc-200 rounded-3xl p-8 sm:p-10 relative overflow-hidden shadow-xl shadow-zinc-200/40">
             <div className="absolute top-0 left-0 w-48 h-48 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
           
@@ -604,7 +606,7 @@ export function AuthenticatedHomeView() {
 
 
         {/* ─── INDIAMART STYLE INSTANT REQUIREMENT BOARD (RFQ) ─── */}
-        <section className="relative z-10 max-w-6xl mx-auto mb-20 px-4 lg:px-0">
+        <section className="relative z-10 max-w-screen-2xl mx-auto mb-20 px-4 lg:px-0">
           {/* Mobile Trust Strip */}
           <div className="lg:hidden flex overflow-x-auto gap-3 pb-3 mb-2 scrollbar-none snap-x px-1">
             <div className="snap-start shrink-0 flex items-center gap-1.5 bg-white border border-zinc-200 px-3 py-1.5 rounded-full text-[10px] font-bold text-zinc-700 shadow-sm">

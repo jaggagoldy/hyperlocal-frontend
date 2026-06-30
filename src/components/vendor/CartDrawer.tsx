@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/authStore';
@@ -9,6 +9,7 @@ import { BusinessProfile } from '@/types/models';
 import apiClient from '@/lib/api-client';
 import { toast } from 'sonner';
 import { X, ChevronRight } from 'lucide-react';
+import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 
 interface CartDrawerProps {
   vendor: BusinessProfile;
@@ -34,6 +35,19 @@ export default function CartDrawer({ vendor, theme }: CartDrawerProps) {
   const totalValue = getTotalValue();
   const finalTotal = appliedDiscount ? Math.max(0, totalValue - appliedDiscount.amount) : totalValue;
   const itemCount = cartItems.reduce((acc, ci) => acc + ci.quantity, 0);
+
+  // Reserve space at the bottom of the page while the floating cart bar is visible,
+  // so it never covers the last bit of content (reviews, last menu item, etc.).
+  // Cleaned up automatically when the bar hides or the drawer opens.
+  useEffect(() => {
+    const barVisible = !isOpen && cartItems.length > 0;
+    if (!barVisible) return;
+    const prev = document.body.style.paddingBottom;
+    document.body.style.paddingBottom = '6.5rem';
+    return () => {
+      document.body.style.paddingBottom = prev;
+    };
+  }, [isOpen, cartItems.length]);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
@@ -144,15 +158,18 @@ export default function CartDrawer({ vendor, theme }: CartDrawerProps) {
         </div>
       )}
 
-      {/* Drawer Overlay */}
-      {isOpen && (
-        <div className="fixed inset-0 z-[60] bg-black/60 flex flex-col justify-end text-zinc-900 font-sans">
-          <div className="bg-white w-full max-h-[90vh] rounded-t-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom">
+      {/* Checkout drawer (vaul) */}
+      <Drawer open={isOpen} onOpenChange={setIsOpen}>
+        <DrawerContent className="max-h-[90vh] pb-safe flex flex-col text-zinc-900 font-sans">
+            <DrawerTitle className="sr-only">Checkout</DrawerTitle>
             <div className="p-4 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/80">
-              <h2 className="font-bold text-lg text-zinc-900">Checkout</h2>
+              <div>
+                <h2 className="font-bold text-lg text-zinc-900 leading-tight">Checkout</h2>
+                <p className="text-xs text-zinc-500 font-medium mt-0.5">{vendor.businessName}</p>
+              </div>
               <button onClick={() => setIsOpen(false)} className="p-2 rounded-full hover:bg-zinc-200 text-zinc-500"><X className="w-5 h-5" /></button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-white">
               {/* Order Summary */}
               <div>
@@ -239,19 +256,18 @@ export default function CartDrawer({ vendor, theme }: CartDrawerProps) {
             </div>
 
             <div className="p-4 border-t border-zinc-100 bg-white pb-safe">
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 form="checkout-form"
                 disabled={isSubmitting}
-                className={`w-full py-4 rounded-xl font-bold text-lg flex justify-center items-center ${theme?.colors?.primary || 'bg-green-600'} border border-transparent disabled:opacity-50 text-white`}
-                style={{ backgroundColor: 'var(--primary, #16a34a)' }} // Fallback if theme structure implies tailwind classes for bg
+                className="w-full py-4 rounded-xl font-bold text-lg flex justify-center items-center border border-transparent disabled:opacity-50 text-white"
+                style={{ backgroundColor: 'var(--primary, #16a34a)' }}
               >
                 {isSubmitting ? 'Processing...' : 'Place Order via WhatsApp'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+        </DrawerContent>
+      </Drawer>
 
       <AuthModal 
         isOpen={isAuthModalOpen} 
