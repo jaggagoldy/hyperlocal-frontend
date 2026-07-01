@@ -10,7 +10,9 @@ import { AuthGuard } from "@/components/shared/AuthGuard";
 import { Footer } from "@/components/shared/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import ErrorDiagnosticsModal from "@/components/shared/ErrorDiagnosticsModal";
+import DbModeBadge from "@/components/shared/DbModeBadge";
 import { TutorialModal } from '@/components/shared/TutorialModal';
+import { SpotlightTour } from '@/components/shared/SpotlightTour';
 import GoogleAuthProvider from '@/components/providers/GoogleAuthProvider';
 
 const inter = Inter({ subsets: ["latin"] });
@@ -48,6 +50,7 @@ export default function RootLayout({
         <GoogleAuthProvider>
           <AuthGuard>
             <TutorialModal />
+            <SpotlightTour />
             <Navbar />
             <main className="flex-1 pb-16 md:pb-0">
               {children}
@@ -58,6 +61,7 @@ export default function RootLayout({
           <Toaster position="top-center" />
           <PwaUpdatePrompt />
           <ErrorDiagnosticsModal />
+          <DbModeBadge />
         </GoogleAuthProvider>
       </body>
     </html>

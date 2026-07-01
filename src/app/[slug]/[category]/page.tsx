@@ -1,3 +1,8 @@
+import { createRequire } from 'module';
+if (typeof globalThis.require === 'undefined') {
+  (globalThis as any).require = createRequire(import.meta.url);
+}
+
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -10,13 +15,15 @@ import {
   API_BASE,
 } from '@/lib/directory';
 import SearchCardSelector from '@/components/directory/SearchCardSelector';
+import VerticalExperienceRoute from '@/components/vertical/VerticalExperienceRoute';
+import { getVerticalExperience } from '@/config/verticalExperience';
 
 // ISR: SEO pages stay cached and fast, refreshed periodically as supply changes.
 export const revalidate = 1800;
 
 type Params = { slug: string; category: string };
 
-export async function generateMetadata({ params }: { params: Promise<Params> | Params }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug, category } = await params;
   const cat = getCategoryBySlug(category);
   const district = await resolveDistrict(slug);
@@ -31,7 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> | P
   };
 }
 
-export default async function DirectoryCategoryPage({ params }: { params: Promise<Params> | Params }) {
+export default async function DirectoryCategoryPage({ params }: { params: Promise<Params> }) {
   const { slug, category } = await params;
   const cat = getCategoryBySlug(category);
   const district = await resolveDistrict(slug);
@@ -91,6 +98,19 @@ export default async function DirectoryCategoryPage({ params }: { params: Promis
       },
     })),
   };
+
+  // Configured verticals (Food, Salon, …) get the immersive, interactive
+  // experience. We still emit the server-rendered JSON-LD above it so the page
+  // keeps its structured-data SEO value; metadata comes from generateMetadata.
+  const experience = getVerticalExperience(cat.slug);
+  if (experience) {
+    return (
+      <>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <VerticalExperienceRoute slug={cat.slug} districtSlug={slug} />
+      </>
+    );
+  }
 
   const siblings = DIRECTORY_CATEGORIES.filter((c) => c.slug !== category).slice(0, 8);
 

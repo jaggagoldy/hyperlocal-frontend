@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/authStore';
-import { Store, Car, Home, Scissors, Plus, ChevronRight, MapPin, Star, AlertCircle, Briefcase, Stethoscope, Plane, Heart, Dumbbell, GraduationCap, Truck, Wrench, Key, Banknote, Bed, Building, Utensils } from 'lucide-react';
+import { Store, Car, Home, Scissors, Plus, ChevronRight, MapPin, Star, AlertCircle, Briefcase, Stethoscope, Plane, Heart, Dumbbell, GraduationCap, Truck, Wrench, Key, Banknote, Bed, Building, Utensils, LogOut, LayoutDashboard } from 'lucide-react';
 import TierUpsell from '@/components/vendor-dashboard/TierUpsell';
 import type { ListingTier } from '@/lib/directory';
 
@@ -29,7 +29,9 @@ export default function GlobalHubPage() {
   const [businesses, setBusinesses] = useState<BusinessProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const { setActiveBusiness } = useAuthStore();
+  const { setActiveBusiness, logout } = useAuthStore();
+
+  const handleLogout = () => { logout(); router.push('/'); };
 
   const fetchBusinesses = async () => {
     try {
@@ -54,84 +56,115 @@ export default function GlobalHubPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="flex h-screen w-full items-center justify-center" style={{ background: '#0d1117' }}>
         <div className="animate-pulse flex flex-col items-center">
-          <div className="h-12 w-12 bg-slate-200 dark:bg-slate-800 rounded-full mb-4"></div>
-          <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded mb-2"></div>
+          <div className="h-12 w-12 bg-zinc-800 rounded-full mb-4" />
+          <div className="h-4 w-32 bg-zinc-800 rounded mb-2" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen" style={{ background: '#0d1117' }}>
+      {/* Hub Header */}
+      <header className="sticky top-0 z-40 border-b flex items-center justify-between px-4 sm:px-6 h-14"
+        style={{ background: '#0d1117', borderColor: 'rgba(255,255,255,.07)' }}>
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/vendor-dashboard')}>
+          <div className="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-black text-base leading-none">N</span>
+          </div>
+          <span className="font-black text-white text-base tracking-tight">NearByBazar</span>
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full ml-1"
+            style={{ background: 'rgba(16,185,129,.1)', border: '1px solid rgba(16,185,129,.2)', color: '#34d399' }}>
+            Vendor Hub
+          </span>
+        </div>
+        <button onClick={handleLogout}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-zinc-800"
+          style={{ color: '#6b7280' }}>
+          <LogOut className="w-4 h-4" />
+          <span className="hidden sm:inline">Logout</span>
+        </button>
+      </header>
+
+    <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">Your Businesses</h1>
-        <p className="text-slate-500 dark:text-slate-400">Manage all your ventures from a single powerful dashboard.</p>
+        <h1 className="text-2xl font-black text-white mb-1">Your Businesses</h1>
+        <p className="text-sm" style={{ color: '#6b7280' }}>Manage all your ventures from a single powerful dashboard.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+
         {/* Create New Business Card */}
-        <div 
+        <div
           onClick={() => router.push('/vendor/register')}
-          className="group cursor-pointer min-h-[220px] rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-400 bg-transparent flex flex-col items-center justify-center p-6 transition-all duration-300 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/5"
+          className="group cursor-pointer min-h-[220px] rounded-2xl flex flex-col items-center justify-center p-6 transition-all duration-300"
+          style={{ border: '2px dashed rgba(255,255,255,.1)', background: 'transparent' }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(16,185,129,.4)')}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,.1)')}
         >
-          <div className="w-14 h-14 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <Plus className="w-7 h-7" />
+          <div className="w-14 h-14 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
+            style={{ background: 'rgba(16,185,129,.1)', border: '1px solid rgba(16,185,129,.2)' }}>
+            <Plus className="w-7 h-7 text-emerald-400" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Add New Business</h3>
-          <p className="text-sm text-slate-500 text-center mt-2 max-w-[200px]">Launch a new service, restaurant, or cab fleet.</p>
+          <h3 className="text-base font-bold text-white">Add New Business</h3>
+          <p className="text-sm text-center mt-1.5 max-w-[200px]" style={{ color: '#6b7280' }}>
+            Launch a new service, restaurant, or cab fleet.
+          </p>
         </div>
 
         {/* Existing Business Cards */}
         {businesses.map((business) => {
           const cat = business.categories?.[0]?.category;
           const Icon = cat?.icon ? (IconMap[cat.icon] || Store) : Store;
-          const colorClass = 'text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10';
-          const label = cat?.name || business.businessType;
-          
+          const label = cat?.name || (business.businessType || '').replace(/_/g, ' ');
+          const isActive = business.status === 'AVAILABLE' || business.status === 'ACTIVE' || business.status === 'available';
+
           return (
-            <div 
+            <div
               key={business.id}
               onClick={() => handleLaunchWorkspace(business.id)}
-              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col"
+              className="rounded-2xl transition-all duration-300 cursor-pointer overflow-hidden flex flex-col"
+              style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(16,185,129,.25)')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,.08)')}
             >
-              <div className="p-6 flex-1">
+              <div className="p-5 flex-1">
                 <div className="flex justify-between items-start mb-4">
-                  <div className={`p-3 rounded-xl ${colorClass}`}>
-                    <Icon className="w-6 h-6" />
+                  <div className="p-3 rounded-xl" style={{ background: 'rgba(16,185,129,.1)', border: '1px solid rgba(16,185,129,.15)' }}>
+                    <Icon className="w-5 h-5 text-emerald-400" />
                   </div>
-                  <div className="flex flex-col items-end">
-                    <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
-                      business.status === 'AVAILABLE' || business.status === 'ACTIVE' 
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' 
-                        : 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
-                    }`}>
-                      {business.status}
+                  <div className="flex flex-col items-end gap-1.5">
+                    <span className={`px-2.5 py-0.5 text-[10px] font-black rounded-full uppercase tracking-wide ${
+                      isActive
+                        ? 'text-emerald-300'
+                        : 'text-amber-300'
+                    }`} style={{ background: isActive ? 'rgba(16,185,129,.1)' : 'rgba(245,158,11,.1)' }}>
+                      {business.status?.toLowerCase() || 'active'}
                     </span>
-                    <div className="flex items-center gap-1 mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">
-                      <Star className="w-4 h-4 text-amber-400 fill-current" />
+                    <div className="flex items-center gap-1 text-sm font-bold" style={{ color: '#fbbf24' }}>
+                      <Star className="w-3.5 h-3.5 fill-current" />
                       {business.rating ? business.rating.toFixed(1) : 'New'}
                     </div>
                   </div>
                 </div>
-                
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white line-clamp-1 mb-1">
+
+                <h3 className="text-lg font-black text-white line-clamp-1 mb-1">
                   {business.businessName}
                 </h3>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">{label}</p>
-                
+                <p className="text-xs font-medium mb-3 capitalize" style={{ color: '#6b7280' }}>{label}</p>
+
                 {(business.localityName || business.city?.name) && (
-                  <div className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
-                    <MapPin className="w-4 h-4 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-xs" style={{ color: '#4b5563' }}>
+                    <MapPin className="w-3.5 h-3.5 shrink-0" />
                     <span className="truncate">{business.localityName}{business.localityName && business.city?.name ? ', ' : ''}{business.city?.name}</span>
                   </div>
                 )}
               </div>
-              
-              {/* Tier badge + "Activate" upsell (Phase F5) */}
-              <div className="px-6 pb-4" onClick={(e) => e.stopPropagation()}>
+
+              {/* Tier badge */}
+              <div className="px-5 pb-4" onClick={(e) => e.stopPropagation()}>
                 <TierUpsell
                   businessId={business.id}
                   businessType={business.businessType}
@@ -142,15 +175,17 @@ export default function GlobalHubPage() {
                 />
               </div>
 
-              <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between group">
-                <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300">Open Workspace</span>
-                <ChevronRight className="w-5 h-5 text-indigo-500 group-hover:translate-x-1 transition-transform" />
+              <div className="px-5 py-3.5 border-t flex items-center justify-between"
+                style={{ borderColor: 'rgba(255,255,255,.07)', background: 'rgba(255,255,255,.02)' }}>
+                <span className="text-sm font-bold text-emerald-400">Open Workspace</span>
+                <ChevronRight className="w-4 h-4 text-emerald-500 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
           );
         })}
 
       </div>
+    </div>
     </div>
   );
 }

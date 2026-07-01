@@ -8,8 +8,42 @@ import { toast } from 'sonner';
 
 import apiClient from '@/lib/api-client';
 import { useAuthStore } from '@/store/authStore';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+
+const inputBase: React.CSSProperties = {
+  width: '100%',
+  height: 48,
+  background: 'rgba(255,255,255,.04)',
+  borderWidth: 1,
+  borderStyle: 'solid',
+  borderColor: 'rgba(255,255,255,.1)',
+  borderRadius: 12,
+  paddingLeft: 44,
+  paddingRight: 16,
+  fontSize: 14,
+  color: '#fff',
+  outline: 'none',
+  transition: 'border-color .15s',
+};
+
+const inputFocused: React.CSSProperties = {
+  ...inputBase,
+  borderColor: 'rgba(16,185,129,.5)',
+  background: 'rgba(16,185,129,.04)',
+};
+
+const inputVendor: React.CSSProperties = {
+  ...inputBase,
+  borderColor: 'rgba(245,158,11,.2)',
+  background: 'rgba(245,158,11,.03)',
+};
+
+const inputVendorFocused: React.CSSProperties = {
+  ...inputVendor,
+  borderColor: 'rgba(245,158,11,.5)',
+  background: 'rgba(245,158,11,.06)',
+};
+
+const labelCls = 'block text-xs font-bold mb-1.5 text-slate-400';
 
 export function RegisterForm() {
   const [loading, setLoading] = useState(false);
@@ -27,6 +61,7 @@ export function RegisterForm() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,9 +76,8 @@ export function RegisterForm() {
     setLoading(true);
     try {
       const payload: any = { name, email, password, role };
-      if (role === 'vendor') {
-        payload.phoneNumber = phoneNumber;
-      }
+      if (role === 'vendor') payload.phoneNumber = phoneNumber;
+
       const response = await apiClient.post('/auth/register', payload);
       const { token, user } = response.data?.data || response.data;
       setAuth(token, user, role === 'vendor' ? 'vendor' : 'customer');
@@ -62,44 +96,69 @@ export function RegisterForm() {
     }
   };
 
+  const isVendor = role === 'vendor';
+
+  const f = (field: string): React.CSSProperties => {
+    const isFocused = focusedField === field;
+    if (field === 'phone') return isFocused ? inputVendorFocused : inputVendor;
+    return isFocused ? inputFocused : inputBase;
+  };
+
   return (
     <div className="w-full flex flex-col">
-      {/* User / Pro Tab Switcher */}
-      <div className="flex bg-muted/50 p-1 rounded-xl mb-8 w-full">
-        <button 
+      {/* User / Pro tab switcher */}
+      <div
+        className="flex p-1 rounded-xl mb-7"
+        style={{ background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.06)' }}
+      >
+        <button
           type="button"
           onClick={() => setRole('customer')}
-          className={`flex-1 py-2.5 text-sm rounded-lg transition-all font-bold ${role === 'customer' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          className="flex-1 py-2.5 text-sm font-black rounded-lg transition-all"
+          style={
+            !isVendor
+              ? { background: 'rgba(16,185,129,.15)', border: '1px solid rgba(16,185,129,.25)', color: '#34d399' }
+              : { color: '#475569' }
+          }
         >
           User
         </button>
-        <button 
+        <button
           type="button"
           onClick={() => setRole('vendor')}
-          className={`flex-1 py-2.5 text-sm rounded-lg transition-all font-bold ${role === 'vendor' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          className="flex-1 py-2.5 text-sm font-black rounded-lg transition-all"
+          style={
+            isVendor
+              ? { background: 'rgba(245,158,11,.12)', border: '1px solid rgba(245,158,11,.25)', color: '#f59e0b' }
+              : { color: '#475569' }
+          }
         >
           Pro
         </button>
       </div>
 
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">
-          {role === 'vendor' ? 'Create your Pro Account' : 'Create an account'}
+      <div className="mb-7">
+        <h1 className="text-2xl font-black text-white mb-1.5">
+          {isVendor ? 'Create your Pro account 🚀' : 'Create an account ✨'}
         </h1>
-        <p className="text-muted-foreground text-sm">
-          {role === 'vendor' ? 'Become a service provider on NearByBazar' : 'Join thousands of users on NearByBazar'}
+        <p className="text-sm font-medium" style={{ color: '#475569' }}>
+          {isVendor
+            ? 'Become a service provider on NearByBazar'
+            : 'Join thousands of users on NearByBazar'}
         </p>
       </div>
 
-      <form onSubmit={handleRegister} className="space-y-5">
-        <div className="space-y-1">
-          <label className="text-sm font-medium">Full Name</label>
+      <form onSubmit={handleRegister} className="space-y-4">
+        <div>
+          <label className={labelCls}>Full Name</label>
           <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
+            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#475569' }} />
+            <input
               type="text"
               placeholder="John Doe"
-              className="h-12 pl-10 bg-muted/30 focus-visible:bg-background"
+              style={f('name')}
+              onFocus={() => setFocusedField('name')}
+              onBlur={() => setFocusedField(null)}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -107,14 +166,16 @@ export function RegisterForm() {
           </div>
         </div>
 
-        <div className="space-y-1">
-          <label className="text-sm font-medium">Email address</label>
+        <div>
+          <label className={labelCls}>Email address</label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
+            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#475569' }} />
+            <input
               type="email"
               placeholder="you@example.com"
-              className="h-12 pl-10 bg-muted/30 focus-visible:bg-background"
+              style={f('email')}
+              onFocus={() => setFocusedField('email')}
+              onBlur={() => setFocusedField(null)}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -122,31 +183,40 @@ export function RegisterForm() {
           </div>
         </div>
 
-        {role === 'vendor' && (
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Mobile Number</label>
+        {isVendor && (
+          <div>
+            <label className="block text-xs font-bold mb-1.5 flex items-center gap-1.5" style={{ color: '#f59e0b' }}>
+              Mobile Number
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,.12)', color: '#f59e0b' }}>
+                PRO ONLY
+              </span>
+            </label>
             <div className="relative flex items-center">
-              <span className="absolute left-3 text-muted-foreground font-bold text-sm">+91</span>
-              <Input
+              <span className="absolute left-3.5 text-sm font-black" style={{ color: '#64748b' }}>+91</span>
+              <input
                 type="tel"
                 placeholder="9999999999"
-                className="h-12 pl-12 bg-muted/30 focus-visible:bg-background"
+                style={{ ...f('phone'), paddingLeft: 52 }}
+                onFocus={() => setFocusedField('phone')}
+                onBlur={() => setFocusedField(null)}
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
-                required
+                required={isVendor}
               />
             </div>
           </div>
         )}
-        
-        <div className="space-y-1">
-          <label className="text-sm font-medium">Password</label>
+
+        <div>
+          <label className={labelCls}>Password</label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
+            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#475569' }} />
+            <input
               type={showPassword ? 'text' : 'password'}
               placeholder="Create a strong password"
-              className="h-12 pl-10 pr-10 bg-muted/30 focus-visible:bg-background"
+              style={{ ...f('password'), paddingRight: 44 }}
+              onFocus={() => setFocusedField('password')}
+              onBlur={() => setFocusedField(null)}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -154,7 +224,8 @@ export function RegisterForm() {
             />
             <button
               type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5"
+              style={{ color: '#475569' }}
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -162,16 +233,26 @@ export function RegisterForm() {
           </div>
         </div>
 
-        <Button type="submit" className="w-full h-12 text-base font-medium mt-2" disabled={loading}>
-          {loading ? 'Creating account...' : 'Create account'}
-        </Button>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full h-12 rounded-xl text-sm font-black text-white mt-2 transition-all active:scale-[0.98] disabled:opacity-60"
+          style={
+            isVendor
+              ? { background: 'linear-gradient(135deg,#f59e0b,#d97706)', boxShadow: '0 8px 24px rgba(245,158,11,.3)' }
+              : { background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 8px 24px rgba(16,185,129,.3)' }
+          }
+        >
+          {loading ? 'Creating account…' : isVendor ? 'Create Pro Account' : 'Create account'}
+        </button>
       </form>
 
-      <div className="mt-8 text-center text-sm text-muted-foreground">
+      <div className="mt-7 text-center text-sm" style={{ color: '#475569' }}>
         Already have an account?{' '}
-        <Link 
-          href={redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login'} 
-          className="font-semibold text-primary hover:underline"
+        <Link
+          href={redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login'}
+          className="font-bold"
+          style={{ color: '#34d399' }}
         >
           Log in
         </Link>
@@ -182,7 +263,7 @@ export function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-[300px] text-zinc-500 font-medium">Loading...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[300px] text-slate-500 font-medium">Loading…</div>}>
       <RegisterForm />
     </Suspense>
   );

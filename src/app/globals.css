@@ -5,25 +5,25 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  /* NearByBazar brand — emerald (matches the Phase F directory/hub/storefront UI) */
-  --primary: #059669; /* emerald-600 */
-  --primary-foreground: #ffffff;
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --background: #020617; /* Figma slate-950 */
+  --foreground: #ffffff;
+  --card: #0f172a; /* Figma slate-900 */
+  --card-foreground: #ffffff;
+  --popover: #0f172a;
+  --popover-foreground: #ffffff;
+  /* NearByBazar brand — emerald */
+  --primary: #10b981; /* emerald-500 */
+  --primary-foreground: #052e16;
+  --secondary: #1e293b; /* Figma slate-800 */
+  --secondary-foreground: #cbd5e1;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #1e293b;
+  --accent-foreground: #ffffff;
+  --destructive: #7f1d1d;
+  --destructive-foreground: #f87171;
+  --border: rgba(255,255,255,.06);
+  --input: rgba(255,255,255,.08);
   --ring: #10b981; /* emerald-500 focus ring */
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -31,14 +31,14 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #070d1a;
+  --sidebar-foreground: #94a3b8;
+  --sidebar-primary: #10b981;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255,255,255,.04);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255,255,255,.06);
+  --sidebar-ring: #10b981;
 }
 
 .dark {
@@ -140,4 +140,103 @@
     scrollbar-width: thin;
     scrollbar-color: #d4d4d8 transparent;
   }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Safe-area utilities for PWA notch/home-indicator awareness */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+@utility mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── VIBRANT LIGHT-LAVENDER THEME ─── */
+.vibrant {
+  --background: #f4f5f9;
+  --foreground: #1e1b4b;
+  --card: #ffffff;
+  --card-foreground: #1e1b4b;
+  --popover: #ffffff;
+  --popover-foreground: #1e1b4b;
+  --primary: #8b5cf6; /* Lavender violet */
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #475569;
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
+  --accent: #f3e8ff;
+  --accent-foreground: #8b5cf6;
+  --destructive: #fee2e2;
+  --destructive-foreground: #ef4444;
+  --border: #e2e8f0;
+  --input: #f1f5f9;
+  --ring: #8b5cf6;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #475569;
+  --sidebar-primary: #8b5cf6;
+  --sidebar-border: #f1f5f9;
+  --sidebar-accent: rgba(139, 92, 246, 0.06);
+  --sidebar-accent-foreground: #8b5cf6;
+}
+
+/* Override hardcoded dark elements in vibrant mode */
+.vibrant .bg-zinc-900,
+.vibrant .bg-\[\#0f172a\] {
+  background-color: #ffffff !important;
+}
+
+.vibrant .bg-zinc-950,
+.vibrant .bg-\[\#020617\],
+.vibrant .bg-\[rgba\(7\,13\,26\,\.95\)\],
+.vibrant .bg-zinc-900\/50,
+.vibrant .bg-zinc-950\/50 {
+  background-color: #f8fafc !important;
+}
+
+.vibrant .border-zinc-800,
+.vibrant .border-zinc-850,
+.vibrant .border-white\/10,
+.vibrant .border-white\/\[0\.08\],
+.vibrant .border-white\/\[0\.05\] {
+  border-color: #f1f5f9 !important;
+}
+
+.vibrant .text-white:not(.carousel *),
+.vibrant .text-zinc-100:not(.carousel *) {
+  color: #1e1b4b !important;
+}
+
+.vibrant .text-zinc-200:not(.carousel *),
+.vibrant .text-zinc-300:not(.carousel *),
+.vibrant .text-zinc-400:not(.carousel *) {
+  color: #475569 !important;
+}
+
+.vibrant .text-zinc-350:not(.carousel *) {
+  color: #64748b !important;
+}
+
+.vibrant select option {
+  background-color: #ffffff !important;
+  color: #1e1b4b !important;
 }

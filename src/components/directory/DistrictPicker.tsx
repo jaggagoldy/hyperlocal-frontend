@@ -11,18 +11,18 @@ import type { RegionState } from '@/lib/directory';
 export default function DistrictPicker({ states, value }: { states: RegionState[]; value: string }) {
   const router = useRouter();
   return (
-    <label className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 shadow-sm">
-      <MapPin className="h-4 w-4 shrink-0 text-emerald-600" />
-      <span className="text-sm font-semibold text-zinc-500">District</span>
+    <label className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 shadow-sm">
+      <MapPin className="h-4 w-4 shrink-0 text-emerald-500" />
+      <span className="text-sm font-semibold text-zinc-400">District</span>
       <select
         value={value}
         onChange={(e) => router.push(`/directory?district=${e.target.value}`)}
-        className="flex-1 bg-transparent text-sm font-bold text-zinc-900 outline-none"
+        className="flex-1 bg-transparent text-sm font-bold text-white outline-none"
       >
         {states.map((s) => (
-          <optgroup key={s.name} label={s.name}>
+          <optgroup key={s.name} label={s.name} className="bg-zinc-900 text-white">
             {s.districts.map((d) => (
-              <option key={d.slug} value={d.slug}>{d.name}</option>
+              <option key={d.slug} value={d.slug} className="bg-zinc-900 text-white">{d.name}</option>
             ))}
           </optgroup>
         ))}

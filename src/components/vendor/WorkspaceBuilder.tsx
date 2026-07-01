@@ -7,6 +7,7 @@ import { TEMPLATE_METADATA, getTemplateComponent, getTemplateArchetype, getDefau
 import { getBlueprintForArchetype } from '@/lib/blueprints';
 import { getTaxonomyForCategory } from '@/lib/taxonomy';
 import DishModal from './DishModal';
+import DevicePreviewFrame from './DevicePreviewFrame';
 import apiClient from '@/lib/api-client';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store/useCartStore';
@@ -96,8 +97,24 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
     }
   };
 
-  // Menu State
-  const [catalog, setCatalog] = useState<any[]>(initialData?.catalogItems || []);
+  // Menu State — pre-populate with 2 editable placeholder items in create mode
+  const [catalog, setCatalog] = useState<any[]>(() => {
+    if (initialData?.catalogItems?.length > 0) return initialData.catalogItems;
+    if (mode === 'edit') return [];
+    // Create mode: seed 2 example items so the preview is meaningful and vendor can edit/delete
+    if (isRetail) return [
+      { id: 'ex-1', title: 'Premium Wireless Headphones', price: 2999, description: 'Edit or delete this example product', isActive: true, foodCategory: ['Electronics'], metaData: {} },
+      { id: 'ex-2', title: 'Classic Leather Wallet', price: 899, description: 'Edit or delete this example product', isActive: true, foodCategory: ['Accessories'], metaData: {} }
+    ];
+    if (isService) return [
+      { id: 'ex-1', title: 'Basic Package', price: 999, description: 'Edit or delete this example service', isActive: true, foodCategory: ['General'], metaData: {} },
+      { id: 'ex-2', title: 'Premium Package', price: 1999, description: 'Edit or delete this example service', isActive: true, foodCategory: ['General'], metaData: {} }
+    ];
+    return [
+      { id: 'ex-1', title: 'Signature Dal Makhani', price: 180, description: 'Edit or delete this example dish', isActive: true, foodCategory: ['Mains'], metaData: { isVeg: true, dietaryType: 'veg' } },
+      { id: 'ex-2', title: 'Masala Chai', price: 30, description: 'Edit or delete this example dish', isActive: true, foodCategory: ['Beverages'], metaData: { isVeg: true, dietaryType: 'veg' } }
+    ];
+  });
   const [deletedCatalogIds, setDeletedCatalogIds] = useState<string[]>([]);
 
   const handleDeleteItem = (id: string) => {
@@ -366,6 +383,8 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
     businessType: initialData?.businessType || 'FOOD_BEVERAGE',
     metaData: {
       taxonomy: taxonomySelections,
+      // Flatten taxonomy into top-level metaData so templates can read e.g. metaData.cuisines directly
+      ...taxonomySelections,
       customTags,
       isDineInAvailable: dineIn,
       isPureVeg,
@@ -443,20 +462,21 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-zinc-50 flex overflow-hidden">
-      
+    <div className="fixed inset-0 z-[100] flex overflow-hidden" style={{ background: '#020617' }}>
+
       {/* 1. LEFT COLUMN: SIDEBAR */}
-      <div className="w-72 bg-white border-r border-zinc-200 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20 shrink-0">
-        <div className="p-6 border-b border-zinc-100 mb-2 flex items-center justify-between">
-          <h1 className="text-xl font-black text-zinc-900 tracking-tight">App Builder</h1>
+      <div className="w-72 flex flex-col z-20 shrink-0" style={{ background: '#070d1a', borderRight: '1px solid rgba(255,255,255,.06)' }}>
+        <div className="p-6 mb-2 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+          <h1 className="text-xl font-black text-white tracking-tight">App Builder</h1>
           {onExit && (
-            <button 
+            <button
               onClick={onExit}
-              className="p-2 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-xl transition-all"
+              className="p-2 rounded-xl transition-all"
+              style={{ color: '#475569' }}
               title="Exit Builder"
             >
               <Trash2 className="w-5 h-5 hidden" />
-              <div className="text-xs font-bold bg-zinc-100 text-zinc-600 px-2 py-1 rounded-lg">Exit</div>
+              <div className="text-xs font-bold px-2 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,.06)', color: '#64748b' }}>Exit</div>
             </button>
           )}
         </div>
@@ -465,17 +485,27 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
             const isActive = activeTabId === tab.id;
             const isCompleted = currentTabIndex > idx;
             return (
-              <button 
+              <button
                 key={tab.id}
                 onClick={() => setActiveTabId(tab.id)}
-                className={`w-full flex items-center gap-4 p-3 rounded-2xl transition-all text-left group ${isActive ? 'bg-blue-50/80 ring-1 ring-blue-100' : 'hover:bg-zinc-50'}`}
+                className="w-full flex items-center gap-4 p-3 rounded-2xl transition-all text-left group"
+                style={isActive ? { background: 'rgba(16,185,129,.1)', border: '1px solid rgba(16,185,129,.18)' } : { border: '1px solid transparent' }}
               >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${isActive ? 'bg-blue-600 text-white shadow-blue-600/20' : isCompleted ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' : 'bg-white text-zinc-400 border border-zinc-200 group-hover:bg-zinc-50 group-hover:text-zinc-600'}`}>
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                  style={
+                    isActive
+                      ? { background: '#10b981', color: '#052e16' }
+                      : isCompleted
+                        ? { background: 'rgba(16,185,129,.12)', color: '#34d399', border: '1px solid rgba(16,185,129,.2)' }
+                        : { background: 'rgba(255,255,255,.04)', color: '#475569', border: '1px solid rgba(255,255,255,.08)' }
+                  }
+                >
                   {isCompleted && !isActive ? <Check className="w-5 h-5" /> : <tab.icon className="w-5 h-5" />}
                 </div>
                 <div>
-                  <p className={`text-[15px] font-bold ${isActive ? 'text-blue-900' : 'text-zinc-700'}`}>{tab.title}</p>
-                  <p className={`text-[11px] font-medium leading-snug mt-0.5 ${isActive ? 'text-blue-600' : 'text-zinc-400'}`}>{tab.desc}</p>
+                  <p className="text-[15px] font-bold" style={{ color: isActive ? '#fff' : '#94a3b8' }}>{tab.title}</p>
+                  <p className="text-[11px] font-medium leading-snug mt-0.5" style={{ color: isActive ? '#34d399' : '#475569' }}>{tab.desc}</p>
                 </div>
               </button>
             )
@@ -484,16 +514,17 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
       </div>
 
       {/* 2. CENTER COLUMN: EDITOR */}
-      <div className="flex-1 flex flex-col h-full bg-zinc-50/50 relative overflow-hidden">
-        <div className="px-10 py-6 border-b border-zinc-200 bg-white/80 backdrop-blur-xl flex justify-between items-center sticky top-0 z-10">
+      <div className="flex-1 flex flex-col h-full relative overflow-hidden" style={{ background: '#020617' }}>
+        <div className="px-10 py-6 flex justify-between items-center sticky top-0 z-10" style={{ borderBottom: '1px solid rgba(255,255,255,.06)', background: 'rgba(7,13,26,.95)', backdropFilter: 'blur(20px)' }}>
             <div>
-              <h2 className="text-2xl font-black text-zinc-900">{currentTab?.title}</h2>
-              <p className="text-zinc-500 font-medium text-sm mt-1">{currentTab?.desc}</p>
+              <h2 className="text-2xl font-black text-white">{currentTab?.title}</h2>
+              <p className="font-medium text-sm mt-1" style={{ color: '#64748b' }}>{currentTab?.desc}</p>
             </div>
-            <button 
+            <button
               onClick={handlePublish}
               disabled={isPublishing}
-              className="px-6 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-bold transition-all shadow-md disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-2.5 rounded-xl font-bold transition-all shadow-md disabled:opacity-50 flex items-center gap-2 text-white"
+              style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 4px 16px rgba(16,185,129,.25)' }}
             >
               {isPublishing ? 'Publishing...' : 'Publish App'} <Check className="w-4 h-4" />
             </button>
@@ -503,55 +534,55 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
           <div className="max-w-4xl mx-auto space-y-8 animate-in slide-in-from-bottom-4 fade-in duration-300">
             
             {activeTabId === 'profile' && (
-              <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm space-y-6">
+              <div className="p-8 rounded-3xl space-y-6" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                 <div className="flex gap-6 mb-8">
                   <div className="flex-1 space-y-2">
-                    <label className="block text-sm font-bold text-zinc-700">Logo Image</label>
-                    <div className="relative group cursor-pointer h-32 rounded-2xl border-2 border-dashed border-zinc-200 hover:border-blue-500 bg-zinc-50 flex items-center justify-center overflow-hidden transition-all">
-                      {logoUrl ? <img src={logoUrl} alt="Logo" className="w-full h-full object-contain p-2" /> : <div className="text-center"><ImageIcon className="w-6 h-6 mx-auto text-zinc-400 mb-2" /><span className="text-xs font-bold text-zinc-500">Upload Logo</span></div>}
+                    <label className="block text-sm font-bold mb-2" style={{ color: '#94a3b8' }}>Logo Image</label>
+                    <div className="relative group cursor-pointer h-32 rounded-2xl overflow-hidden transition-all flex items-center justify-center" style={{ border: '2px dashed rgba(255,255,255,.12)', background: 'rgba(255,255,255,.03)' }}>
+                      {logoUrl ? <img src={logoUrl} alt="Logo" className="w-full h-full object-contain p-2" /> : <div className="text-center"><ImageIcon className="w-6 h-6 mx-auto mb-2" style={{ color: '#475569' }} /><span className="text-xs font-bold" style={{ color: '#475569' }}>Upload Logo</span></div>}
                       <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, setLogoUrl)} />
                     </div>
                   </div>
                   <div className="flex-[2] space-y-2">
-                    <label className="block text-sm font-bold text-zinc-700">Banner Image</label>
-                    <div className="relative group cursor-pointer h-32 rounded-2xl border-2 border-dashed border-zinc-200 hover:border-blue-500 bg-zinc-50 flex items-center justify-center overflow-hidden transition-all">
-                      {bannerUrl ? <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" /> : <div className="text-center"><Upload className="w-6 h-6 mx-auto text-zinc-400 mb-2" /><span className="text-xs font-bold text-zinc-500">Upload Banner (Landscape)</span></div>}
+                    <label className="block text-sm font-bold mb-2" style={{ color: '#94a3b8' }}>Banner Image</label>
+                    <div className="relative group cursor-pointer h-32 rounded-2xl overflow-hidden transition-all flex items-center justify-center" style={{ border: '2px dashed rgba(255,255,255,.12)', background: 'rgba(255,255,255,.03)' }}>
+                      {bannerUrl ? <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" /> : <div className="text-center"><Upload className="w-6 h-6 mx-auto mb-2" style={{ color: '#475569' }} /><span className="text-xs font-bold" style={{ color: '#475569' }}>Upload Banner (Landscape)</span></div>}
                       <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(e, setBannerUrl)} />
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-zinc-700 mb-2">Business Name <span className="text-red-500">*</span></label>
-                  <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. The Spicy Kitchen" className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-medium text-base" />
+                  <label className="block text-sm font-bold mb-2" style={{ color: '#94a3b8' }}>Business Name <span className="text-red-500">*</span></label>
+                  <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. The Spicy Kitchen" className="w-full px-5 py-4 rounded-2xl transition-all font-medium text-base text-white placeholder:text-slate-600 outline-none" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }} onFocus={e => { e.currentTarget.style.border='1px solid rgba(16,185,129,.4)'; e.currentTarget.style.background='rgba(16,185,129,.04)'; }} onBlur={e => { e.currentTarget.style.border='1px solid rgba(255,255,255,.08)'; e.currentTarget.style.background='rgba(255,255,255,.04)'; }} />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-zinc-700 mb-2">Display Name (Owner/Brand) <span className="text-red-500">*</span></label>
-                  <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="e.g. Dr. Sarah Johnson" className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-medium text-base" />
+                  <label className="block text-sm font-bold mb-2" style={{ color: '#94a3b8' }}>Display Name (Owner/Brand) <span className="text-red-500">*</span></label>
+                  <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="e.g. Dr. Sarah Johnson" className="w-full px-5 py-4 rounded-2xl transition-all font-medium text-base text-white placeholder:text-slate-600 outline-none" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }} onFocus={e => { e.currentTarget.style.border='1px solid rgba(16,185,129,.4)'; e.currentTarget.style.background='rgba(16,185,129,.04)'; }} onBlur={e => { e.currentTarget.style.border='1px solid rgba(255,255,255,.08)'; e.currentTarget.style.background='rgba(255,255,255,.04)'; }} />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-zinc-700 mb-2">Tagline / Slogan</label>
-                  <input type="text" value={tagline} onChange={e => setTagline(e.target.value)} placeholder="e.g. Master Stylist & Owner" className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-medium text-base" />
+                  <label className="block text-sm font-bold mb-2" style={{ color: '#94a3b8' }}>Tagline / Slogan</label>
+                  <input type="text" value={tagline} onChange={e => setTagline(e.target.value)} placeholder="e.g. Master Stylist & Owner" className="w-full px-5 py-4 rounded-2xl transition-all font-medium text-base text-white placeholder:text-slate-600 outline-none" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }} onFocus={e => { e.currentTarget.style.border='1px solid rgba(16,185,129,.4)'; e.currentTarget.style.background='rgba(16,185,129,.04)'; }} onBlur={e => { e.currentTarget.style.border='1px solid rgba(255,255,255,.08)'; e.currentTarget.style.background='rgba(255,255,255,.04)'; }} />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-zinc-700 mb-2">About Text</label>
-                  <textarea value={aboutText} onChange={e => setAboutText(e.target.value)} rows={4} placeholder="Detailed about section..." className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-medium text-base resize-none"></textarea>
+                  <label className="block text-sm font-bold mb-2" style={{ color: '#94a3b8' }}>About Text</label>
+                  <textarea value={aboutText} onChange={e => setAboutText(e.target.value)} rows={4} placeholder="Detailed about section..." className="w-full px-5 py-4 rounded-2xl transition-all font-medium text-base resize-none text-white placeholder:text-slate-600 outline-none" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }} onFocus={e => { e.currentTarget.style.border='1px solid rgba(16,185,129,.4)'; e.currentTarget.style.background='rgba(16,185,129,.04)'; }} onBlur={e => { e.currentTarget.style.border='1px solid rgba(255,255,255,.08)'; e.currentTarget.style.background='rgba(255,255,255,.04)'; }}></textarea>
                 </div>
                 
                 {/* Legacy Profile Fields Below */}
-                <hr className="border-zinc-100" />
-                <h4 className="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-4">Location Details</h4>
+                <hr style={{ borderColor: 'rgba(255,255,255,.06)' }} />
+                <h4 className="text-sm font-bold uppercase tracking-widest mb-4" style={{ color: '#475569' }}>Location Details</h4>
                 <div>
-                  <label className="block text-sm font-bold text-zinc-700 mb-2">Detailed Address <span className="text-red-500">*</span></label>
-                  <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="e.g. 123 Food Street, Downtown" className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-medium text-base" />
+                  <label className="block text-sm font-bold mb-2" style={{ color: '#94a3b8' }}>Detailed Address <span className="text-red-500">*</span></label>
+                  <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="e.g. 123 Food Street, Downtown" className="w-full px-5 py-4 rounded-2xl transition-all font-medium text-base text-white placeholder:text-slate-600 outline-none" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }} onFocus={e => { e.currentTarget.style.border='1px solid rgba(16,185,129,.4)'; e.currentTarget.style.background='rgba(16,185,129,.04)'; }} onBlur={e => { e.currentTarget.style.border='1px solid rgba(255,255,255,.08)'; e.currentTarget.style.background='rgba(255,255,255,.04)'; }} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-zinc-700 mb-2">State <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-bold mb-2" style={{ color: '#94a3b8' }}>State <span className="text-red-500">*</span></label>
                     <select
                       value={stateName}
                       onChange={e => { setStateName(e.target.value); setDistrict(''); }}
-                      className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-medium text-base"
+                      className="w-full px-5 py-4 rounded-2xl transition-all font-medium text-base text-white placeholder:text-slate-600 outline-none" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }} onFocus={e => { e.currentTarget.style.border='1px solid rgba(16,185,129,.4)'; e.currentTarget.style.background='rgba(16,185,129,.04)'; }} onBlur={e => { e.currentTarget.style.border='1px solid rgba(255,255,255,.08)'; e.currentTarget.style.background='rgba(255,255,255,.04)'; }}
                     >
                       <option value="" disabled>Select State</option>
                       {regionStates.map((s) => (
@@ -560,12 +591,12 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-zinc-700 mb-2">District <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-bold mb-2" style={{ color: '#94a3b8' }}>District <span className="text-red-500">*</span></label>
                     <select
                       value={district}
                       disabled={!stateName}
                       onChange={e => setDistrict(e.target.value)}
-                      className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full px-5 py-4 rounded-2xl transition-all font-medium text-base text-white outline-none disabled:opacity-40 disabled:cursor-not-allowed" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }}
                     >
                       <option value="" disabled>{stateName ? 'Select District' : 'Pick a state first'}</option>
                       {districtsForState(regionStates, stateName).map((d) => (
@@ -575,40 +606,44 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-zinc-700 mb-2">Pincode</label>
-                  <input type="text" value={pincode} onChange={e => setPincode(e.target.value)} placeholder="e.g. 110001" className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-medium text-base" />
+                  <label className="block text-sm font-bold mb-2" style={{ color: '#94a3b8' }}>Pincode</label>
+                  <input type="text" value={pincode} onChange={e => setPincode(e.target.value)} placeholder="e.g. 110001" className="w-full px-5 py-4 rounded-2xl transition-all font-medium text-base text-white placeholder:text-slate-600 outline-none" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }} onFocus={e => { e.currentTarget.style.border='1px solid rgba(16,185,129,.4)'; e.currentTarget.style.background='rgba(16,185,129,.04)'; }} onBlur={e => { e.currentTarget.style.border='1px solid rgba(255,255,255,.08)'; e.currentTarget.style.background='rgba(255,255,255,.04)'; }} />
                 </div>
               </div>
             )}
             
             {activeTabId === 'contact' && (
-              <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm space-y-6">
+              <div className="p-8 rounded-3xl space-y-6" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                 <div>
-                  <label className="block text-sm font-bold text-zinc-700 mb-2">Contact Phone</label>
-                  <input type="text" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="+1 234 567 8900" className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-medium text-base" />
+                  <label className="block text-sm font-bold mb-2" style={{ color: '#94a3b8' }}>Contact Phone</label>
+                  <input type="text" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="+1 234 567 8900" className="w-full px-5 py-4 rounded-2xl transition-all font-medium text-base text-white placeholder:text-slate-600 outline-none" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }} onFocus={e => { e.currentTarget.style.border='1px solid rgba(16,185,129,.4)'; e.currentTarget.style.background='rgba(16,185,129,.04)'; }} onBlur={e => { e.currentTarget.style.border='1px solid rgba(255,255,255,.08)'; e.currentTarget.style.background='rgba(255,255,255,.04)'; }} />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-zinc-700 mb-2">Contact Email</label>
-                  <input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="hello@example.com" className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-medium text-base" />
+                  <label className="block text-sm font-bold mb-2" style={{ color: '#94a3b8' }}>Contact Email</label>
+                  <input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="hello@example.com" className="w-full px-5 py-4 rounded-2xl transition-all font-medium text-base text-white placeholder:text-slate-600 outline-none" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }} onFocus={e => { e.currentTarget.style.border='1px solid rgba(16,185,129,.4)'; e.currentTarget.style.background='rgba(16,185,129,.04)'; }} onBlur={e => { e.currentTarget.style.border='1px solid rgba(255,255,255,.08)'; e.currentTarget.style.background='rgba(255,255,255,.04)'; }} />
                 </div>
               </div>
             )}
 
             {activeTabId === 'theme' && (
-              <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm">
+              <div className="p-8 rounded-3xl" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {templates.map(t => {
                     const isActive = themeId === t.id;
                     return (
-                      <button 
+                      <button
                         key={t.id}
                         onClick={() => setThemeId(t.id)}
-                        className={`p-6 rounded-3xl border-2 text-left transition-all relative ${isActive ? 'border-blue-600 bg-blue-50/30 shadow-[0_8px_30px_rgba(37,99,235,0.1)] scale-[1.02]' : 'border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50'}`}
+                        className="p-6 rounded-3xl text-left transition-all relative"
+                        style={isActive
+                          ? { border: '2px solid rgba(16,185,129,.4)', background: 'rgba(16,185,129,.08)', transform: 'scale(1.02)' }
+                          : { border: '2px solid rgba(255,255,255,.08)', background: 'rgba(255,255,255,.03)' }
+                        }
                       >
-                        {isActive && <div className="absolute top-4 right-4 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center shadow-md"><Check className="w-3 h-3 text-white" /></div>}
+                        {isActive && <div className="absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center shadow-md" style={{ background: '#10b981' }}><Check className="w-3 h-3 text-white" /></div>}
                         <div className={`w-16 h-12 rounded-xl mb-6 ${t.color} border shadow-inner`}></div>
-                        <h4 className={`text-base font-black mb-1 ${isActive ? 'text-blue-900' : 'text-zinc-900'}`}>{t.name}</h4>
-                        <p className="text-xs font-medium text-zinc-500 line-clamp-2">Premium app template optimized for conversions.</p>
+                        <h4 className="text-base font-black mb-1" style={{ color: isActive ? '#34d399' : '#e2e8f0' }}>{t.name}</h4>
+                        <p className="text-xs font-medium line-clamp-2" style={{ color: '#475569' }}>Premium app template optimized for conversions.</p>
                       </button>
                     )
                   })}
@@ -617,42 +652,46 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
             )}
 
             {activeTabId === 'taxonomy' && (
-              <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm space-y-8">
+              <div className="p-8 rounded-3xl space-y-8" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                  {currentArchetype === 'FOOD_BEVERAGE' && (
-                   <div className="flex flex-col gap-4 bg-zinc-50 p-6 rounded-2xl border border-zinc-100">
+                   <div className="flex flex-col gap-4 p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }}>
                      <label className="flex items-center gap-4 cursor-pointer">
-                        <input type="checkbox" checked={dineIn} onChange={e => setDineIn(e.target.checked)} className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500" />
-                        <span className="text-base font-bold text-zinc-900">Enable Dine-In Orders</span>
+                        <input type="checkbox" checked={dineIn} onChange={e => setDineIn(e.target.checked)} className="w-5 h-5 rounded" style={{ accentColor: '#10b981' }} />
+                        <span className="text-base font-bold text-white">Enable Dine-In Orders</span>
                      </label>
                      <label className="flex items-center gap-4 cursor-pointer">
-                        <input type="checkbox" checked={isPureVeg} onChange={e => setIsPureVeg(e.target.checked)} className="w-5 h-5 rounded text-green-600 focus:ring-green-500" />
-                        <span className="text-base font-bold text-green-700 bg-green-100 px-3 py-1 rounded-lg">Pure Veg Restaurant</span>
+                        <input type="checkbox" checked={isPureVeg} onChange={e => setIsPureVeg(e.target.checked)} className="w-5 h-5 rounded" style={{ accentColor: '#22c55e' }} />
+                        <span className="text-base font-bold px-3 py-1 rounded-lg" style={{ color: '#4ade80', background: 'rgba(34,197,94,.1)' }}>Pure Veg Restaurant</span>
                      </label>
                    </div>
                  )}
                  {currentArchetype === 'RETAIL' && (
-                   <div className="flex flex-col gap-4 bg-zinc-50 p-6 rounded-2xl border border-zinc-100">
+                   <div className="flex flex-col gap-4 p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }}>
                      <label className="flex items-center gap-4 cursor-pointer">
-                        <input type="checkbox" checked={dineIn} onChange={e => setDineIn(e.target.checked)} className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500" />
-                        <span className="text-base font-bold text-zinc-900">Offer Click & Collect (Store Pickup)</span>
+                        <input type="checkbox" checked={dineIn} onChange={e => setDineIn(e.target.checked)} className="w-5 h-5 rounded" style={{ accentColor: '#10b981' }} />
+                        <span className="text-base font-bold text-white">Offer Click &amp; Collect (Store Pickup)</span>
                      </label>
                    </div>
                  )}
                  {taxonomySchema.map(field => (
-                   <div key={field.id} className="pt-6 first:pt-0 first:border-0 border-t border-zinc-100">
-                     <h3 className="text-sm font-bold text-zinc-700 mb-4 uppercase tracking-wider">{field.label}</h3>
+                   <div key={field.id} className="pt-6 first:pt-0 first:border-0" style={{ borderTop: '1px solid rgba(255,255,255,.06)' }}>
+                     <h3 className="text-sm font-bold mb-4 uppercase tracking-wider" style={{ color: '#64748b' }}>{field.label}</h3>
                      <div className="flex flex-wrap gap-3">
                        {field.options.map(option => {
                          const currentVal = taxonomySelections[field.id];
-                         const isSel = field.type === 'multi_select' 
+                         const isSel = field.type === 'multi_select'
                            ? (currentVal || []).includes(option)
                            : currentVal === option;
 
                          return (
-                           <button 
+                           <button
                              key={option}
                              onClick={() => field.type === 'multi_select' ? toggleTaxonomyMulti(field.id, option) : setTaxonomySingle(field.id, option)}
-                             className={`px-5 py-3 rounded-xl text-sm font-bold border-2 transition-all flex items-center gap-2 ${isSel ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm' : 'border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50'}`}
+                             className="px-5 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                             style={isSel
+                               ? { border: '2px solid rgba(16,185,129,.4)', background: 'rgba(16,185,129,.12)', color: '#34d399' }
+                               : { border: '2px solid rgba(255,255,255,.08)', background: 'rgba(255,255,255,.03)', color: '#64748b' }
+                             }
                            >
                              {isSel && <Check className="w-4 h-4" />}
                              {option}
@@ -665,27 +704,27 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
 
                  {taxonomySchema.length === 0 && currentArchetype !== 'FOOD_BEVERAGE' && currentArchetype !== 'RETAIL' && (
                    <div className="text-center py-8">
-                     <Tags className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                     <p className="text-zinc-500 font-bold">No predefined tags for this category.</p>
-                     <p className="text-zinc-400 text-sm mt-1">You can add custom tags below.</p>
+                     <Tags className="w-12 h-12 mx-auto mb-4" style={{ color: '#334155' }} />
+                     <p className="font-bold" style={{ color: '#475569' }}>No predefined tags for this category.</p>
+                     <p className="text-sm mt-1" style={{ color: '#334155' }}>You can add custom tags below.</p>
                    </div>
                  )}
 
-                 <div className="pt-6 border-t border-zinc-100">
-                   <h3 className="text-sm font-bold text-zinc-700 mb-3 uppercase tracking-wider">Add Custom Tags</h3>
+                 <div className="pt-6" style={{ borderTop: '1px solid rgba(255,255,255,.06)' }}>
+                   <h3 className="text-sm font-bold mb-3 uppercase tracking-wider" style={{ color: '#64748b' }}>Add Custom Tags</h3>
                    <div className="flex flex-wrap gap-2 mb-4">
                      {customTags.map((tag, idx) => (
-                       <span key={idx} className="px-3 py-1.5 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded-lg text-xs font-bold flex items-center gap-2">
+                       <span key={idx} className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2" style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: '#94a3b8' }}>
                          {tag}
-                         <button onClick={() => setCustomTags(customTags.filter((_, i) => i !== idx))} className="hover:text-rose-500">
+                         <button onClick={() => setCustomTags(customTags.filter((_, i) => i !== idx))} className="hover:text-rose-400">
                            <X className="w-3 h-3" />
                          </button>
                        </span>
                      ))}
                    </div>
                    <div className="flex gap-3">
-                     <input type="text" maxLength={20} value={customTagInput} onChange={e => setCustomTagInput(e.target.value)} placeholder="Type a custom tag" className="flex-1 h-12 px-5 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none text-sm font-semibold" />
-                     <button onClick={addCustomTag} className="h-12 px-8 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-bold transition-colors shadow-md">
+                     <input type="text" maxLength={20} value={customTagInput} onChange={e => setCustomTagInput(e.target.value)} placeholder="Type a custom tag" className="flex-1 h-12 px-5 rounded-xl outline-none text-sm font-semibold text-white placeholder:text-slate-600" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }} onFocus={e => { e.currentTarget.style.border='1px solid rgba(16,185,129,.4)'; }} onBlur={e => { e.currentTarget.style.border='1px solid rgba(255,255,255,.08)'; }} />
+                     <button onClick={addCustomTag} className="h-12 px-8 rounded-xl font-bold transition-colors text-white" style={{ background: 'rgba(16,185,129,.15)', border: '1px solid rgba(16,185,129,.3)', color: '#34d399' }}>
                        Add
                      </button>
                    </div>
@@ -694,40 +733,32 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
             )}
 
             {activeTabId === 'enquiry_form' && (
-              <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm space-y-6">
+              <div className="p-8 rounded-3xl space-y-6" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                 <div>
-                  <h3 className="text-xl font-black text-zinc-900 mb-2">Enquiry Form Setup</h3>
-                  <p className="text-zinc-500 text-sm mb-6">Choose what information clients must provide when requesting a quote or booking.</p>
-                  
+                  <h3 className="text-xl font-black text-white mb-2">Enquiry Form Setup</h3>
+                  <p className="text-sm mb-6" style={{ color: '#64748b' }}>Choose what information clients must provide when requesting a quote or booking.</p>
+
                   <div className="space-y-4">
-                    <label className="flex items-center justify-between p-4 border border-zinc-200 rounded-xl bg-zinc-50 cursor-pointer hover:bg-zinc-100 transition-colors">
+                    {[
+                      { label: 'Require Photo Upload', sub: 'Clients must upload a photo of the issue (e.g. broken pipe)', checked: true },
+                      { label: 'Require Detailed Address', sub: 'Ask for full address instead of just locality', checked: true },
+                      { label: 'Require Preferred Date/Time', sub: 'Ask when they need the service done', checked: true },
+                    ].map(item => (
+                      <label key={item.label} className="flex items-center justify-between p-4 rounded-xl cursor-pointer transition-colors" style={{ border: '1px solid rgba(255,255,255,.08)', background: 'rgba(255,255,255,.03)' }}>
+                        <div>
+                          <div className="font-bold text-white">{item.label}</div>
+                          <div className="text-xs" style={{ color: '#475569' }}>{item.sub}</div>
+                        </div>
+                        <input type="checkbox" className="w-5 h-5 rounded" defaultChecked={item.checked} style={{ accentColor: '#10b981' }} />
+                      </label>
+                    ))}
+
+                    <label className="flex items-center justify-between p-4 rounded-xl cursor-pointer transition-colors mt-6" style={{ border: '1px solid rgba(255,255,255,.08)', background: 'rgba(255,255,255,.03)' }}>
                       <div>
-                        <div className="font-bold text-zinc-900">Require Photo Upload</div>
-                        <div className="text-xs text-zinc-500">Clients must upload a photo of the issue (e.g. broken pipe)</div>
+                        <div className="font-bold text-white">Enable Service Selection</div>
+                        <div className="text-xs" style={{ color: '#475569' }}>Customers must select a service/treatment from the catalog before enquiring</div>
                       </div>
-                      <input type="checkbox" className="w-5 h-5 rounded text-blue-600" defaultChecked />
-                    </label>
-                    <label className="flex items-center justify-between p-4 border border-zinc-200 rounded-xl bg-zinc-50 cursor-pointer hover:bg-zinc-100 transition-colors">
-                      <div>
-                        <div className="font-bold text-zinc-900">Require Detailed Address</div>
-                        <div className="text-xs text-zinc-500">Ask for full address instead of just locality</div>
-                      </div>
-                      <input type="checkbox" className="w-5 h-5 rounded text-blue-600" defaultChecked />
-                    </label>
-                    <label className="flex items-center justify-between p-4 border border-zinc-200 rounded-xl bg-zinc-50 cursor-pointer hover:bg-zinc-100 transition-colors">
-                      <div>
-                        <div className="font-bold text-zinc-900">Require Preferred Date/Time</div>
-                        <div className="text-xs text-zinc-500">Ask when they need the service done</div>
-                      </div>
-                      <input type="checkbox" className="w-5 h-5 rounded text-blue-600" defaultChecked />
-                    </label>
-                    
-                    <label className="flex items-center justify-between p-4 border border-zinc-200 rounded-xl bg-zinc-50 cursor-pointer hover:bg-zinc-100 transition-colors mt-6">
-                      <div>
-                        <div className="font-bold text-zinc-900">Enable Service Selection</div>
-                        <div className="text-xs text-zinc-500">Customers must select a service/treatment from the catalog before enquiring</div>
-                      </div>
-                      <input type="checkbox" checked={enableServiceSelection} onChange={e => setEnableServiceSelection(e.target.checked)} className="w-5 h-5 rounded text-blue-600" />
+                      <input type="checkbox" checked={enableServiceSelection} onChange={e => setEnableServiceSelection(e.target.checked)} className="w-5 h-5 rounded" style={{ accentColor: '#10b981' }} />
                     </label>
                   </div>
                 </div>
@@ -739,37 +770,39 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
             {['menu', 'services'].includes(activeTabId) && (
               <div className="space-y-6">
                 <div className="flex justify-end">
-                   <button 
+                   <button
                      onClick={() => { setEditItem(null); setIsDishModalOpen(true); }}
-                     className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-[0_8px_20px_rgba(37,99,235,0.2)] flex items-center gap-2 hover:-translate-y-0.5"
+                     className="px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 text-white"
+                     style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 8px 20px rgba(16,185,129,.25)' }}
                    >
                      <Plus className="w-5 h-5" /> {isService ? 'Add Service Package' : (isRetail ? 'Add New Product' : 'Add New Dish')}
                    </button>
                 </div>
                 
                 {catalog.length === 0 ? (
-                  <div className="bg-white border-2 border-dashed border-zinc-200 rounded-3xl p-16 text-center flex flex-col items-center">
-                    <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-blue-600">
+                  <div className="rounded-3xl p-16 text-center flex flex-col items-center" style={{ border: '2px dashed rgba(255,255,255,.1)', background: 'rgba(255,255,255,.02)' }}>
+                    <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6" style={{ background: 'rgba(16,185,129,.1)', color: '#34d399' }}>
                       <Menu className="w-10 h-10" />
                     </div>
-                    <h3 className="text-2xl font-black text-zinc-900 mb-2">{isService ? 'Your service list is empty' : (isRetail ? 'Your inventory is empty' : 'Your menu is empty')}</h3>
-                    <p className="text-zinc-500 mb-8 max-w-sm text-base">{isService ? 'Start building your professional profile by adding your first service package.' : (isRetail ? 'Start building your store by adding your first product.' : 'Start building your catalog by adding your first delicious dish.')}</p>
-                    <button 
+                    <h3 className="text-2xl font-black text-white mb-2">{isService ? 'Your service list is empty' : (isRetail ? 'Your inventory is empty' : 'Your menu is empty')}</h3>
+                    <p className="mb-8 max-w-sm text-base" style={{ color: '#475569' }}>{isService ? 'Start building your professional profile by adding your first service package.' : (isRetail ? 'Start building your store by adding your first product.' : 'Start building your catalog by adding your first delicious dish.')}</p>
+                    <button
                       onClick={() => { setEditItem(null); setIsDishModalOpen(true); }}
-                      className="px-8 py-4 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-bold transition-all shadow-xl flex items-center gap-2 text-lg hover:-translate-y-1"
+                      className="px-8 py-4 rounded-xl font-bold transition-all flex items-center gap-2 text-lg text-white"
+                      style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 8px 24px rgba(16,185,129,.25)' }}
                     >
                       <Plus className="w-6 h-6" /> {isService ? 'Add First Service' : (isRetail ? 'Add First Product' : 'Add First Dish')}
                     </button>
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    <div className="flex justify-between items-center bg-white p-2 rounded-2xl border border-zinc-200 shadow-sm">
+                    <div className="flex justify-between items-center p-2 rounded-2xl" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                       <div className="pl-4">
-                        <span className="text-sm font-bold text-zinc-500">{catalog.length} Items Configured</span>
+                        <span className="text-sm font-bold" style={{ color: '#64748b' }}>{catalog.length} Items Configured</span>
                       </div>
-                      <div className="flex gap-1 bg-zinc-100/50 p-1 rounded-xl">
-                        <button onClick={() => setMenuViewMode('list')} className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${menuViewMode === 'list' ? 'bg-white shadow-sm text-zinc-900 border border-zinc-200/50' : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100'}`}>List View</button>
-                        <button onClick={() => setMenuViewMode('grid')} className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${menuViewMode === 'grid' ? 'bg-white shadow-sm text-zinc-900 border border-zinc-200/50' : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100'}`}>Grid View</button>
+                      <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'rgba(255,255,255,.04)' }}>
+                        <button onClick={() => setMenuViewMode('list')} className="px-4 py-2 rounded-lg font-bold text-sm transition-all" style={menuViewMode === 'list' ? { background: 'rgba(16,185,129,.12)', color: '#34d399', border: '1px solid rgba(16,185,129,.2)' } : { color: '#475569' }}>List View</button>
+                        <button onClick={() => setMenuViewMode('grid')} className="px-4 py-2 rounded-lg font-bold text-sm transition-all" style={menuViewMode === 'grid' ? { background: 'rgba(16,185,129,.12)', color: '#34d399', border: '1px solid rgba(16,185,129,.2)' } : { color: '#475569' }}>Grid View</button>
                       </div>
                     </div>
                     
@@ -782,55 +815,61 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
                               onDragStart={(e) => handleDragStart(e, item.id)}
                               onDragOver={(e) => handleDragOver(e, item.id)}
                               onDragEnd={handleDragEnd}
-                              className={`bg-white rounded-2xl border border-zinc-200 shadow-sm p-4 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between group transition-all ${draggedItemId === item.id ? 'opacity-50 scale-[0.99] border-dashed border-emerald-500 bg-emerald-50/50' : 'hover:border-emerald-500/30 hover:shadow-md cursor-grab'}`}
+                              className={`rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between group transition-all ${draggedItemId === item.id ? 'opacity-50 scale-[0.99] cursor-grabbing' : 'cursor-grab'}`}
+                            style={draggedItemId === item.id
+                              ? { background: 'rgba(16,185,129,.06)', border: '1px dashed rgba(16,185,129,.4)' }
+                              : { background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }
+                            }
                             >
                                <div className="flex items-center gap-4 flex-1 min-w-0">
-                                  <div className="text-zinc-300 group-hover:text-zinc-500 transition-colors shrink-0">
+                                  <div className="transition-colors shrink-0" style={{ color: '#334155' }}>
                                     <GripVertical className="w-6 h-6" />
                                   </div>
-                                  <div className="shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-zinc-100 border border-zinc-200 shadow-sm flex items-center justify-center">
+                                  <div className="shrink-0 w-16 h-16 rounded-xl overflow-hidden flex items-center justify-center" style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.08)' }}>
                                     {item.mediaUrl ? (
                                       <img src={item.mediaUrl} alt={item.title} className="w-full h-full object-cover" />
                                     ) : (
-                                      <ImageIcon className="w-6 h-6 text-zinc-400" />
+                                      <ImageIcon className="w-6 h-6" style={{ color: '#475569' }} />
                                     )}
                                   </div>
                                   <div className="flex-1 min-w-0 pr-4">
-                                     <h4 className={`text-base font-bold flex items-start gap-2 ${item.isActive ? 'text-zinc-900' : 'text-zinc-400 line-through'}`}>
+                                     <h4 className={`text-base font-bold flex items-start gap-2 ${item.isActive ? 'text-white' : 'line-through'}`} style={!item.isActive ? { color: '#475569' } : {}}>
                                         {!isRetail && !isService && (item.metaData?.isVeg ? <span className="w-3 h-3 rounded-[3px] bg-green-500 shadow-[0_0_0_1px_rgba(34,197,94,0.2)] mt-1.5 shrink-0"></span> : <span className="w-3 h-3 rounded-[3px] bg-red-500 shadow-[0_0_0_1px_rgba(239,68,68,0.2)] mt-1.5 shrink-0"></span>)}
                                         <span className="break-all leading-tight min-w-0">{item.title}</span>
                                      </h4>
                                      <div className="flex flex-wrap gap-1.5 mt-2">
-                                        <span className="font-black text-zinc-900 bg-zinc-100 px-2 py-0.5 rounded text-xs">₹{item.price}</span>
+                                        <span className="font-black px-2 py-0.5 rounded text-xs" style={{ background: 'rgba(255,255,255,.08)', color: '#e2e8f0' }}>₹{item.price}</span>
                                         {(Array.isArray(item.foodCategory) ? item.foodCategory : [item.foodCategory || 'Mains']).map((cat: string, i: number) => (
-                                          <span key={i} className="px-2 py-0.5 bg-emerald-50 border border-emerald-100 text-emerald-700 text-[10px] font-bold rounded uppercase tracking-wider">{cat}</span>
+                                          <span key={i} className="px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider" style={{ background: 'rgba(16,185,129,.1)', border: '1px solid rgba(16,185,129,.2)', color: '#34d399' }}>{cat}</span>
                                         ))}
                                         {item.variants && item.variants.length > 0 && (
-                                          <span className="px-2 py-0.5 bg-blue-50 border border-blue-100 text-blue-700 text-[10px] font-bold rounded uppercase tracking-wider">+{item.variants.length} Variants</span>
+                                          <span className="px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider" style={{ background: 'rgba(56,189,248,.08)', border: '1px solid rgba(56,189,248,.15)', color: '#38bdf8' }}>+{item.variants.length} Variants</span>
                                         )}
                                      </div>
                                   </div>
                                </div>
                                
-                               <div className="flex items-center gap-4 shrink-0 mt-4 md:mt-0 w-full md:w-auto justify-end border-t md:border-t-0 border-zinc-100 pt-4 md:pt-0">
+                               <div className="flex items-center gap-4 shrink-0 mt-4 md:mt-0 w-full md:w-auto justify-end pt-4 md:pt-0" style={{ borderTop: '1px solid rgba(255,255,255,.06)' }}>
                                   <label className="inline-flex items-center cursor-pointer mr-2">
                                     <div className="relative">
                                       <input type="checkbox" className="sr-only" checked={item.isActive} onChange={() => toggleAvailability(item.id)} />
-                                      <div className={`block w-12 h-7 rounded-full transition-colors ${item.isActive ? 'bg-emerald-500' : 'bg-zinc-300'}`}></div>
+                                      <div className={`block w-12 h-7 rounded-full transition-colors ${item.isActive ? 'bg-emerald-500' : ''}`} style={!item.isActive ? { background: 'rgba(255,255,255,.12)' } : {}}></div>
                                       <div className={`absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform shadow-sm ${item.isActive ? 'transform translate-x-5' : ''}`}></div>
                                     </div>
                                   </label>
-                                  
-                                  <div className="flex items-center gap-1 bg-zinc-50 rounded-xl p-1 border border-zinc-200">
-                                    <button 
-                                      onClick={() => { setEditItem(item); setIsDishModalOpen(true); }} 
-                                      className="p-2 text-zinc-500 hover:text-blue-600 hover:bg-white rounded-lg transition-all shadow-sm"
+
+                                  <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }}>
+                                    <button
+                                      onClick={() => { setEditItem(item); setIsDishModalOpen(true); }}
+                                      className="p-2 rounded-lg transition-all hover:bg-white/10"
+                                      style={{ color: '#64748b' }}
                                     >
                                       <Edit className="w-4 h-4" />
                                     </button>
-                                    <button 
-                                      onClick={() => handleDeleteItem(item.id)} 
-                                      className="p-2 text-zinc-500 hover:text-rose-500 hover:bg-white rounded-lg transition-all shadow-sm"
+                                    <button
+                                      onClick={() => handleDeleteItem(item.id)}
+                                      className="p-2 rounded-lg transition-all hover:bg-rose-500/10 hover:text-rose-400"
+                                      style={{ color: '#64748b' }}
                                     >
                                       <Trash2 className="w-4 h-4" />
                                     </button>
@@ -844,49 +883,52 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
                          {catalog.map(item => (
                             <div 
                               key={item.id}
-                              className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-4 flex flex-col group transition-all hover:border-emerald-500/30 hover:shadow-md relative"
+                              className="rounded-2xl p-4 flex flex-col group transition-all relative"
+                            style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}
                             >
                                <div className="flex justify-between items-start mb-4">
-                                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-zinc-100 border border-zinc-200 shadow-sm flex items-center justify-center shrink-0">
+                                  <div className="w-16 h-16 rounded-xl overflow-hidden flex items-center justify-center shrink-0" style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.08)' }}>
                                     {item.mediaUrl ? (
                                       <img src={item.mediaUrl} alt={item.title} className="w-full h-full object-cover" />
                                     ) : (
-                                      <ImageIcon className="w-6 h-6 text-zinc-400" />
+                                      <ImageIcon className="w-6 h-6" style={{ color: '#475569' }} />
                                     )}
                                   </div>
                                   <label className="inline-flex items-center cursor-pointer">
                                     <div className="relative">
                                       <input type="checkbox" className="sr-only" checked={item.isActive} onChange={() => toggleAvailability(item.id)} />
-                                      <div className={`block w-10 h-6 rounded-full transition-colors ${item.isActive ? 'bg-emerald-500' : 'bg-zinc-300'}`}></div>
+                                      <div className={`block w-10 h-6 rounded-full transition-colors ${item.isActive ? 'bg-emerald-500' : ''}`} style={!item.isActive ? { background: 'rgba(255,255,255,.12)' } : {}}></div>
                                       <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform shadow-sm ${item.isActive ? 'transform translate-x-4' : ''}`}></div>
                                     </div>
                                   </label>
                                </div>
                                
                                <div className="flex-1">
-                                 <h4 className={`text-base font-bold flex items-start gap-2 mb-2 ${item.isActive ? 'text-zinc-900' : 'text-zinc-400 line-through'}`}>
+                                 <h4 className={`text-base font-bold flex items-start gap-2 mb-2 ${item.isActive ? 'text-white' : 'line-through'}`} style={!item.isActive ? { color: '#475569' } : {}}>
                                     {!isRetail && !isService && (item.metaData?.isVeg ? <span className="w-3 h-3 rounded-[3px] bg-green-500 shadow-[0_0_0_1px_rgba(34,197,94,0.2)] mt-1.5 shrink-0"></span> : <span className="w-3 h-3 rounded-[3px] bg-red-500 shadow-[0_0_0_1px_rgba(239,68,68,0.2)] mt-1.5 shrink-0"></span>)}
                                     <span className="leading-tight break-all min-w-0">{item.title}</span>
                                  </h4>
-                                 <div className="font-black text-lg text-zinc-900 mb-3">₹{item.price}</div>
-                                 
+                                 <div className="font-black text-lg text-white mb-3">₹{item.price}</div>
+
                                  <div className="flex flex-wrap gap-1.5 mb-4">
                                     {(Array.isArray(item.foodCategory) ? item.foodCategory : [item.foodCategory || 'Mains']).map((cat: string, i: number) => (
-                                      <span key={i} className="px-2 py-0.5 bg-zinc-100 border border-zinc-200 text-zinc-600 text-[10px] font-bold rounded uppercase tracking-wider">{cat}</span>
+                                      <span key={i} className="px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider" style={{ background: 'rgba(16,185,129,.1)', border: '1px solid rgba(16,185,129,.2)', color: '#34d399' }}>{cat}</span>
                                     ))}
                                  </div>
                                </div>
                                
-                               <div className="flex items-center gap-2 pt-4 border-t border-zinc-100 mt-auto">
-                                 <button 
-                                   onClick={() => { setEditItem(item); setIsDishModalOpen(true); }} 
-                                   className="flex-1 py-2 text-zinc-600 hover:text-blue-600 bg-zinc-50 hover:bg-blue-50 border border-zinc-200 rounded-xl font-bold text-sm transition-colors flex justify-center items-center gap-2"
+                               <div className="flex items-center gap-2 pt-4 mt-auto" style={{ borderTop: '1px solid rgba(255,255,255,.06)' }}>
+                                 <button
+                                   onClick={() => { setEditItem(item); setIsDishModalOpen(true); }}
+                                   className="flex-1 py-2 rounded-xl font-bold text-sm transition-colors flex justify-center items-center gap-2"
+                                   style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', color: '#94a3b8' }}
                                  >
                                    <Edit className="w-4 h-4" /> Edit
                                  </button>
-                                 <button 
-                                   onClick={() => handleDeleteItem(item.id)} 
-                                   className="p-2 text-zinc-400 hover:text-rose-500 bg-zinc-50 hover:bg-rose-50 border border-zinc-200 rounded-xl transition-colors flex justify-center items-center"
+                                 <button
+                                   onClick={() => handleDeleteItem(item.id)}
+                                   className="p-2 rounded-xl transition-colors flex justify-center items-center hover:bg-rose-500/10 hover:text-rose-400"
+                                   style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', color: '#64748b' }}
                                  >
                                    <Trash2 className="w-4 h-4" />
                                  </button>
@@ -901,23 +943,23 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
             )}
 
             {activeTabId === 'availability' && (
-              <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm space-y-6">
+              <div className="p-8 rounded-3xl space-y-6" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                 <div>
-                  <h3 className="text-lg font-black text-zinc-900 mb-2">Working Hours</h3>
-                  <p className="text-zinc-500 text-sm mb-6">Define your standard availability for bookings.</p>
-                  
+                  <h3 className="text-lg font-black text-white mb-2">Working Hours</h3>
+                  <p className="text-sm mb-6" style={{ color: '#64748b' }}>Define your standard availability for bookings.</p>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-700 uppercase tracking-wider">Start Time</label>
-                      <select className="w-full px-5 py-4 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none font-bold">
+                      <label className="text-xs font-bold uppercase tracking-wider" style={{ color: '#64748b' }}>Start Time</label>
+                      <select className="w-full px-5 py-4 rounded-xl outline-none font-bold text-white" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', colorScheme: 'dark' }}>
                         <option>09:00 AM</option>
                         <option>10:00 AM</option>
                         <option>11:00 AM</option>
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-700 uppercase tracking-wider">End Time</label>
-                      <select className="w-full px-5 py-4 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none font-bold">
+                      <label className="text-xs font-bold uppercase tracking-wider" style={{ color: '#64748b' }}>End Time</label>
+                      <select className="w-full px-5 py-4 rounded-xl outline-none font-bold text-white" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', colorScheme: 'dark' }}>
                         <option>05:00 PM</option>
                         <option>06:00 PM</option>
                         <option>07:00 PM</option>
@@ -926,11 +968,11 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
                     </div>
                   </div>
                 </div>
-                
-                <div className="pt-6 border-t border-zinc-100">
-                  <h3 className="text-lg font-black text-zinc-900 mb-2">Slot Duration</h3>
-                  <p className="text-zinc-500 text-sm mb-4">How long does a typical appointment/service take?</p>
-                  <select className="w-full px-5 py-4 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none font-bold">
+
+                <div className="pt-6" style={{ borderTop: '1px solid rgba(255,255,255,.06)' }}>
+                  <h3 className="text-lg font-black text-white mb-2">Slot Duration</h3>
+                  <p className="text-sm mb-4" style={{ color: '#64748b' }}>How long does a typical appointment/service take?</p>
+                  <select className="w-full px-5 py-4 rounded-xl outline-none font-bold text-white" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', colorScheme: 'dark' }}>
                     <option>15 Minutes</option>
                     <option>30 Minutes</option>
                     <option>45 Minutes</option>
@@ -943,21 +985,21 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
             )}
 
             {activeTabId === 'offers' && (
-              <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm space-y-8">
+              <div className="p-8 rounded-3xl space-y-8" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                  {offers.length > 0 && (
                    <div className="grid grid-cols-1 gap-4">
                      {offers.map((offer, idx) => (
-                       <div key={idx} className="flex items-center justify-between p-6 border-2 border-dashed border-emerald-200 bg-emerald-50/50 rounded-2xl">
+                       <div key={idx} className="flex items-center justify-between p-6 rounded-2xl" style={{ border: '2px dashed rgba(16,185,129,.25)', background: 'rgba(16,185,129,.06)' }}>
                           <div>
                             <div className="flex items-center gap-3 mb-1">
-                               <Tag className="w-5 h-5 text-emerald-500" />
-                               <h4 className="font-black text-emerald-900 text-lg">{offer.code}</h4>
+                               <Tag className="w-5 h-5" style={{ color: '#34d399' }} />
+                               <h4 className="font-black text-lg" style={{ color: '#34d399' }}>{offer.code}</h4>
                             </div>
-                            <p className="text-sm font-bold text-emerald-600/80">{offer.title}</p>
+                            <p className="text-sm font-bold" style={{ color: '#10b981' }}>{offer.title}</p>
                           </div>
                           <div className="flex items-center gap-6">
-                             <span className="text-xl font-black text-emerald-600">{offer.discount}</span>
-                             <button onClick={() => setOffers(offers.filter((_, i) => i !== idx))} className="p-3 text-rose-500 hover:bg-rose-100 rounded-xl transition-colors">
+                             <span className="text-xl font-black" style={{ color: '#34d399' }}>{offer.discount}</span>
+                             <button onClick={() => setOffers(offers.filter((_, i) => i !== idx))} className="p-3 rounded-xl transition-colors hover:bg-rose-500/10 hover:text-rose-400" style={{ color: '#64748b' }}>
                                <Trash2 className="w-5 h-5" />
                              </button>
                           </div>
@@ -965,24 +1007,24 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
                      ))}
                    </div>
                  )}
-                 
-                 <div className="pt-6 border-t border-zinc-100">
-                    <h3 className="text-lg font-black text-zinc-900 mb-4">Create New Promo</h3>
+
+                 <div className="pt-6" style={{ borderTop: '1px solid rgba(255,255,255,.06)' }}>
+                    <h3 className="text-lg font-black text-white mb-4">Create New Promo</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                        <div>
-                         <label className="block text-xs font-bold text-zinc-500 mb-1.5 uppercase tracking-wider">Promo Code</label>
-                         <input type="text" maxLength={15} value={offerCode} onChange={e => setOfferCode(e.target.value.toUpperCase())} placeholder="e.g. WELCOME50" className="w-full h-12 px-4 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-bold" />
+                         <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: '#64748b' }}>Promo Code</label>
+                         <input type="text" maxLength={15} value={offerCode} onChange={e => setOfferCode(e.target.value.toUpperCase())} placeholder="e.g. WELCOME50" className="w-full h-12 px-4 rounded-xl outline-none text-sm font-bold text-white placeholder:text-slate-600" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }} onFocus={e => { e.currentTarget.style.border='1px solid rgba(16,185,129,.4)'; }} onBlur={e => { e.currentTarget.style.border='1px solid rgba(255,255,255,.08)'; }} />
                        </div>
                        <div>
-                         <label className="block text-xs font-bold text-zinc-500 mb-1.5 uppercase tracking-wider">Discount Text</label>
-                         <input type="text" maxLength={10} value={offerDiscount} onChange={e => setOfferDiscount(e.target.value)} placeholder="e.g. 50% Off" className="w-full h-12 px-4 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-bold" />
+                         <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: '#64748b' }}>Discount Text</label>
+                         <input type="text" maxLength={10} value={offerDiscount} onChange={e => setOfferDiscount(e.target.value)} placeholder="e.g. 50% Off" className="w-full h-12 px-4 rounded-xl outline-none text-sm font-bold text-white placeholder:text-slate-600" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }} onFocus={e => { e.currentTarget.style.border='1px solid rgba(16,185,129,.4)'; }} onBlur={e => { e.currentTarget.style.border='1px solid rgba(255,255,255,.08)'; }} />
                        </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-zinc-500 mb-1.5 uppercase tracking-wider">Description</label>
+                      <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: '#64748b' }}>Description</label>
                       <div className="flex gap-3">
-                        <input type="text" maxLength={30} value={offerTitle} onChange={e => setOfferTitle(e.target.value)} placeholder="e.g. Welcome to our restaurant!" className="flex-1 h-12 px-4 rounded-xl border border-zinc-200 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-bold" />
-                        <button onClick={addOffer} className="h-12 px-8 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-bold transition-colors flex items-center gap-2">
+                        <input type="text" maxLength={30} value={offerTitle} onChange={e => setOfferTitle(e.target.value)} placeholder="e.g. Welcome to our restaurant!" className="flex-1 h-12 px-4 rounded-xl outline-none text-sm font-bold text-white placeholder:text-slate-600" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }} onFocus={e => { e.currentTarget.style.border='1px solid rgba(16,185,129,.4)'; }} onBlur={e => { e.currentTarget.style.border='1px solid rgba(255,255,255,.08)'; }} />
+                        <button onClick={addOffer} className="h-12 px-8 rounded-xl font-bold transition-colors flex items-center gap-2 text-white" style={{ background: 'rgba(16,185,129,.15)', border: '1px solid rgba(16,185,129,.3)', color: '#34d399' }}>
                           <Plus className="w-4 h-4"/> Add Offer
                         </button>
                       </div>
@@ -992,15 +1034,15 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
             )}
 
             {activeTabId === 'media' && (
-              <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm">
+              <div className="p-8 rounded-3xl" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                    <div className="space-y-4">
                      <div>
-                       <h3 className="text-lg font-black text-zinc-900">Banner Image</h3>
-                       <p className="text-sm font-medium text-zinc-500">Recommended size: 520x320px</p>
+                       <h3 className="text-lg font-black text-white">Banner Image</h3>
+                       <p className="text-sm font-medium" style={{ color: '#64748b' }}>Recommended size: 520x320px</p>
                      </div>
                      {bannerUrl ? (
-                       <div className="relative w-full h-48 rounded-2xl border-2 border-dashed border-zinc-200 overflow-hidden group">
+                       <div className="relative w-full h-48 rounded-2xl overflow-hidden group" style={{ border: '2px dashed rgba(255,255,255,.12)' }}>
                          <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" />
                          <button onClick={() => setBannerUrl('')} className="absolute inset-0 bg-black/60 backdrop-blur-sm text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                            <Trash2 className="w-6 h-6" /> Remove Banner
@@ -1009,8 +1051,8 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
                      ) : (
                        <div className="relative">
                           <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, setBannerUrl)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                          <button className="w-full h-48 bg-zinc-50 hover:bg-zinc-100 text-zinc-500 rounded-2xl font-bold text-base transition-colors flex flex-col items-center justify-center gap-3 border-2 border-zinc-200 border-dashed">
-                            <Upload className="w-8 h-8 text-zinc-400" /> Click or drag to upload Banner
+                          <button className="w-full h-48 rounded-2xl font-bold text-base transition-colors flex flex-col items-center justify-center gap-3" style={{ background: 'rgba(255,255,255,.03)', border: '2px dashed rgba(255,255,255,.12)', color: '#475569' }}>
+                            <Upload className="w-8 h-8" style={{ color: '#334155' }} /> Click or drag to upload Banner
                           </button>
                        </div>
                      )}
@@ -1018,11 +1060,11 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
                    
                    <div className="space-y-4">
                      <div>
-                       <h3 className="text-lg font-black text-zinc-900">Logo Image</h3>
-                       <p className="text-sm font-medium text-zinc-500">Recommended size: 150x150px square</p>
+                       <h3 className="text-lg font-black text-white">Logo Image</h3>
+                       <p className="text-sm font-medium" style={{ color: '#64748b' }}>Recommended size: 150x150px square</p>
                      </div>
                      {logoUrl ? (
-                       <div className="relative w-full h-48 rounded-2xl border-2 border-dashed border-zinc-200 overflow-hidden group flex items-center justify-center bg-zinc-50">
+                       <div className="relative w-full h-48 rounded-2xl overflow-hidden group flex items-center justify-center" style={{ border: '2px dashed rgba(255,255,255,.12)', background: 'rgba(255,255,255,.03)' }}>
                          <img src={logoUrl} alt="Logo" className="w-32 h-32 object-cover rounded-xl shadow-md" />
                          <button onClick={() => setLogoUrl('')} className="absolute inset-0 bg-black/60 backdrop-blur-sm text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                            <Trash2 className="w-6 h-6" /> Remove Logo
@@ -1031,8 +1073,8 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
                      ) : (
                        <div className="relative">
                           <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, setLogoUrl)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                          <button className="w-full h-48 bg-zinc-50 hover:bg-zinc-100 text-zinc-500 rounded-2xl font-bold text-base transition-colors flex flex-col items-center justify-center gap-3 border-2 border-zinc-200 border-dashed">
-                            <Upload className="w-8 h-8 text-zinc-400" /> Click or drag to upload Logo
+                          <button className="w-full h-48 rounded-2xl font-bold text-base transition-colors flex flex-col items-center justify-center gap-3" style={{ background: 'rgba(255,255,255,.03)', border: '2px dashed rgba(255,255,255,.12)', color: '#475569' }}>
+                            <Upload className="w-8 h-8" style={{ color: '#334155' }} /> Click or drag to upload Logo
                           </button>
                        </div>
                      )}
@@ -1045,19 +1087,19 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
         </div>
         
         {/* WIZARD FOOTER */}
-        <div className="absolute bottom-0 left-0 right-0 px-10 py-5 bg-white/80 backdrop-blur-xl border-t border-zinc-200 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10 flex justify-between items-center">
+        <div className="absolute bottom-0 left-0 right-0 px-10 py-5 z-10 flex justify-between items-center" style={{ background: 'rgba(7,13,26,.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(255,255,255,.06)' }}>
           {prevTab ? (
-             <button onClick={handleBack} className="px-6 py-3 font-bold text-zinc-500 hover:text-zinc-900 transition-colors flex items-center gap-2">
+             <button onClick={handleBack} className="px-6 py-3 font-bold transition-colors flex items-center gap-2" style={{ color: '#64748b' }}>
                 <ChevronLeft className="w-5 h-5" /> Back
              </button>
           ) : <div></div>}
-          
+
           {nextTab ? (
-            <button onClick={handleNext} className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-[0_8px_20px_rgba(37,99,235,0.2)] hover:shadow-[0_12px_25px_rgba(37,99,235,0.3)] flex items-center gap-2 hover:-translate-y-0.5">
-               Next Step: {nextTab.title} <ChevronRight className="w-5 h-5" />
+            <button onClick={handleNext} className="px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-2 text-white" style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,.1)' }}>
+               Next: {nextTab.title} <ChevronRight className="w-5 h-5" />
             </button>
           ) : (
-            <button onClick={handlePublish} disabled={isPublishing} className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all shadow-[0_8px_20px_rgba(16,185,129,0.2)] flex items-center gap-2 disabled:opacity-50">
+            <button onClick={handlePublish} disabled={isPublishing} className="px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-2 text-white disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 8px 20px rgba(16,185,129,.25)' }}>
                {isPublishing ? 'Publishing...' : 'Publish App'} <Check className="w-5 h-5" />
             </button>
           )}
@@ -1084,8 +1126,10 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
              <div className="w-2 h-2 rounded-full bg-zinc-900"></div>
           </div>
 
-          <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-hide relative z-40 bg-zinc-50">
-             <LivePreviewRenderer themeId={themeId} currentArchetype={currentArchetype} business={previewBusiness} />
+          <div className="h-full relative z-40 bg-zinc-50">
+             <DevicePreviewFrame className="scrollbar-hide">
+               <LivePreviewRenderer themeId={themeId} currentArchetype={currentArchetype} business={previewBusiness} />
+             </DevicePreviewFrame>
           </div>
         </div>
       </div>
@@ -1109,8 +1153,13 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
               selectedCategories.push(...taxonomySelections[key]);
             }
           });
+          if (!isRetail && !isService) {
+            // Food: always include standard menu sections so vendors can assign dishes even before selecting cuisines
+            const defaultSections = ['Starters', 'Mains', 'Breads', 'Desserts', 'Beverages'];
+            return [...new Set([...defaultSections, ...selectedCategories, ...customTags])];
+          }
           const allOptions = [...selectedCategories, ...customTags];
-          return allOptions.length > 0 ? allOptions : [isService ? 'General' : (isRetail ? 'General' : 'Mains')];
+          return allOptions.length > 0 ? allOptions : [isService ? 'General' : 'General'];
         })()}
         editItem={editItem}
         isRetail={isRetail}

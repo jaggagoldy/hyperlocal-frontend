@@ -1,3 +1,8 @@
+import { createRequire } from 'module';
+if (typeof globalThis.require === 'undefined') {
+  (globalThis as any).require = createRequire(import.meta.url);
+}
+
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Store, Smartphone } from 'lucide-react';

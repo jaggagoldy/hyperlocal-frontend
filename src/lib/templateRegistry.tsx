@@ -10,6 +10,7 @@ import RetailGrocery from '@/components/templates/RetailGrocery';
 import RetailTech from '@/components/templates/RetailTech';
 import CabTransportLayout from '@/components/vendor/CabTransportLayout';
 import HomeServicesLayout from '@/components/vendor/HomeServicesLayout';
+import ServicePremiumLayout from '@/components/vendor/ServicePremiumLayout';
 import VCardSalonDark from '@/components/templates/VCardSalonDark';
 import VCardSalonLight from '@/components/templates/VCardSalonLight';
 import VCardDoctorBlue from '@/components/templates/VCardDoctorBlue';
@@ -128,10 +129,10 @@ export const TEMPLATE_METADATA = [
   {
     id: 'service-classic',
     archetype: 'SERVICE',
-    name: 'Service Standard',
-    description: 'Default layout for service providers.',
-    icon: Briefcase,
-    color: 'bg-indigo-50 text-indigo-600 border-indigo-200'
+    name: 'Service Premium',
+    description: 'A premium service storefront with a cover-image hero, refined selectable service cards, and a glass booking bar.',
+    icon: Sparkles,
+    color: 'bg-gradient-to-br from-indigo-500 to-violet-600 text-white border-indigo-300'
   },
   {
     id: 'listing-classic',
@@ -401,6 +402,7 @@ export interface TemplateProps {
 
 export const TemplateRegistry: Record<string, React.ComponentType<any>> = {
   // Food Templates
+  'food': FoodPremiumDark,         // generic 'food' flavor → premium dark (default for seeded data)
   'food-classic': FoodClassic,
   'food-immersive': FoodImmersive,
   'food-premium-dark': FoodPremiumDark,
@@ -415,7 +417,7 @@ export const TemplateRegistry: Record<string, React.ComponentType<any>> = {
   
   // Base fallbacks
   'cab-classic': CabTransportLayout,
-  'service-classic': HomeServicesLayout,
+  'service-classic': ServicePremiumLayout,
   'listing-classic': HomeServicesLayout,
   
   // vCard Themes
@@ -462,8 +464,8 @@ export const getTemplateComponent = (templateId: string, archetype: string) => {
   }
   
   // Fallbacks based on archetype
-  if (archetype === 'FOOD_BEVERAGE') return FoodClassic;
+  if (archetype === 'FOOD_BEVERAGE') return FoodPremiumDark;
   if (archetype === 'RETAIL') return RetailClassic;
   if (archetype === 'CAB_TRANSPORT') return CabTransportLayout;
-  return HomeServicesLayout;
+  return ServicePremiumLayout;
 };

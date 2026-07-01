@@ -55,45 +55,25 @@ import {
 } from '@/components/ui/drawer';
 import { toast } from 'sonner';
 
-// Define client-side grouping of flat database categories into Verticals with Translation keys
-const VERTICALS = [
-  {
-    id: 'home-maintenance',
-    nameKey: 'homeMaintenance' as const,
-    icon: '🔧',
-    categorySlugs: ['electrician', 'plumber', 'carpenter', 'painter'],
-  },
-  {
-    id: 'appliance-repair',
-    nameKey: 'applianceRepair' as const,
-    icon: '🔌',
-    categorySlugs: ['ac-repair', 'ro-repair'],
-  },
-  {
-    id: 'car-rental',
-    nameKey: 'carRental' as const,
-    icon: '🚗',
-    categorySlugs: ['car-rental'],
-  },
-  {
-    id: 'salon-booking',
-    nameKey: 'salonBooking' as const,
-    icon: '✂️',
-    categorySlugs: ['salon-booking'],
-  },
-  {
-    id: 'real-estate',
-    nameKey: 'realEstate' as const,
-    icon: '🏢',
-    categorySlugs: ['real-estate'],
-  },
-  {
-    id: 'food-dining',
-    nameKey: 'foodAndDining' as const,
-    icon: '🍔',
-    categorySlugs: ['restaurant', 'cloud-kitchen'],
-  }
-];
+// Client-side mapping of vertical keys to emojis for the sidebar
+const VERTICAL_EMOJIS: Record<string, string> = {
+  FOOD_BEVERAGE: '🍔',
+  GROCERY: '🛒',
+  RETAIL: '🛍️',
+  SALON_BEAUTY: '✂️',
+  HEALTH_MEDICAL: '🩺',
+  HOME_ESSENTIALS: '🔧',
+  PROFESSIONAL_SERVICES: '💼',
+  EDUCATION: '🎓',
+  FITNESS: '🏋️',
+  AUTOMOTIVE: '🚗',
+  REAL_ESTATE: '🏢',
+  HOTELS: '🏨',
+  EVENTS: '🎉',
+  PERSONAL_SERVICES: '👔',
+  TRAVEL: '✈️',
+  FINANCIAL_SERVICES: '💵'
+};
 
 // Search-driven page (reads useSearchParams) — render on demand, not statically
 // prerendered, so the build doesn't bail out now that AuthGuard no longer blanks SSR.
@@ -219,14 +199,10 @@ function ExplorePageContent() {
   const [isAdvancedFilterOpen, setIsAdvancedFilterOpen] = useState(false);
 
   // Expanded Verticals state
-  const [expandedVerticals, setExpandedVerticals] = useState<Record<string, boolean>>({
-    'home-maintenance': true,
-    'appliance-repair': true,
-    'car-rental': true,
-    'salon-booking': true,
-    'real-estate': true,
-    'food-dining': true,
-  });
+  const [expandedVerticals, setExpandedVerticals] = useState<Record<string, boolean>>({});
+  const [verticals, setVerticals] = useState<any[]>([]);
+  const [onlyAvailable, setOnlyAvailable] = useState(false);
+  const [activeCategorySlugs, setActiveCategorySlugs] = useState<string[]>([]);
 
   // Promotional Banner Carousel state
   const [activeSlide, setActiveSlide] = useState(0);
@@ -296,8 +272,50 @@ function ExplorePageContent() {
         console.error('Failed to fetch cities list', err);
       }
     };
+
+    const fetchVerticals = async () => {
+      try {
+        const res = await apiClient.get('/verticals');
+        const data = res.data?.data || [];
+        // Only keep enabled ones (comingSoon: false) or show all. The explore screen is transactional by default.
+        const activeVerticals = data.filter((v: any) => !v.comingSoon);
+        setVerticals(activeVerticals);
+        
+        // Expand the first few verticals by default
+        const initialExpanded: Record<string, boolean> = {};
+        activeVerticals.slice(0, 3).forEach((v: any) => {
+          initialExpanded[v.key] = true;
+        });
+        setExpandedVerticals(initialExpanded);
+      } catch (err) {
+        console.error('Failed to fetch verticals list', err);
+      }
+    };
+
     fetchCities();
+    fetchVerticals();
   }, [selectedCity, setCity]);
+
+  // Fetch active category slugs for city-based active service filtering
+  useEffect(() => {
+    const fetchActiveCategories = async () => {
+      try {
+        const res = await apiClient.get(`/search/categories?city=${selectedCity}&onlyAvailable=${onlyAvailable}`);
+        const categories = res.data?.data || [];
+        const slugs: string[] = [];
+        categories.forEach((cat: any) => {
+          slugs.push(cat.slug);
+          cat.subcategories?.forEach((sub: any) => {
+            slugs.push(sub.slug);
+          });
+        });
+        setActiveCategorySlugs(slugs);
+      } catch (err) {
+        console.error('Failed to fetch active categories', err);
+      }
+    };
+    fetchActiveCategories();
+  }, [selectedCity, onlyAvailable]);
 
   // Sync Search query state
   useEffect(() => {
@@ -429,7 +447,7 @@ function ExplorePageContent() {
       title: t('heroTitle').split(' Chowk')[0] + " Chowk",
       desc: t('heroSubtitle'),
       badge: language === 'hi' ? 'स्थानीय और तेज़' : 'Fast & Local',
-      gradient: "from-teal-650 via-teal-800 to-emerald-900",
+      gradient: "bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950",
       cta: language === 'hi' ? 'अभी बुक करें' : 'Book Now',
       action: () => {
         const grid = document.getElementById('explore-grid');
@@ -442,7 +460,7 @@ function ExplorePageContent() {
         : (language === 'hi' ? 'प्रो प्लान में अपग्रेड करें' : 'Upgrade to Pro Tier Mode'),
       desc: t('proDesc'),
       badge: isDualProfile ? (language === 'hi' ? 'डुअल अकाउंट' : 'Dual Account') : (language === 'hi' ? 'पार्टनर ऑफर' : 'Partner Offer'),
-      gradient: "from-amber-600 via-orange-700 to-rose-800",
+      gradient: "bg-gradient-to-br from-amber-950 via-indigo-950 to-slate-950",
       cta: isDualProfile ? (language === 'hi' ? 'डैशबोर्ड खोलें' : 'Open Dashboard') : t('joinProToday'),
       action: handleProCta
     }] : []),
@@ -450,7 +468,7 @@ function ExplorePageContent() {
       title: t('value3Title'),
       desc: t('value3Desc'),
       badge: language === 'hi' ? 'सुरक्षा पहले' : 'Security First',
-      gradient: "from-indigo-650 via-indigo-800 to-violet-900",
+      gradient: "bg-gradient-to-br from-rose-950 via-[#311042] to-slate-950",
       cta: language === 'hi' ? 'अधिक जानें' : 'Learn More',
       action: () => toast.info("All pros carry official verification badges on their profiles.")
     }
@@ -481,12 +499,60 @@ function ExplorePageContent() {
       'restaurant': 'restaurant',
       'cloud-kitchen': 'cloudKitchen'
     };
-    return t(keyMap[slug] || slug);
+    const translated = t(keyMap[slug] || slug);
+    if (translated === (keyMap[slug] || slug)) {
+      for (const v of verticals) {
+        const sub = v.subcategories?.find((s: any) => s.slug === slug);
+        if (sub) return sub.label;
+      }
+    }
+    return translated;
+  };
+
+  const getVerticalLabel = (vertical: any) => {
+    const keyMap: Record<string, string> = {
+      FOOD_BEVERAGE: 'foodAndDining',
+      SALON_BEAUTY: 'salonBooking',
+      HOME_ESSENTIALS: 'homeMaintenance',
+      REAL_ESTATE: 'realEstate',
+      TRAVEL: 'carRental',
+      GROCERY: 'grocery'
+    };
+    const transKey = keyMap[vertical.key];
+    if (transKey) {
+      const translated = t(transKey as any);
+      if (translated !== transKey) return translated;
+    }
+    return vertical.label;
   };
 
   const renderCategoryNavigation = () => {
     return (
       <div className="space-y-4">
+        {/* Active Services Only Toggle */}
+        <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 border border-zinc-150">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-extrabold text-zinc-700">
+              {language === 'hi' ? 'केवल सक्रिय सेवाएं' : 'Active Services Only'}
+            </span>
+            <span className="text-[9px] text-zinc-400 font-semibold leading-none">
+              {language === 'hi' ? 'वेंडर वाले वर्ग ही दिखाएं' : 'Hide empty categories'}
+            </span>
+          </div>
+          <button
+            onClick={() => setOnlyAvailable(prev => !prev)}
+            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out focus:outline-hidden ${
+              onlyAvailable ? 'bg-emerald-600' : 'bg-zinc-200'
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-250 ease-in-out ${
+                onlyAvailable ? 'translate-x-4' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
+
         {/* All Services Button */}
         <button
           onClick={() => {
@@ -505,23 +571,32 @@ function ExplorePageContent() {
           <ChevronRight className={`w-4 h-4 text-zinc-400 ${!selectedCategory ? 'text-primary' : ''}`} />
         </button>
 
-        {/* Grouped Verticals */}
-        {(() => {
-          const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_APP_ENV === 'production';
-          return isProduction 
-            ? VERTICALS.filter(v => ['food-dining', 'salon-booking'].includes(v.id))
-            : VERTICALS;
-        })().map(vertical => {
-          const isExpanded = expandedVerticals[vertical.id];
+        {/* Loading Spinner */}
+        {verticals.length === 0 && (
+          <div className="p-6 text-zinc-400 text-center font-bold text-xs flex items-center justify-center gap-2 bg-zinc-50/50 rounded-xl border border-zinc-150">
+            <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
+            Loading Categories...
+          </div>
+        )}
+
+        {/* Grouped Verticals (Dynamic) */}
+        {verticals.map(vertical => {
+          const filteredSubs = vertical.subcategories?.filter((sub: any) => 
+            !onlyAvailable || activeCategorySlugs.includes(sub.slug)
+          ) || [];
+
+          if (onlyAvailable && filteredSubs.length === 0) return null;
+
+          const isExpanded = expandedVerticals[vertical.key];
           return (
-            <div key={vertical.id} className="border border-zinc-150 rounded-xl overflow-hidden bg-white shadow-xs">
+            <div key={vertical.key} className="border border-zinc-150 rounded-xl overflow-hidden bg-white shadow-xs">
               <button
-                onClick={() => toggleVertical(vertical.id)}
+                onClick={() => toggleVertical(vertical.key)}
                 className="w-full flex items-center justify-between p-3.5 bg-zinc-50/50 hover:bg-zinc-50 border-b border-zinc-100 transition-colors"
               >
                 <span className="flex items-center gap-2 text-xs font-extrabold text-zinc-700 tracking-wide uppercase">
-                  <span>{vertical.icon}</span>
-                  {t(vertical.nameKey)}
+                  <span>{VERTICAL_EMOJIS[vertical.key] || '🌐'}</span>
+                  {getVerticalLabel(vertical)}
                 </span>
                 {isExpanded ? (
                   <ChevronDown className="w-4 h-4 text-zinc-400" />
@@ -532,13 +607,13 @@ function ExplorePageContent() {
 
               {isExpanded && (
                 <div className="p-1 space-y-0.5 bg-white">
-                  {vertical.categorySlugs.map(slug => {
-                    const isSelected = selectedCategory === slug;
+                  {filteredSubs.map((sub: any) => {
+                    const isSelected = selectedCategory === sub.slug;
                     return (
                       <button
-                        key={slug}
+                        key={sub.slug}
                         onClick={() => {
-                          setCategory(slug);
+                          setCategory(sub.slug);
                           setIsMobileFilterOpen(false);
                         }}
                         className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors ${
@@ -547,7 +622,7 @@ function ExplorePageContent() {
                             : 'text-zinc-500 hover:text-zinc-800 hover:bg-zinc-50'
                         }`}
                       >
-                        {getCategoryName(slug)}
+                        {getCategoryName(sub.slug)}
                         {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
                       </button>
                     );
@@ -574,20 +649,20 @@ function ExplorePageContent() {
     >
       
       {/* ─── STICKY HEADER ─── */}
-      <header className="sticky top-0 z-40 bg-[#020617]/95 border-b border-white/[0.05] px-4 py-3 shadow-xs backdrop-blur-xl">
+      <header className="sticky top-0 z-40 bg-background/95 border-b border-border px-4 py-3 shadow-xs backdrop-blur-xl">
         <div className="max-w-screen-2xl mx-auto flex items-center gap-3">
           
           {/* Unified Search Bar */}
-          <div className="flex-1 flex items-center bg-[#0f172a] border border-white/[0.08] rounded-full shadow-sm overflow-hidden h-12 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+          <div className="flex-1 flex items-center bg-card border border-border rounded-full shadow-sm overflow-hidden h-12 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
             
             {/* Location Section */}
             <button 
               onClick={() => setIsLocationModalOpen(true)}
-              className="flex items-center gap-2 px-4 md:px-5 h-full bg-white/[0.02] hover:bg-white/[0.05] transition-colors border-r border-white/[0.08] shrink-0 text-white"
+              className="flex items-center gap-2 px-4 md:px-5 h-full bg-accent/20 hover:bg-accent transition-colors border-r border-border shrink-0 text-foreground"
             >
               <MapPin className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-white truncate max-w-[80px] md:max-w-[120px]">{getCityNameBySlug(selectedCity) || 'Location'}</span>
-              <ChevronDown className="w-4 h-4 text-zinc-400 hidden sm:block" />
+              <span className="text-sm font-semibold text-foreground truncate max-w-[80px] md:max-w-[120px]">{getCityNameBySlug(selectedCity) || 'Location'}</span>
+              <ChevronDown className="w-4 h-4 text-muted-foreground hidden sm:block" />
             </button>
 
             {/* Search Input Section */}
@@ -595,13 +670,13 @@ function ExplorePageContent() {
               <input 
                 type="text"
                 placeholder={t('searchPlaceholder')}
-                className="w-full h-full pl-4 pr-10 text-sm outline-none bg-transparent text-white placeholder-zinc-500"
+                className="w-full h-full pl-4 pr-10 text-sm outline-none bg-transparent text-foreground placeholder-muted-foreground"
                 value={localQuery}
                 onChange={(e) => setLocalQuery(e.target.value)}
               />
               {localQuery && (
                 <button 
-                  className="absolute right-3 text-zinc-400 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] p-1 rounded-full transition-colors"
+                  className="absolute right-3 text-muted-foreground hover:text-foreground bg-accent/40 hover:bg-accent p-1 rounded-full transition-colors"
                   onClick={() => setLocalQuery('')}
                 >
                   <X className="w-3.5 h-3.5" />
@@ -610,12 +685,12 @@ function ExplorePageContent() {
             </div>
 
             {/* Search Button (Desktop) */}
-            <button className="hidden sm:flex h-full px-8 bg-[#1e293b] hover:bg-[#293548] text-white text-sm font-bold transition-colors items-center justify-center">
+            <button className="hidden sm:flex h-full px-8 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-black transition-colors items-center justify-center">
               {language === 'hi' ? 'खोजें' : 'Search'}
             </button>
 
             {/* Search Button (Mobile Icon) */}
-            <button className="sm:hidden h-full px-4 bg-[#1e293b] hover:bg-[#293548] text-white flex items-center justify-center transition-colors">
+            <button className="sm:hidden h-full px-4 bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center transition-colors">
               <Search className="w-4 h-4" />
             </button>
           </div>
@@ -667,33 +742,46 @@ function ExplorePageContent() {
           
           {/* Dynamic Promotional Ads Carousel */}
           {!isCityEmpty && (
-            <div className="relative w-full aspect-[21/9] sm:aspect-[24/8] lg:aspect-[24/7] rounded-3xl overflow-hidden shadow-xl select-none group bg-zinc-900 border border-zinc-800">
+            <div className="relative w-full h-[220px] rounded-2xl overflow-hidden shadow-lg select-none group bg-zinc-950 border border-zinc-800 carousel">
               {slides.map((slide, index) => {
                 const isActive = index === activeSlide;
                 return (
                   <div
                     key={index}
-                    className={`absolute inset-0 w-full h-full bg-gradient-to-r ${slide.gradient} p-6 sm:p-10 flex flex-col justify-center items-start text-white transition-all duration-700 ease-in-out transform ${
-                      isActive ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 translate-x-4 scale-98 pointer-events-none'
+                    onClick={slide.action}
+                    className={`absolute inset-0 w-full h-full p-8 sm:px-10 flex flex-col justify-center items-start text-white transition-all duration-700 ease-in-out cursor-pointer transform ${
+                      slide.gradient
+                    } ${
+                      isActive 
+                        ? 'opacity-100 translate-x-0 scale-100 z-10 visible' 
+                        : 'opacity-0 translate-x-4 scale-95 z-0 invisible pointer-events-none'
                     }`}
                   >
                     {/* Ambient glow effects */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none transform translate-x-1/2 -translate-y-1/2" />
-                    <div className="absolute bottom-0 right-1/4 w-48 h-48 bg-black/20 rounded-full blur-3xl pointer-events-none" />
-
-                    <div className="relative z-10 space-y-3">
-                      <span className="inline-flex bg-white/20 backdrop-blur-md text-[10px] uppercase tracking-widest font-black px-3 py-1 rounded-full text-white shadow-sm border border-white/10">
+                    <div className="absolute -top-12 -right-12 w-72 h-72 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+                    
+                    <div className="relative z-10 space-y-2">
+                      <span className={`inline-flex items-center gap-1 text-[9px] uppercase tracking-widest font-black px-2.5 py-1 rounded-full border shadow-sm ${
+                        index === 0 
+                          ? 'bg-amber-500/15 border-amber-500/30 text-amber-300' 
+                          : index === 1 
+                            ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300' 
+                            : 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300'
+                      }`}>
+                        {index === 0 && <span className="text-[10px]">👑</span>}
+                        {index === 1 && <span className="text-[10px]">📢</span>}
+                        {index === 2 && <span className="text-[10px]">⚡</span>}
                         {slide.badge}
                       </span>
-                      <h2 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight leading-tight max-w-sm sm:max-w-lg text-white drop-shadow-sm">
+                      <h2 className="text-xl sm:text-2xl lg:text-[26px] font-black tracking-tight leading-tight max-w-lg text-white">
                         {slide.title}
                       </h2>
-                      <p className="text-xs sm:text-sm text-white/90 font-medium leading-relaxed max-w-sm sm:max-w-md">
+                      <p className="text-xs sm:text-sm text-white/80 font-medium leading-relaxed max-w-md">
                         {slide.desc}
                       </p>
                       <button
-                        onClick={slide.action}
-                        className="mt-6 px-6 py-2.5 bg-white text-zinc-900 text-xs sm:text-sm font-extrabold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 group/btn"
+                        onClick={(e) => { e.stopPropagation(); slide.action(); }}
+                        className="mt-4 px-5 py-2.5 bg-white text-zinc-950 text-xs font-black rounded-xl shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2 group/btn"
                       >
                         {slide.cta}
                         <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
@@ -703,14 +791,14 @@ function ExplorePageContent() {
                 );
               })}
 
-              {/* Dots Indicators */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20 bg-black/20 backdrop-blur-md px-3 py-2 rounded-full border border-white/10">
+              {/* Dots Indicators (mockup style) */}
+              <div className="absolute bottom-4 right-10 flex gap-2 z-20">
                 {slides.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setActiveSlide(index)}
                     className={`h-2 rounded-full transition-all duration-300 ${
-                      index === activeSlide ? 'w-6 bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]' : 'w-2 bg-white/40 hover:bg-white/80'
+                      index === activeSlide ? 'w-6 bg-white shadow-md' : 'w-2 bg-white/40 hover:bg-white/70'
                     }`}
                     aria-label={`Slide ${index + 1}`}
                   />
@@ -724,9 +812,9 @@ function ExplorePageContent() {
             
             {/* Show search count header */}
             {!loading && items.length > 0 && (
-              <div className="flex items-center justify-between text-xs text-zinc-500 font-bold border-b border-zinc-200/80 pb-3">
+              <div className="flex items-center justify-between text-xs text-zinc-400 font-bold border-b border-zinc-850 pb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-zinc-900 text-sm font-extrabold">
+                  <span className="text-white text-sm font-extrabold">
                     {items.length} Results
                   </span>
                   {selectedCategory && (
@@ -738,19 +826,20 @@ function ExplorePageContent() {
                 
 
                 <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-zinc-700">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm font-bold text-zinc-200 hover:text-white">
                     <input 
                       type="checkbox" 
-                      className="rounded border-zinc-300 text-primary focus:ring-primary h-4 w-4"
+                      className="rounded border-white/10 bg-zinc-900 text-primary focus:ring-primary h-4 w-4"
                       checked={verifiedOnly}
                       onChange={(e) => setVerifiedOnly(e.target.checked)}
                     />
                     Verified Pros Only
                   </label>
                   
+
                   <Drawer open={isAdvancedFilterOpen} onOpenChange={setIsAdvancedFilterOpen}>
                     <DrawerTrigger asChild>
-                      <Button variant="outline" className="h-8 text-xs px-3 bg-white border-zinc-300 rounded-md shadow-sm font-semibold text-zinc-700 flex items-center gap-2">
+                      <Button variant="outline" className="h-8 text-xs px-3 bg-zinc-900 border-zinc-800 rounded-md shadow-sm font-semibold text-zinc-200 hover:bg-zinc-800 hover:text-white flex items-center gap-2">
                         <SlidersHorizontal className="w-3.5 h-3.5" />
                         Filters
                         {(businessType || minRating || openNow) && (
@@ -758,14 +847,14 @@ function ExplorePageContent() {
                         )}
                       </Button>
                     </DrawerTrigger>
-                    <DrawerContent className="p-5 max-h-[90vh] flex flex-col">
-                      <DrawerHeader className="px-0 pt-0 text-left border-b border-zinc-100 pb-3 mb-4">
-                        <DrawerTitle className="text-lg font-bold text-zinc-900">Advanced Filters</DrawerTitle>
+                    <DrawerContent className="p-5 max-h-[90vh] flex flex-col bg-[#0f172a] border-t border-white/[0.08] text-white">
+                      <DrawerHeader className="px-0 pt-0 text-left border-b border-white/[0.05] pb-3 mb-4">
+                        <DrawerTitle className="text-lg font-black text-white">Advanced Filters</DrawerTitle>
                       </DrawerHeader>
                       <div className="flex-1 overflow-y-auto space-y-6 pb-6 px-1">
                         
                         <div className="space-y-3">
-                          <h4 className="text-sm font-bold text-zinc-800">Business Model</h4>
+                          <h4 className="text-sm font-extrabold text-zinc-200">Business Model</h4>
                           <div className="grid grid-cols-2 gap-2">
                             {(() => {
                               const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_APP_ENV === 'production';
@@ -773,10 +862,10 @@ function ExplorePageContent() {
                                 ? ['FOOD_BEVERAGE', 'SALON_BEAUTY']
                                 : ['FOOD_BEVERAGE', 'SALON_BEAUTY', 'HOME_ESSENTIALS', 'CAB_TRANSPORT'];
                             })().map((bt) => (
-                              <label key={bt} className="flex items-center gap-2 text-sm text-zinc-600 cursor-pointer">
+                              <label key={bt} className="flex items-center gap-2 text-sm text-zinc-300 font-semibold hover:text-white cursor-pointer">
                                 <input 
                                   type="checkbox" 
-                                  className="rounded border-zinc-300 text-primary focus:ring-primary h-4 w-4"
+                                  className="rounded border-white/10 bg-zinc-900 text-primary focus:ring-primary h-4 w-4"
                                   checked={businessType.includes(bt)}
                                   onChange={(e) => {
                                     let newTypes = businessType ? businessType.split(',') : [];
@@ -796,33 +885,33 @@ function ExplorePageContent() {
 
                         {/* Minimum Rating Filter */}
                         <div className="space-y-3">
-                          <h4 className="text-sm font-bold text-zinc-800">Minimum Rating</h4>
+                          <h4 className="text-sm font-extrabold text-zinc-200">Minimum Rating</h4>
                           <div className="flex gap-3">
-                            <label className="flex items-center gap-2 text-sm text-zinc-600 cursor-pointer">
+                            <label className="flex items-center gap-2 text-sm text-zinc-300 font-semibold hover:text-white cursor-pointer">
                               <input 
                                 type="radio" 
                                 name="minRating"
-                                className="border-zinc-300 text-primary focus:ring-primary"
+                                className="border-white/10 bg-zinc-900 text-primary focus:ring-primary"
                                 checked={minRating === '4.0'}
                                 onChange={() => setFilters({ minRating: '4.0' })}
                               />
                               4.0+ Stars
                             </label>
-                            <label className="flex items-center gap-2 text-sm text-zinc-600 cursor-pointer">
+                            <label className="flex items-center gap-2 text-sm text-zinc-300 font-semibold hover:text-white cursor-pointer">
                               <input 
                                 type="radio" 
                                 name="minRating"
-                                className="border-zinc-300 text-primary focus:ring-primary"
+                                className="border-white/10 bg-zinc-900 text-primary focus:ring-primary"
                                 checked={minRating === '3.0'}
                                 onChange={() => setFilters({ minRating: '3.0' })}
                               />
                               3.0+ Stars
                             </label>
-                            <label className="flex items-center gap-2 text-sm text-zinc-600 cursor-pointer">
+                            <label className="flex items-center gap-2 text-sm text-zinc-300 font-semibold hover:text-white cursor-pointer">
                               <input 
                                 type="radio" 
                                 name="minRating"
-                                className="border-zinc-300 text-primary focus:ring-primary"
+                                className="border-white/10 bg-zinc-900 text-primary focus:ring-primary"
                                 checked={minRating === ''}
                                 onChange={() => setFilters({ minRating: '' })}
                               />
@@ -833,30 +922,30 @@ function ExplorePageContent() {
 
                         {/* Open Now Toggle */}
                         <div className="space-y-3 pt-2">
-                          <label className="flex items-center justify-between text-sm font-bold text-zinc-800 cursor-pointer">
+                          <label className="flex items-center justify-between text-sm font-extrabold text-zinc-200 cursor-pointer">
                             <span>Open Now</span>
                             <input 
                               type="checkbox" 
-                              className="w-10 h-5 bg-zinc-200 rounded-full appearance-none checked:bg-primary transition-colors cursor-pointer relative before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:left-0.5 before:top-0.5 checked:before:translate-x-5 before:transition-transform"
+                              className="w-10 h-5 bg-zinc-800 border border-white/5 rounded-full appearance-none checked:bg-primary transition-colors cursor-pointer relative before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:left-0.5 before:top-0.5 checked:before:translate-x-5 before:transition-transform"
                               checked={openNow}
                               onChange={(e) => setFilters({ openNow: e.target.checked })}
                             />
                           </label>
-                          <p className="text-xs text-zinc-500">Only show pros who are currently accepting bookings.</p>
+                          <p className="text-xs text-zinc-400 font-medium">Only show pros who are currently accepting bookings.</p>
                         </div>
 
                       </div>
                       
-                      <div className="border-t border-zinc-100 pt-4 flex gap-3">
+                      <div className="border-t border-white/[0.05] pt-4 flex gap-3">
                         <Button 
                           variant="outline" 
-                          className="flex-1"
+                          className="flex-1 border-white/10 bg-transparent text-zinc-300 hover:bg-white/[0.04] hover:text-white"
                           onClick={() => setFilters({ businessType: '', minRating: '', openNow: false })}
                         >
                           Clear
                         </Button>
                         <Button 
-                          className="flex-1"
+                          className="flex-1 bg-primary text-emerald-950 font-black hover:bg-primary/90"
                           onClick={() => setIsAdvancedFilterOpen(false)}
                         >
                           Apply Filters
@@ -870,8 +959,8 @@ function ExplorePageContent() {
                       onClick={() => setShowRadarMap(!showRadarMap)}
                       className={`h-9 px-4.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
                         showRadarMap
-                          ? 'bg-emerald-600 border-emerald-700 text-white font-black'
-                          : 'bg-white border-zinc-250 hover:bg-zinc-50 text-zinc-700'
+                          ? 'bg-primary border-primary text-primary-foreground font-black'
+                          : 'bg-card border-border hover:bg-accent text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       <Compass className={`w-4 h-4 ${showRadarMap ? 'animate-spin' : ''}`} style={{ animationDuration: '6s' }} />
@@ -879,16 +968,16 @@ function ExplorePageContent() {
                     </button>
                   )}
 
-                  <div className="h-4 w-px bg-zinc-300 hidden sm:block"></div>
+                  <div className="h-4 w-px bg-border hidden sm:block"></div>
                   <div className="flex items-center gap-3">
-                    <span className="hidden sm:inline-block">View By</span>
-                    <div className="flex items-center bg-zinc-100 rounded-lg p-1 border border-zinc-200 shadow-2xs">
+                    <span className="hidden sm:inline-block text-muted-foreground text-[10px] font-bold uppercase tracking-wider">View By</span>
+                    <div className="flex items-center bg-card rounded-lg p-1 border border-border shadow-inner">
                       <button 
                         onClick={() => setViewMode('grid')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
                           viewMode === 'grid' 
-                            ? 'bg-zinc-800 text-white shadow-sm' 
-                            : 'text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50'
+                            ? 'bg-accent text-accent-foreground shadow-sm font-extrabold' 
+                            : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                         }`}
                       >
                         <span className="hidden sm:inline">Grid</span>
@@ -898,8 +987,8 @@ function ExplorePageContent() {
                         onClick={() => setViewMode('list')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
                           viewMode === 'list' 
-                            ? 'bg-zinc-800 text-white shadow-sm' 
-                            : 'text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50'
+                            ? 'bg-accent text-accent-foreground shadow-sm font-extrabold' 
+                            : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                         }`}
                       >
                         <span className="hidden sm:inline">List</span>
@@ -1025,30 +1114,72 @@ function ExplorePageContent() {
 
               </div>
             ) : items.length === 0 ? (
-              // Search Criteria Empty State
-              <div className="flex flex-col items-center justify-center py-16 text-center px-4 max-w-md mx-auto space-y-4">
-                <div className="w-14 h-14 bg-zinc-100 rounded-full flex items-center justify-center mx-auto shadow-xs border border-zinc-200/50">
+              // Search Criteria Empty State (Redesigned)
+              <div className="flex flex-col items-center justify-center py-16 text-center px-4 max-w-lg mx-auto space-y-6">
+                <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto shadow-md border border-zinc-800 animate-pulse">
                   <Search className="w-6 h-6 text-zinc-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-zinc-800">{t('noResults')}</h3>
-                  <p className="text-zinc-555 text-xs sm:text-sm mt-1 max-w-xs mx-auto leading-relaxed">
-                    {t('noResultsDesc')}
+                  <h3 className="text-xl font-black text-white">{t('noResults')}</h3>
+                  <p className="text-zinc-400 text-xs sm:text-sm mt-2 max-w-sm mx-auto leading-relaxed">
+                    {language === 'hi' 
+                      ? `हम जल्द ही आ रहे हैं! वर्तमान में हमारे पास ${getCityNameBySlug(selectedCity)} में इस श्रेणी के अंतर्गत कोई सूचीबद्ध व्यवसाय नहीं है।`
+                      : `Currently, we don't have any businesses listed under this category in ${getCityNameBySlug(selectedCity)}, but we are expanding soon!`}
                   </p>
                 </div>
                 
-                <div className="bg-zinc-50 border border-zinc-200/60 rounded-xl p-3.5 text-xs text-zinc-550 leading-relaxed font-semibold">
-                  💡 {language === 'hi' 
-                    ? `हम ${getCityNameBySlug(selectedCity)} में लगातार नए प्रोवाइडर्स को जोड़ रहे हैं! किसी अन्य श्रेणी का चयन करें या फ़िल्टर को साफ़ करें।` 
-                    : `We're actively onboarding professionals in ${getCityNameBySlug(selectedCity)}! Try selecting other categories or clear the search criteria.`}
+                <div className="bg-[#0f172a] border border-cyan-500/10 rounded-2xl p-5 text-xs text-zinc-350 leading-relaxed font-semibold shadow-inner space-y-4 w-full">
+                  <div className="flex items-start gap-2.5 text-left">
+                    <span className="text-base shrink-0">💡</span>
+                    <div>
+                      <p className="font-bold text-white mb-1">
+                        {language === 'hi' ? 'क्या आप एक ग्राहक हैं?' : 'Are you looking for this service?'}
+                      </p>
+                      <p className="text-zinc-400 font-medium">
+                        {language === 'hi' 
+                          ? 'आप हमारी मुख्य स्क्रीन पर इस सेवा के लिए अनुरोध (RFQ) पोस्ट कर सकते हैं ताकि स्थानीय वेंडर्स आपसे सीधे संपर्क कर सकें।' 
+                          : 'You can post a requirement (RFQ) on our home screen to let verified local pros reach out to you directly.'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="h-px bg-zinc-800/80 w-full" />
+                  <div className="flex items-start gap-2.5 text-left">
+                    <span className="text-base shrink-0">💼</span>
+                    <div>
+                      <p className="font-bold text-white mb-1">
+                        {language === 'hi' ? 'क्या आप एक स्थानीय व्यवसायी हैं?' : 'Are you a local vendor?'}
+                      </p>
+                      <p className="text-zinc-400 font-medium">
+                        {language === 'hi' 
+                          ? 'आज ही अपना व्यवसाय मुफ़्त में सूचीबद्ध करें और अपने स्थानीय क्षेत्र से सीधे ग्राहक लीड्स प्राप्त करें!' 
+                          : 'List your business for free today and start receiving direct customer leads from your area!'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <Button 
-                  onClick={() => setCategory('')} 
-                  variant="outline" 
-                  className="rounded-xl h-10 font-bold text-xs"
-                >
-                  {language === 'hi' ? 'श्रेणी साफ़ करें' : 'Clear Category Filter'}
-                </Button>
+
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full justify-center">
+                  <Button 
+                    onClick={() => router.push('/')} 
+                    className="rounded-xl h-11 font-black text-xs px-6 bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto shadow-md"
+                  >
+                    {language === 'hi' ? 'अनुरोध (RFQ) पोस्ट करें' : 'Post Requirement (RFQ)'}
+                  </Button>
+                  <Button 
+                    onClick={() => router.push('/pro')} 
+                    variant="outline" 
+                    className="rounded-xl h-11 font-bold text-xs px-6 border-zinc-750 text-zinc-300 hover:bg-zinc-800 w-full sm:w-auto hover:text-white"
+                  >
+                    {language === 'hi' ? 'व्यवसाय सूचीबद्ध करें' : 'Join as Partner / Pro'}
+                  </Button>
+                  <Button 
+                    onClick={() => setCategory('')} 
+                    variant="ghost" 
+                    className="rounded-xl h-11 font-bold text-xs text-zinc-400 hover:text-white w-full sm:w-auto"
+                  >
+                    {language === 'hi' ? 'श्रेणी साफ़ करें' : 'Clear Filter'}
+                  </Button>
+                </div>
               </div>
             ) : (
               // Product Grid Layout
@@ -1225,40 +1356,6 @@ function ExplorePageContent() {
                       </button>
                     </div>
                   )}
-                </div>
-
-                {/* Vertical Banner Ad (Right Sidebar) */}
-                <div className="hidden xl:block w-[300px] shrink-0 sticky top-28 h-[550px]">
-                  {(() => {
-                    const ad = SIDEBAR_ADS[activeAdIndex];
-                    return (
-                      <div 
-                        onClick={() => window.open(ad.url, '_blank')}
-                        className="bg-zinc-100 border border-zinc-200 rounded-2xl overflow-hidden shadow-sm flex flex-col items-center justify-center relative h-full group cursor-pointer transition-all hover:shadow-md"
-                      >
-                        <div className={`absolute inset-0 bg-gradient-to-br ${ad.bgGradient} transition-colors duration-700`} />
-                        
-                        {/* Dynamic Ad Content */}
-                        <div className="relative z-10 w-full h-full flex flex-col p-6 items-center justify-between text-center animate-in fade-in duration-500" key={ad.sponsor}>
-                          <div className="flex flex-col items-center gap-2">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500 bg-white/60 px-2 py-0.5 rounded-full shadow-2xs">Sponsored</span>
-                            <h3 className={`font-extrabold text-[28px] ${ad.titleColor} mt-6 leading-none tracking-tight`}>{ad.sponsor}</h3>
-                            <span className={`text-[10px] ${ad.titleColor} opacity-60 uppercase tracking-widest font-bold`}>{ad.category}</span>
-                            
-                            <div className={`h-px w-16 bg-current opacity-20 my-4 ${ad.titleColor}`} />
-                            
-                            <p className="text-zinc-700 font-medium text-sm leading-snug px-4">
-                              {ad.title}
-                            </p>
-                          </div>
-                          
-                          <div className={`w-full text-white font-black text-xl py-4 rounded-xl shadow-lg transition-colors mt-8 ${ad.buttonBg}`}>
-                              {ad.discount}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
                 </div>
               </div>
             )}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Moon, Target, User, LogOut, LayoutDashboard,
+  Moon, Sun, Target, User, LogOut, LayoutDashboard,
   Briefcase, ChevronDown, ArrowLeftRight, UserPlus, Sparkles,
   Compass, LayoutGrid,
 } from "lucide-react";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
 import { useLanguageStore } from "@/store/languageStore";
 import { useSearchStore } from "@/store/searchStore";
+import { useThemeStore } from "@/store/themeStore";
 import { useState, useRef, useEffect } from "react";
 import apiClient from "@/lib/api-client";
 import { toast } from "sonner";
@@ -32,10 +33,22 @@ export function Navbar() {
   const { isAuthenticated, logout, user, activeContext, updateToken } = useAuthStore();
   const { language, setLanguage } = useLanguageStore();
   const { selectedCity } = useSearchStore();
+  const { theme, setTheme } = useThemeStore();
   const router = useRouter();
   const pathname = usePathname();
   const isProMode = activeContext === 'vendor';
   const citySlug = selectedCity || 'hisar';
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const root = window.document.documentElement;
+      if (theme === 'vibrant') {
+        root.classList.add('vibrant');
+      } else {
+        root.classList.remove('vibrant');
+      }
+    }
+  }, [theme]);
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
@@ -110,12 +123,12 @@ export function Navbar() {
   const navLinkClass = (active: boolean) =>
     `flex items-center gap-1.5 h-10 px-3.5 rounded-xl font-bold text-sm transition-all ${
       active
-        ? 'bg-white/[0.08] text-white'
-        : 'text-zinc-400 hover:text-white hover:bg-white/[0.05]'
+        ? 'bg-accent text-accent-foreground'
+        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
     }`;
 
   return (
-    <header className={`sticky top-0 z-50 w-full border-b border-white/[0.05] bg-[#020617]/90 backdrop-blur-xl transition-shadow duration-200 ${scrolled ? 'shadow-sm' : ''}`}>
+    <header className={`sticky top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur-xl transition-shadow duration-200 ${scrolled ? 'shadow-sm' : ''}`}>
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
 
         {/* Logo */}
@@ -123,7 +136,7 @@ export function Navbar() {
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-[#F43F5E] text-white flex items-center justify-center group-hover:shadow-lg group-hover:shadow-primary/25 transition-all">
             <Target className="w-5 h-5" />
           </div>
-          <span className="font-extrabold text-xl tracking-tight text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <span className="font-extrabold text-xl tracking-tight text-foreground" style={{ fontFamily: 'Outfit, sans-serif' }}>
             NearByBazar
           </span>
         </Link>
@@ -156,8 +169,8 @@ export function Navbar() {
                 </button>
 
                 {categoriesOpen && (
-                  <div className="absolute left-0 top-full mt-2 w-72 bg-[#0f172a] border border-white/[0.08] rounded-2xl shadow-xl shadow-black/80 overflow-hidden z-50 animate-in fade-in-0 zoom-in-95 duration-150 p-2">
-                    <p className="text-[9px] font-black uppercase tracking-[0.18em] px-2 pt-1 pb-2" style={{ color: '#334155' }}>
+                  <div className="absolute left-0 top-full mt-2 w-72 bg-card border border-border rounded-2xl shadow-xl shadow-black/40 overflow-hidden z-50 animate-in fade-in-0 zoom-in-95 duration-150 p-2">
+                    <p className="text-[9px] font-black uppercase tracking-[0.18em] px-2 pt-1 pb-2 text-muted-foreground/60">
                       Browse by category
                     </p>
                     <div className="grid grid-cols-2 gap-1">
@@ -166,10 +179,10 @@ export function Navbar() {
                           key={cat.slug}
                           href={`/${citySlug}/${cat.slug}`}
                           onClick={() => setCategoriesOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-colors hover:bg-white/[0.06] group"
+                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-colors hover:bg-accent group"
                         >
                           <span className="text-base leading-none">{cat.emoji}</span>
-                          <span className="text-xs font-semibold text-zinc-300 group-hover:text-white transition-colors truncate">
+                          <span className="text-xs font-semibold text-muted-foreground group-hover:text-foreground transition-colors truncate">
                             {cat.label}
                           </span>
                         </Link>
@@ -199,7 +212,7 @@ export function Navbar() {
             className={`relative flex items-center gap-1.5 h-10 px-2.5 sm:px-3 rounded-xl border font-bold text-sm transition-all active:scale-[0.97] ${
               pathname.startsWith('/whats-new')
                 ? 'bg-primary/15 border-primary/30 text-primary'
-                : 'bg-white/[0.04] border-white/[0.08] text-zinc-300 hover:bg-white/[0.08] hover:border-white/[0.15]'
+                : 'bg-accent/40 border-border text-muted-foreground hover:bg-accent hover:text-foreground'
             }`}
           >
             <Sparkles className="w-4 h-4 text-emerald-400" />
@@ -211,23 +224,28 @@ export function Navbar() {
           </Link>
 
           {/* Language Switcher */}
-          <div className="bg-white/[0.05] p-0.5 rounded-lg flex gap-0.5 items-center border border-white/[0.08] shadow-inner text-[10px] font-black select-none">
+          <div className="bg-accent/40 p-0.5 rounded-lg flex gap-0.5 items-center border border-border shadow-inner text-[10px] font-black select-none">
             <button
               onClick={() => setLanguage('en')}
-              className={`px-2 py-1 rounded transition-all cursor-pointer font-bold ${language === 'en' ? 'bg-white/10 text-[#34d399] shadow-2xs font-extrabold' : 'text-zinc-400 hover:text-white'}`}
+              className={`px-2 py-1 rounded transition-all cursor-pointer font-bold ${language === 'en' ? 'bg-accent text-primary shadow-2xs font-extrabold' : 'text-muted-foreground hover:text-foreground'}`}
             >
               EN
             </button>
             <button
               onClick={() => setLanguage('hi')}
-              className={`px-2 py-1 rounded transition-all cursor-pointer font-bold ${language === 'hi' ? 'bg-white/10 text-[#34d399] shadow-2xs font-extrabold' : 'text-zinc-400 hover:text-white'}`}
+              className={`px-2 py-1 rounded transition-all cursor-pointer font-bold ${language === 'hi' ? 'bg-accent text-primary shadow-2xs font-extrabold' : 'text-muted-foreground hover:text-foreground'}`}
             >
               हि
             </button>
           </div>
 
-          <Button variant="ghost" size="icon" className="hidden md:flex rounded-xl border border-white/[0.08] bg-[#0f172a] text-zinc-400 hover:bg-white/[0.05] h-10 w-10 hover:text-white">
-            <Moon className="w-4 h-4" />
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setTheme(theme === 'dark' ? 'vibrant' : 'dark')}
+            className="hidden md:flex rounded-xl border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground h-10 w-10"
+          >
+            {theme === 'vibrant' ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4" />}
           </Button>
 
           {isAuthenticated ? (

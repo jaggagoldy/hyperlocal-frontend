@@ -124,6 +124,13 @@ export function Footer() {
           <h4 className="font-extrabold text-sm uppercase text-white tracking-widest">Trust & Support</h4>
           
           <ul className="space-y-3 text-xs text-zinc-450 font-bold">
+            <li>
+              <Link href="/whats-new" className="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors">
+                <span>🆕</span>
+                <span>What&apos;s New</span>
+                <span className="text-[8px] font-black uppercase bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 rounded-full px-1.5 py-0.5 tracking-wider">New</span>
+              </Link>
+            </li>
             <li><Link href="/about" className="hover:text-emerald-400 transition-colors">About NearByBazar</Link></li>
             <li><Link href="/faq" className="hover:text-emerald-400 transition-colors">Frequently Asked FAQs</Link></li>
             <li><Link href="/contact" className="hover:text-emerald-400 transition-colors">Contact Support</Link></li>

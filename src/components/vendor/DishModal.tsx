@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, UploadCloud, Plus, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, UploadCloud, Plus, Trash2, ChevronDown } from 'lucide-react';
 
 interface DishModalProps {
   isOpen: boolean;
@@ -20,11 +20,23 @@ export default function DishModal({ isOpen, onClose, onSave, availableCategories
   const [dietary, setDietary] = useState('veg'); // veg, non-veg, vegan, egg
   const [categories, setCategories] = useState<string[]>([availableCategories[0]]);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [customCatInput, setCustomCatInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
   
   // Variants State
   const [hasVariants, setHasVariants] = useState(false);
   const [variants, setVariants] = useState<{name: string, price: string}[]>([{ name: 'Half', price: '' }, { name: 'Full', price: '' }]);
+
+  useEffect(() => {
+    const handleOutside = (e: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(e.target as Node)) {
+        setIsCategoryOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, []);
 
   useEffect(() => {
     if (isOpen && editItem) {
@@ -53,11 +65,19 @@ export default function DishModal({ isOpen, onClose, onSave, availableCategories
       setDietary('veg');
       setCategories([availableCategories[0]]);
       setIsCategoryOpen(false);
+      setCustomCatInput('');
       setSelectedFile(null);
       setHasVariants(false);
       setVariants([{ name: 'Half', price: '' }, { name: 'Full', price: '' }]);
     }
   }, [isOpen, editItem, availableCategories]);
+
+  const addCustomCategory = () => {
+    const val = customCatInput.trim();
+    if (!val) return;
+    if (!categories.includes(val)) setCategories([...categories, val]);
+    setCustomCatInput('');
+  };
 
   if (!isOpen) return null;
 
@@ -153,32 +173,62 @@ export default function DishModal({ isOpen, onClose, onSave, availableCategories
                 className="w-full h-11 px-4 rounded-xl border border-zinc-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-sm font-semibold"
               />
             </div>
-            <div className="space-y-1.5 col-span-2 md:col-span-1 relative">
-              <label className="text-xs font-bold text-zinc-700">Categories</label>
-              <div 
-                className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-zinc-200 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 bg-white cursor-pointer flex flex-wrap gap-1 items-center"
+            <div className="space-y-1.5 col-span-2 md:col-span-1 relative" ref={categoryDropdownRef}>
+              <label className="text-xs font-bold text-zinc-700">Categories <span className="text-zinc-400 font-medium">(multi-select)</span></label>
+              <div
+                className="w-full min-h-[44px] px-3 py-2 pr-8 rounded-xl border border-zinc-200 focus-within:border-emerald-500 bg-white cursor-pointer flex flex-wrap gap-1 items-center relative"
                 onClick={() => setIsCategoryOpen(!isCategoryOpen)}
               >
-                {categories.length === 0 ? <span className="text-sm text-zinc-400">Select categories...</span> : 
+                {categories.length === 0 ? <span className="text-sm text-zinc-400">Select categories...</span> :
                   categories.map(c => (
-                    <span key={c} className="text-[11px] font-bold bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md border border-emerald-100 whitespace-nowrap">{c}</span>
+                    <span key={c} className="text-[11px] font-bold bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md border border-emerald-100 whitespace-nowrap flex items-center gap-1">
+                      {c}
+                      <button
+                        type="button"
+                        onClick={e => { e.stopPropagation(); toggleCategory(c); }}
+                        className="hover:text-rose-500 ml-0.5"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </span>
                   ))
                 }
+                <ChevronDown className={`w-4 h-4 text-zinc-400 absolute right-2 top-1/2 -translate-y-1/2 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} />
               </div>
-              
+
               {isCategoryOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto p-1.5">
-                  {availableCategories.map(cat => (
-                    <label key={cat} className="flex items-center gap-3 p-2.5 hover:bg-zinc-50 rounded-lg cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={categories.includes(cat)}
-                        onChange={() => toggleCategory(cat)}
-                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-zinc-300"
-                      />
-                      <span className="text-sm font-semibold text-zinc-700">{cat}</span>
-                    </label>
-                  ))}
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-xl shadow-xl z-50 max-h-52 overflow-y-auto">
+                  <div className="p-1.5 space-y-0.5">
+                    {availableCategories.map(cat => (
+                      <label key={cat} className="flex items-center gap-3 p-2.5 hover:bg-zinc-50 rounded-lg cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={categories.includes(cat)}
+                          onChange={() => toggleCategory(cat)}
+                          className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-zinc-300"
+                        />
+                        <span className="text-sm font-semibold text-zinc-700">{cat}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="p-2 border-t border-zinc-100 flex gap-2">
+                    <input
+                      type="text"
+                      value={customCatInput}
+                      onChange={e => setCustomCatInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomCategory(); } }}
+                      placeholder="Add custom section..."
+                      className="flex-1 h-8 px-3 rounded-lg border border-zinc-200 text-xs font-semibold outline-none focus:border-emerald-500"
+                      onClick={e => e.stopPropagation()}
+                    />
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); addCustomCategory(); }}
+                      className="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold"
+                    >
+                      Add
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

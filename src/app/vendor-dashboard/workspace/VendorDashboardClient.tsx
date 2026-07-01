@@ -236,7 +236,8 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
       
       try {
         const ordersRes = await apiClient.get('/orders/vendor');
-        setOrders(ordersRes.data?.data || []);
+        const rawOrders = ordersRes.data?.data || [];
+        setOrders(Array.from(new Map(rawOrders.map((o: any) => [o.id, o])).values()));
       } catch(e) {
         console.error('Failed to fetch orders', e);
       }
@@ -638,26 +639,26 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
       </aside>
 
       {/* ─── MAIN CONTENT ─── */}
-      <main className="flex-1 bg-zinc-50 flex flex-col min-h-screen overflow-hidden relative">
-        
+      <main className="flex-1 flex flex-col min-h-screen overflow-hidden relative" style={{ background: '#020617' }}>
+
         {/* STATS HERO */}
-        <div className="bg-white border-b border-zinc-200 px-4 xl:px-8 py-6 sticky top-0 z-30">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-zinc-50 p-4 rounded-xl border border-zinc-100">
-              <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-1">Profile Views</p>
-              <p className="text-2xl font-black text-zinc-900">{analytics?.profileViews || 0}</p>
+        <div className="px-4 xl:px-8 py-5 sticky top-0 z-30" style={{ background: 'rgba(7,13,26,.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="p-4 rounded-xl" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#475569' }}>Profile Views</p>
+              <p className="text-2xl font-black text-white">{analytics?.profileViews || 0}</p>
             </div>
-            <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100">
-              <p className="text-amber-600/80 text-[10px] font-bold uppercase tracking-wider mb-1">Total Leads</p>
-              <p className="text-2xl font-black text-amber-600">{(analytics?.whatsappClicks || 0) + (analytics?.callClicks || 0)}</p>
+            <div className="p-4 rounded-xl" style={{ background: 'rgba(245,158,11,.06)', border: '1px solid rgba(245,158,11,.15)' }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#d97706' }}>Total Leads</p>
+              <p className="text-2xl font-black" style={{ color: '#f59e0b' }}>{(analytics?.whatsappClicks || 0) + (analytics?.callClicks || 0)}</p>
             </div>
-            <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
-              <p className="text-indigo-600/80 text-[10px] font-bold uppercase tracking-wider mb-1">Average Rating</p>
-              <p className="text-2xl font-black text-indigo-600">{(analytics?.rating || 0).toFixed(1)} <span className="text-sm">★</span></p>
+            <div className="p-4 rounded-xl" style={{ background: 'rgba(139,92,246,.06)', border: '1px solid rgba(139,92,246,.15)' }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#7c3aed' }}>Average Rating</p>
+              <p className="text-2xl font-black" style={{ color: '#a78bfa' }}>{(analytics?.rating || 0).toFixed(1)} <span className="text-sm">★</span></p>
             </div>
-            <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
-              <p className="text-emerald-600/80 text-[10px] font-bold uppercase tracking-wider mb-1">Total Revenue</p>
-              <p className="text-2xl font-black text-emerald-600">₹{analytics?.totalRevenue || 0}</p>
+            <div className="p-4 rounded-xl" style={{ background: 'rgba(16,185,129,.06)', border: '1px solid rgba(16,185,129,.15)' }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#059669' }}>Total Revenue</p>
+              <p className="text-2xl font-black" style={{ color: '#34d399' }}>₹{analytics?.totalRevenue || 0}</p>
             </div>
           </div>
         </div>
@@ -668,62 +669,62 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
           {activeTab === 'leads' && (
             <div className="h-full flex flex-col">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-black text-zinc-900 tracking-tight">{isMenuBuilderMode ? 'Live Orders' : 'Lead Pipeline'}</h2>
+                <h2 className="text-xl font-black text-white tracking-tight">{isMenuBuilderMode ? 'Live Orders' : 'Lead Pipeline'}</h2>
               </div>
               
               <div className="flex flex-col md:flex-row gap-6 items-start h-full pb-10">
                 {isMenuBuilderMode ? (
                   <>
                     {/* NEW ORDERS COLUMN */}
-                    <div className="flex-1 w-full bg-zinc-100/50 rounded-2xl p-4 border border-zinc-200">
+                    <div className="flex-1 w-full rounded-2xl p-4" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                       <div className="flex items-center justify-between mb-4 px-1">
-                        <h3 className="font-bold text-sm text-zinc-700 flex items-center gap-2">
+                        <h3 className="font-bold text-sm flex items-center gap-2" style={{ color: '#94a3b8' }}>
                           <span className="w-2 h-2 rounded-full bg-indigo-500"></span> New Orders
                         </h3>
-                        <span className="bg-zinc-200 text-zinc-600 text-xs font-bold px-2 py-0.5 rounded-full">{newOrdersCount}</span>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,.08)', color: '#64748b' }}>{newOrdersCount}</span>
                       </div>
                       <div className="space-y-3">
                         {orders.filter(o => o.status === 'PENDING').map(order => (
                           <OrderCard key={order.id} order={order} handleOrderStatusChange={handleOrderStatusChange} isUpdatingOrderStatus={isUpdatingOrderStatus} />
                         ))}
                         {orders.filter(o => o.status === 'PENDING').length === 0 && (
-                          <div className="text-center p-6 text-zinc-400 text-sm font-medium border-2 border-dashed border-zinc-200 rounded-xl">No new orders</div>
+                          <div className="text-center p-6 text-sm font-medium rounded-xl" style={{ color: '#475569', border: '2px dashed rgba(255,255,255,.08)' }}>No new orders</div>
                         )}
                       </div>
                     </div>
 
                     {/* PREPARING COLUMN */}
-                    <div className="flex-1 w-full bg-zinc-100/50 rounded-2xl p-4 border border-zinc-200">
+                    <div className="flex-1 w-full rounded-2xl p-4" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                       <div className="flex items-center justify-between mb-4 px-1">
-                        <h3 className="font-bold text-sm text-zinc-700 flex items-center gap-2">
+                        <h3 className="font-bold text-sm flex items-center gap-2" style={{ color: '#94a3b8' }}>
                           <span className="w-2 h-2 rounded-full bg-amber-500"></span> Preparing
                         </h3>
-                        <span className="bg-zinc-200 text-zinc-600 text-xs font-bold px-2 py-0.5 rounded-full">{preparingOrdersCount}</span>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,.08)', color: '#64748b' }}>{preparingOrdersCount}</span>
                       </div>
                       <div className="space-y-3">
                         {orders.filter(o => o.status === 'CONFIRMED').map(order => (
                           <OrderCard key={order.id} order={order} handleOrderStatusChange={handleOrderStatusChange} isUpdatingOrderStatus={isUpdatingOrderStatus} />
                         ))}
                         {orders.filter(o => o.status === 'CONFIRMED').length === 0 && (
-                          <div className="text-center p-6 text-zinc-400 text-sm font-medium border-2 border-dashed border-zinc-200 rounded-xl">No orders preparing</div>
+                          <div className="text-center p-6 text-sm font-medium rounded-xl" style={{ color: '#475569', border: '2px dashed rgba(255,255,255,.08)' }}>No orders preparing</div>
                         )}
                       </div>
                     </div>
 
                     {/* COMPLETED COLUMN */}
-                    <div className="flex-1 w-full bg-zinc-100/50 rounded-2xl p-4 border border-zinc-200">
+                    <div className="flex-1 w-full rounded-2xl p-4" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                       <div className="flex items-center justify-between mb-4 px-1">
-                        <h3 className="font-bold text-sm text-zinc-700 flex items-center gap-2">
+                        <h3 className="font-bold text-sm flex items-center gap-2" style={{ color: '#94a3b8' }}>
                           <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Completed
                         </h3>
-                        <span className="bg-zinc-200 text-zinc-600 text-xs font-bold px-2 py-0.5 rounded-full">{completedOrdersCount}</span>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,.08)', color: '#64748b' }}>{completedOrdersCount}</span>
                       </div>
                       <div className="space-y-3">
                         {orders.filter(o => o.status === 'COMPLETED').map(order => (
                           <OrderCard key={order.id} order={order} handleOrderStatusChange={handleOrderStatusChange} isUpdatingOrderStatus={isUpdatingOrderStatus} />
                         ))}
                         {orders.filter(o => o.status === 'COMPLETED').length === 0 && (
-                          <div className="text-center p-6 text-zinc-400 text-sm font-medium border-2 border-dashed border-zinc-200 rounded-xl">No completed orders</div>
+                          <div className="text-center p-6 text-sm font-medium rounded-xl" style={{ color: '#475569', border: '2px dashed rgba(255,255,255,.08)' }}>No completed orders</div>
                         )}
                       </div>
                     </div>
@@ -731,64 +732,64 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
                 ) : (
                   <>
                 {/* NEW COLUMN */}
-                <div className="flex-1 w-full bg-zinc-100/50 rounded-2xl p-4 border border-zinc-200">
+                <div className="flex-1 w-full rounded-2xl p-4" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                   <div className="flex items-center justify-between mb-4 px-1">
-                    <h3 className="font-bold text-sm text-zinc-700 flex items-center gap-2">
+                    <h3 className="font-bold text-sm flex items-center gap-2" style={{ color: '#94a3b8' }}>
                       <span className="w-2 h-2 rounded-full bg-indigo-500"></span> New Enquiries
                     </h3>
-                    <span className="bg-zinc-200 text-zinc-600 text-xs font-bold px-2 py-0.5 rounded-full">{newLeadsCount}</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,.08)', color: '#64748b' }}>{newLeadsCount}</span>
                   </div>
                   <div className="space-y-3">
                     {leads.filter(l => l.status === 'NEW').map(lead => (
                       <LeadCard key={lead.id} lead={lead} openWhatsApp={openWhatsApp} handleLeadStatusChange={handleLeadStatusChange} isUpdatingStatus={isUpdatingStatus} />
                     ))}
                     {leads.filter(l => l.status === 'NEW').length === 0 && (
-                      <div className="text-center p-6 text-zinc-400 text-sm font-medium border-2 border-dashed border-zinc-200 rounded-xl">No new leads</div>
+                      <div className="text-center p-6 text-sm font-medium rounded-xl" style={{ color: '#475569', border: '2px dashed rgba(255,255,255,.08)' }}>No new leads</div>
                     )}
                   </div>
                 </div>
 
                 {/* CONTACTED COLUMN */}
-                <div className="flex-1 w-full bg-zinc-100/50 rounded-2xl p-4 border border-zinc-200">
+                <div className="flex-1 w-full rounded-2xl p-4" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                   <div className="flex items-center justify-between mb-4 px-1">
-                    <h3 className="font-bold text-sm text-zinc-700 flex items-center gap-2">
+                    <h3 className="font-bold text-sm flex items-center gap-2" style={{ color: '#94a3b8' }}>
                       <span className="w-2 h-2 rounded-full bg-amber-500"></span> Contacted
                     </h3>
-                    <span className="bg-zinc-200 text-zinc-600 text-xs font-bold px-2 py-0.5 rounded-full">{contactedLeadsCount}</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,.08)', color: '#64748b' }}>{contactedLeadsCount}</span>
                   </div>
                   <div className="space-y-3">
                     {leads.filter(l => l.status === 'CONTACTED').map(lead => (
                       <LeadCard key={lead.id} lead={lead} openWhatsApp={openWhatsApp} handleLeadStatusChange={handleLeadStatusChange} isUpdatingStatus={isUpdatingStatus} />
                     ))}
                     {leads.filter(l => l.status === 'CONTACTED').length === 0 && (
-                      <div className="text-center p-6 text-zinc-400 text-sm font-medium border-2 border-dashed border-zinc-200 rounded-xl">No contacted leads</div>
+                      <div className="text-center p-6 text-sm font-medium rounded-xl" style={{ color: '#475569', border: '2px dashed rgba(255,255,255,.08)' }}>No contacted leads</div>
                     )}
                   </div>
                 </div>
 
                 {/* CONVERTED COLUMN */}
-                <div className="flex-1 w-full bg-zinc-100/50 rounded-2xl p-4 border border-zinc-200">
+                <div className="flex-1 w-full rounded-2xl p-4" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                   <div className="flex items-center justify-between mb-4 px-1">
-                    <h3 className="font-bold text-sm text-zinc-700 flex items-center gap-2">
+                    <h3 className="font-bold text-sm flex items-center gap-2" style={{ color: '#94a3b8' }}>
                       <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Converted
                     </h3>
-                    <span className="bg-zinc-200 text-zinc-600 text-xs font-bold px-2 py-0.5 rounded-full">{convertedLeadsCount}</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,.08)', color: '#64748b' }}>{convertedLeadsCount}</span>
                   </div>
                   <div className="space-y-3">
                     {leads.filter(l => l.status === 'CONVERTED').map(lead => (
-                      <div key={lead.id} className="bg-white rounded-xl p-4 shadow-sm border border-emerald-100 ring-1 ring-emerald-500/10">
+                      <div key={lead.id} className="bg-zinc-950 rounded-xl p-4 shadow-inner border border-zinc-850">
                         <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-bold text-zinc-900">{lead.customerName}</h4>
+                          <h4 className="font-bold text-white">{lead.customerName}</h4>
                           <span className="text-[10px] text-zinc-400 font-bold">{formatDistanceToNow(new Date(lead.updatedAt), { addSuffix: true })}</span>
                         </div>
-                        <p className="text-xs text-zinc-500 font-medium mb-3">{lead.catalogItem?.title}</p>
+                        <p className="text-xs text-zinc-400 font-medium mb-3">{lead.catalogItem?.title}</p>
                         
-                        <div className="bg-zinc-50 rounded-lg p-2.5 border border-zinc-100">
-                          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide block mb-1">Track Revenue (₹)</label>
+                        <div className="bg-zinc-900/50 rounded-lg p-2.5 border border-zinc-800">
+                          <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide block mb-1">Track Revenue (₹)</label>
                           <div className="flex gap-2">
                             <Input 
                               type="number" 
-                              className="h-8 text-sm font-bold bg-white" 
+                              className="h-8 text-sm font-bold bg-zinc-950 border-zinc-800 text-white" 
                               placeholder="e.g. 500" 
                               value={leadRevenues[lead.id] || ''}
                               onChange={(e) => handleRevenueChange(lead.id, e.target.value)}
@@ -799,7 +800,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
                       </div>
                     ))}
                     {leads.filter(l => l.status === 'CONVERTED').length === 0 && (
-                      <div className="text-center p-6 text-zinc-400 text-sm font-medium border-2 border-dashed border-zinc-200 rounded-xl">No converted leads</div>
+                      <div className="text-center p-6 text-sm font-medium rounded-xl" style={{ color: '#475569', border: '2px dashed rgba(255,255,255,.08)' }}>No converted leads</div>
                     )}
                   </div>
                 </div>
@@ -815,8 +816,8 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-black text-zinc-900 tracking-tight">{isMenuBuilderMode ? 'Menu & Services Builder' : 'Service Catalog'}</h2>
-                  <p className="text-sm text-zinc-500 font-medium mt-1">Manage your offerings</p>
+                  <h2 className="text-xl font-black text-white tracking-tight">{isMenuBuilderMode ? 'Menu & Services Builder' : 'Service Catalog'}</h2>
+                  <p className="text-sm font-medium mt-1" style={{ color: '#64748b' }}>Manage your offerings</p>
                 </div>
                 {!isMenuBuilderMode && (
                   <Button onClick={handleOpenAddCatalog} className="font-bold rounded-xl h-11 px-6 shadow-sm">
@@ -828,19 +829,19 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
               {isMenuBuilderMode ? (
                 <div className="flex flex-col lg:flex-row gap-8">
                   {/* Left: Items List */}
-                  <div className="flex-1 bg-white rounded-2xl border border-zinc-200 shadow-sm p-5">
+                  <div className="flex-1 rounded-2xl p-5" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                      <div className="flex justify-between items-center mb-6">
-                       <h3 className="font-bold text-lg">Your Catalog</h3>
+                       <h3 className="font-bold text-lg text-white">Your Catalog</h3>
                        <Button size="sm" onClick={handleOpenAddCatalog} className="font-bold rounded-lg shadow-sm"><Plus className="w-4 h-4 mr-1"/> Add Item</Button>
                      </div>
                      <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                         {catalogItems.map(item => (
-                          <div key={item.id} className="p-4 border rounded-xl flex items-center justify-between hover:border-primary transition-colors cursor-pointer bg-zinc-50/30" onClick={() => handleOpenEditCatalog(item)}>
+                          <div key={item.id} className="p-4 rounded-xl flex items-center justify-between transition-colors cursor-pointer" style={{ border: '1px solid rgba(255,255,255,.06)', background: 'rgba(255,255,255,.03)' }} onClick={() => handleOpenEditCatalog(item)}>
                              <div>
                                <div className="flex items-center gap-1.5 mb-1">
                                  {(item.variants as any)?.includes('veg') ? <span className="w-3.5 h-3.5 border border-green-600 flex items-center justify-center p-[1px]"><span className="w-2 h-2 bg-green-600 rounded-full"></span></span> : null}
                                  {(item.variants as any)?.includes('non-veg') ? <span className="w-3.5 h-3.5 border border-rose-600 flex items-center justify-center p-[1px]"><span className="w-2 h-2 bg-rose-600 rounded-full"></span></span> : null}
-                                 <p className="font-bold text-zinc-900">{item.title}</p>
+                                 <p className="font-bold text-white">{item.title}</p>
                                </div>
                                <p className="text-xs text-zinc-500 font-medium">₹{item.price} • <span className="capitalize">{item.category?.name}</span></p>
                              </div>
@@ -877,8 +878,8 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
                            
                            {/* Active Form Preview (if open) */}
                            {isCatalogOpen && (
-                             <div className="m-3 p-3 bg-amber-50 rounded-xl border border-amber-200 relative overflow-hidden">
-                               <div className="absolute top-0 right-0 bg-amber-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-bl-lg uppercase tracking-wider animate-pulse">Editing Now</div>
+                             <div className="m-3 p-3 bg-amber-950/10 rounded-xl border border-amber-500/20 relative overflow-hidden">
+                               <div className="absolute top-0 right-0 bg-amber-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-bl-lg uppercase tracking-wider animate-pulse">Editing Now</div>
                                <div className="flex justify-between items-start gap-2 mt-2">
                                  <div className="flex-1">
                                    <div className="flex items-start gap-1.5">
@@ -886,15 +887,15 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
                                        {catalogForm.variants?.includes('veg') ? <span className="w-3 h-3 border border-green-600 flex items-center justify-center p-[1px]"><span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span></span> : null}
                                        {catalogForm.variants?.includes('non-veg') ? <span className="w-3 h-3 border border-rose-600 flex items-center justify-center p-[1px]"><span className="w-1.5 h-1.5 bg-rose-600 rounded-full"></span></span> : null}
                                      </div>
-                                     <h4 className="font-bold text-sm text-zinc-900 leading-tight">{catalogForm.title || 'Item Name'}</h4>
+                                     <h4 className="font-bold text-sm text-amber-200 leading-tight">{catalogForm.title || 'Item Name'}</h4>
                                    </div>
-                                   <p className="text-xs font-black text-zinc-900 mt-1">₹{catalogForm.price || '0'}</p>
-                                   <p className="text-[10px] text-zinc-500 mt-1.5 line-clamp-2 leading-relaxed">{catalogForm.description || 'Description will appear here'}</p>
+                                   <p className="text-xs font-black text-amber-300 mt-1">₹{catalogForm.price || '0'}</p>
+                                   <p className="text-[10px] text-zinc-400 mt-1.5 line-clamp-2 leading-relaxed">{catalogForm.description || 'Description will appear here'}</p>
                                  </div>
-                                 <div className="w-20 h-20 bg-zinc-100 rounded-xl overflow-hidden shrink-0 border border-zinc-200 relative">
-                                    {filePreview ? <img src={filePreview} className="w-full h-full object-cover"/> : <div className="absolute inset-0 flex items-center justify-center text-[10px] text-zinc-400 font-medium">No Image</div>}
+                                 <div className="w-20 h-20 bg-zinc-950 rounded-xl overflow-hidden shrink-0 border border-zinc-800 relative">
+                                    {filePreview ? <img src={filePreview} className="w-full h-full object-cover"/> : <div className="absolute inset-0 flex items-center justify-center text-[10px] text-zinc-650 font-medium">No Image</div>}
                                     <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
-                                       <button className="bg-white text-rose-600 text-[10px] font-black px-4 py-1 rounded-lg border shadow-sm">ADD</button>
+                                       <button className="bg-zinc-900 text-rose-400 text-[10px] font-black px-4 py-1 rounded-lg border border-zinc-800 shadow-sm">ADD</button>
                                     </div>
                                  </div>
                                </div>
@@ -908,25 +909,25 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
                                if (items.length === 0) return null;
                                return (
                                  <div key={cat.id}>
-                                   <h4 className="font-bold text-lg mb-3 text-zinc-900 capitalize">{cat.name}</h4>
+                                   <h4 className="font-bold text-lg mb-3 text-white capitalize">{cat.name}</h4>
                                    <div className="space-y-4">
                                      {items.map(item => (
-                                        <div key={item.id} className="flex justify-between items-start gap-3 border-b border-dashed border-zinc-200 pb-4 last:border-0 last:pb-0">
+                                        <div key={item.id} className="flex justify-between items-start gap-3 border-b border-dashed border-zinc-800 pb-4 last:border-0 last:pb-0">
                                           <div className="flex-1">
                                             <div className="flex items-start gap-1.5">
                                               <div className="mt-1 shrink-0">
                                                 {(item.variants as any)?.includes('veg') ? <span className="w-3 h-3 border border-green-600 flex items-center justify-center p-[1px]"><span className="w-2 h-2 bg-green-600 rounded-full"></span></span> : null}
                                                 {(item.variants as any)?.includes('non-veg') ? <span className="w-3 h-3 border border-rose-600 flex items-center justify-center p-[1px]"><span className="w-2 h-2 bg-rose-600 rounded-full"></span></span> : null}
                                               </div>
-                                              <p className="font-bold text-sm text-zinc-900 leading-tight">{item.title}</p>
+                                              <p className="font-bold text-sm text-zinc-100 leading-tight">{item.title}</p>
                                             </div>
-                                            <p className="font-semibold text-xs text-zinc-900 mt-1">₹{item.price}</p>
-                                            {item.description && <p className="text-[10px] text-zinc-500 mt-1.5 line-clamp-2 leading-relaxed">{item.description}</p>}
+                                            <p className="font-semibold text-xs text-zinc-300 mt-1">₹{item.price}</p>
+                                            {item.description && <p className="text-[10px] text-zinc-400 mt-1.5 line-clamp-2 leading-relaxed">{item.description}</p>}
                                           </div>
-                                          <div className="w-24 h-24 bg-zinc-100 rounded-xl overflow-hidden shrink-0 relative">
+                                          <div className="w-24 h-24 bg-zinc-950 rounded-xl overflow-hidden shrink-0 relative border border-zinc-900">
                                             {item.mediaUrl && <img src={item.mediaUrl} className="w-full h-full object-cover"/>}
                                             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
-                                              <button className="bg-white text-rose-600 text-[10px] font-black px-5 py-1.5 rounded-lg border border-zinc-200 shadow-sm uppercase">Add</button>
+                                              <button className="bg-zinc-900 text-rose-450 text-[10px] font-black px-5 py-1.5 rounded-lg border border-zinc-800 shadow-sm uppercase hover:bg-zinc-800">Add</button>
                                             </div>
                                           </div>
                                         </div>
@@ -941,32 +942,32 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
                   </div>
                 </div>
               ) : (
-                <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+                <div className="rounded-2xl overflow-hidden" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                   <table className="w-full text-left text-sm">
-                    <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 font-bold uppercase tracking-wider text-[10px]">
+                    <thead style={{ background: 'rgba(255,255,255,.03)', borderBottom: '1px solid rgba(255,255,255,.06)' }}>
                       <tr>
-                        <th className="px-6 py-4">Service Details</th>
-                        <th className="px-6 py-4">Category</th>
-                        <th className="px-6 py-4">Price</th>
-                        <th className="px-6 py-4">Status</th>
-                        <th className="px-6 py-4 text-right">Actions</th>
+                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider" style={{ color: '#475569' }}>Service Details</th>
+                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider" style={{ color: '#475569' }}>Category</th>
+                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider" style={{ color: '#475569' }}>Price</th>
+                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider" style={{ color: '#475569' }}>Status</th>
+                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-right" style={{ color: '#475569' }}>Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-100">
+                    <tbody style={{ borderTop: 'none' }}>
                       {catalogItems.map(item => (
-                        <tr key={item.id} className={`transition-colors hover:bg-zinc-50/50 ${!item.isActive ? 'opacity-70' : ''}`}>
+                        <tr key={item.id} className={`transition-colors ${!item.isActive ? 'opacity-60' : ''}`} style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-zinc-100 overflow-hidden border border-zinc-200 flex-shrink-0 flex items-center justify-center">
-                                {item.mediaUrl ? <img src={item.mediaUrl} className="w-full h-full object-cover" /> : <ImageIcon className="w-4 h-4 text-zinc-400" />}
+                              <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.08)' }}>
+                                {item.mediaUrl ? <img src={item.mediaUrl} className="w-full h-full object-cover" /> : <ImageIcon className="w-4 h-4" style={{ color: '#475569' }} />}
                               </div>
                               <div>
-                                <p className="font-bold text-zinc-900">{item.title}</p>
-                                <p className="text-xs text-zinc-500 line-clamp-1 max-w-[200px]">{item.description || 'No description'}</p>
+                                <p className="font-bold text-white">{item.title}</p>
+                                <p className="text-xs line-clamp-1 max-w-[200px]" style={{ color: '#64748b' }}>{item.description || 'No description'}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 font-medium text-zinc-600 capitalize">{item.category?.name || 'N/A'}</td>
+                          <td className="px-6 py-4 font-medium capitalize" style={{ color: '#94a3b8' }}>{item.category?.name || 'N/A'}</td>
                           <td className="px-6 py-4 font-black text-primary">₹{item.price || '-'}</td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
@@ -984,7 +985,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
                       ))}
                       {catalogItems.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="px-6 py-12 text-center text-zinc-400 font-medium">No services added yet. Create one to get started!</td>
+                          <td colSpan={5} className="px-6 py-12 text-center font-medium" style={{ color: '#475569' }}>No services added yet. Create one to get started!</td>
                         </tr>
                       )}
                     </tbody>
@@ -998,8 +999,8 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-black text-zinc-900 tracking-tight">Performance Analytics</h2>
-                  <p className="text-sm text-zinc-500 font-medium mt-1">Track your business growth and leads</p>
+                  <h2 className="text-xl font-black text-white tracking-tight">Performance Analytics</h2>
+                  <p className="text-sm text-zinc-400 font-medium mt-1">Track your business growth and leads</p>
                 </div>
                 <Select defaultValue="all">
                   <SelectTrigger className="w-[150px] font-bold">
@@ -1029,61 +1030,61 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
               )}
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm">
-                  <div className="flex items-center gap-2 text-indigo-600 mb-2">
+                <div className="p-5 rounded-2xl" style={{ background: 'rgba(99,102,241,.06)', border: '1px solid rgba(99,102,241,.15)' }}>
+                  <div className="flex items-center gap-2 mb-2" style={{ color: '#818cf8' }}>
                     <Eye className="w-5 h-5" />
-                    <h3 className="font-bold text-sm text-zinc-700">Profile Views</h3>
+                    <h3 className="font-bold text-sm" style={{ color: '#94a3b8' }}>Profile Views</h3>
                   </div>
-                  <p className="text-3xl font-black text-zinc-900">{analytics?.profileViews || 0}</p>
-                  <p className="text-xs text-emerald-600 font-bold mt-2 flex items-center gap-1">
+                  <p className="text-3xl font-black text-white">{analytics?.profileViews || 0}</p>
+                  <p className="text-xs font-bold mt-2 flex items-center gap-1" style={{ color: '#34d399' }}>
                     <TrendingUp className="w-3 h-3" /> {analytics?.last30Days?.profileViews ?? 0} in last 30 days
                   </p>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm">
-                  <div className="flex items-center gap-2 text-[#25D366] mb-2">
+                <div className="p-5 rounded-2xl" style={{ background: 'rgba(37,211,102,.06)', border: '1px solid rgba(37,211,102,.15)' }}>
+                  <div className="flex items-center gap-2 mb-2" style={{ color: '#25D366' }}>
                     <MessageSquare className="w-5 h-5" />
-                    <h3 className="font-bold text-sm text-zinc-700">WhatsApp Leads</h3>
+                    <h3 className="font-bold text-sm" style={{ color: '#94a3b8' }}>WhatsApp Leads</h3>
                   </div>
-                  <p className="text-3xl font-black text-zinc-900">{analytics?.whatsappClicks || 0}</p>
-                  <p className="text-xs text-emerald-600 font-bold mt-2 flex items-center gap-1">
+                  <p className="text-3xl font-black text-white">{analytics?.whatsappClicks || 0}</p>
+                  <p className="text-xs font-bold mt-2 flex items-center gap-1" style={{ color: '#34d399' }}>
                     <TrendingUp className="w-3 h-3" /> {analytics?.last30Days?.whatsappClicks ?? 0} in last 30 days
                   </p>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm">
-                  <div className="flex items-center gap-2 text-amber-600 mb-2">
+                <div className="p-5 rounded-2xl" style={{ background: 'rgba(245,158,11,.06)', border: '1px solid rgba(245,158,11,.15)' }}>
+                  <div className="flex items-center gap-2 mb-2" style={{ color: '#fbbf24' }}>
                     <Phone className="w-5 h-5" />
-                    <h3 className="font-bold text-sm text-zinc-700">Call Clicks</h3>
+                    <h3 className="font-bold text-sm" style={{ color: '#94a3b8' }}>Call Clicks</h3>
                   </div>
-                  <p className="text-3xl font-black text-zinc-900">{analytics?.callClicks || 0}</p>
-                  <p className="text-xs text-zinc-500 font-bold mt-2 flex items-center gap-1">
+                  <p className="text-3xl font-black text-white">{analytics?.callClicks || 0}</p>
+                  <p className="text-xs font-bold mt-2 flex items-center gap-1" style={{ color: '#64748b' }}>
                     {analytics?.last30Days?.callClicks ?? 0} in last 30 days
                   </p>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm">
-                  <div className="flex items-center gap-2 text-emerald-600 mb-2">
+                <div className="p-5 rounded-2xl" style={{ background: 'rgba(16,185,129,.06)', border: '1px solid rgba(16,185,129,.15)' }}>
+                  <div className="flex items-center gap-2 mb-2" style={{ color: '#34d399' }}>
                     <Activity className="w-5 h-5" />
-                    <h3 className="font-bold text-sm text-zinc-700">Total Revenue</h3>
+                    <h3 className="font-bold text-sm" style={{ color: '#94a3b8' }}>Total Revenue</h3>
                   </div>
-                  <p className="text-3xl font-black text-zinc-900">₹{analytics?.totalRevenue || 0}</p>
-                  <p className="text-xs text-emerald-600 font-bold mt-2 flex items-center gap-1">
+                  <p className="text-3xl font-black text-white">₹{analytics?.totalRevenue || 0}</p>
+                  <p className="text-xs font-bold mt-2 flex items-center gap-1" style={{ color: '#34d399' }}>
                     <TrendingUp className="w-3 h-3" /> View detailed ledger
                   </p>
                 </div>
               </div>
 
               {/* Charts */}
-              <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm mt-6">
+              <div className="p-6 rounded-2xl mt-6" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.06)' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-lg text-zinc-900">Traffic Overview</h3>
+                  <h3 className="font-bold text-lg text-white">Traffic Overview</h3>
                   <div className="flex gap-4 text-xs font-semibold">
-                    <span className="flex items-center gap-1.5 text-emerald-600">
+                    <span className="flex items-center gap-1.5" style={{ color: '#34d399' }}>
                       <span className="w-3 h-3 bg-emerald-500 rounded-full inline-block"></span>
                       Views
                     </span>
-                    <span className="flex items-center gap-1.5 text-emerald-800">
+                    <span className="flex items-center gap-1.5" style={{ color: '#6ee7b7' }}>
                       <span className="w-3 h-3 bg-emerald-700 rounded-full inline-block"></span>
                       Leads
                     </span>
@@ -1095,7 +1096,7 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
                   const maxVal = Math.max(...dailySeries.map((d: any) => d.views + d.leads), 1);
                   return (
                     <>
-                      <div className="h-64 flex items-end justify-between gap-1 md:gap-2 border-b border-l border-zinc-200 p-4 pb-0 relative">
+                      <div className="h-64 flex items-end justify-between gap-1 md:gap-2 p-4 pb-0 relative" style={{ borderBottom: '1px solid rgba(255,255,255,.08)', borderLeft: '1px solid rgba(255,255,255,.08)' }}>
                         {dailySeries.map((d: any) => {
                           const totalVal = d.views + d.leads;
                           const viewsPercent = totalVal > 0 ? (d.views / maxVal) * 100 : 0;
@@ -1154,26 +1155,27 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
 
           {activeTab === 'settings' && (
             <div className="space-y-6">
-              <div className="p-10 text-center text-zinc-500 font-medium border-2 border-dashed border-zinc-200 rounded-2xl">
-                <SettingsIcon className="w-10 h-10 mx-auto text-zinc-300 mb-4" />
+              <div className="p-10 text-center font-medium rounded-2xl" style={{ color: '#64748b', border: '2px dashed rgba(255,255,255,.08)' }}>
+                <SettingsIcon className="w-10 h-10 mx-auto mb-4" style={{ color: '#334155' }} />
                 <p>General settings panel moved to Vendor Profile.</p>
               </div>
 
               {/* Danger Zone */}
-              <div className="mt-8 border-t border-destructive/20 pt-8 pb-4">
-                <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-6">
+              <div className="mt-8 pt-8 pb-4" style={{ borderTop: '1px solid rgba(239,68,68,.2)' }}>
+                <div className="rounded-2xl p-6" style={{ background: 'rgba(239,68,68,.05)', border: '1px solid rgba(239,68,68,.2)' }}>
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <h3 className="text-lg font-bold text-destructive flex items-center gap-2">
                         <AlertTriangle className="w-5 h-5" /> Danger Zone
                       </h3>
-                      <p className="text-zinc-600 text-sm mt-1">
+                      <p className="text-sm mt-1" style={{ color: '#94a3b8' }}>
                         Once you delete your account, there is no going back. Please be certain.
                       </p>
                     </div>
                     <button
                       onClick={() => setIsDeleteModalOpen(true)}
-                      className="flex-shrink-0 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-colors px-4 py-2 rounded-xl text-sm font-bold border border-destructive/20"
+                      className="flex-shrink-0 text-destructive hover:bg-destructive hover:text-white transition-colors px-4 py-2 rounded-xl text-sm font-bold"
+                      style={{ background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.2)' }}
                     >
                       Delete Account
                     </button>
@@ -1201,12 +1203,12 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
       />
 
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="rounded-2xl max-w-sm w-full p-6 text-center" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.08)' }}>
             <Trash2 className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-            <h3 className="text-lg font-bold">Delete "{deleteTarget.title}"?</h3>
+            <h3 className="text-lg font-bold text-white">Delete &quot;{deleteTarget.title}&quot;?</h3>
             <div className="flex gap-3 mt-6">
-              <Button onClick={() => setDeleteTarget(null)} variant="outline" className="flex-1">Cancel</Button>
+              <Button onClick={() => setDeleteTarget(null)} variant="outline" className="flex-1" style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: '#94a3b8' }}>Cancel</Button>
               <Button onClick={handleDeleteItem} disabled={isDeleting} className="flex-1 bg-rose-600 hover:bg-rose-700 text-white">{isDeleting ? 'Deleting...' : 'Delete'}</Button>
             </div>
           </div>
@@ -1225,28 +1227,28 @@ export default function VendorDashboardClient({ defaultTab = 'leads' }: VendorDa
 // Helper Component for Kanban Cards
 function LeadCard({ lead, openWhatsApp, handleLeadStatusChange, isUpdatingStatus }: any) {
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm border border-zinc-200 hover:border-zinc-300 transition-all">
+    <div className="rounded-xl p-4 transition-all" style={{ background: 'rgba(15,23,42,.8)', border: '1px solid rgba(255,255,255,.06)' }}>
       <div className="flex justify-between items-start mb-2">
-        <h4 className="font-bold text-zinc-900 text-sm truncate">{lead.customerName}</h4>
-        <span className="text-[9px] font-bold text-zinc-400 bg-zinc-100 px-1.5 py-0.5 rounded">{formatDistanceToNow(new Date(lead.createdAt))}</span>
+        <h4 className="font-bold text-white text-sm truncate">{lead.customerName}</h4>
+        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ color: '#64748b', background: 'rgba(255,255,255,.06)' }}>{formatDistanceToNow(new Date(lead.createdAt))}</span>
       </div>
-      <p className="text-xs text-zinc-500 font-medium mb-3 line-clamp-1">{lead.catalogItem?.title}</p>
-      
+      <p className="text-xs font-medium mb-3 line-clamp-1" style={{ color: '#64748b' }}>{lead.catalogItem?.title}</p>
+
       {lead.customerRequirement && (
-        <p className="text-[11px] text-zinc-500 italic bg-zinc-50 p-2 rounded-lg mb-3 border border-zinc-100">
-          "{lead.customerRequirement}"
+        <p className="text-[11px] italic p-2 rounded-lg mb-3" style={{ color: '#64748b', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)' }}>
+          &quot;{lead.customerRequirement}&quot;
         </p>
       )}
 
       <div className="flex gap-2">
-        <button 
+        <button
           onClick={() => openWhatsApp(lead.customerPhone, lead.customerName, lead.catalogItem?.title)}
-          className="flex-1 flex items-center justify-center gap-1.5 bg-[#25D366] hover:bg-[#128C7E] text-white text-[11px] font-bold py-2 rounded-lg shadow-sm"
+          className="flex-1 flex items-center justify-center gap-1.5 bg-[#25D366] hover:bg-[#128C7E] text-white text-[11px] font-bold py-2 rounded-lg"
         >
           <Phone className="w-3 h-3 fill-current" /> WhatsApp
         </button>
         <Select value={lead.status} onValueChange={(val) => handleLeadStatusChange(lead.id, val)}>
-          <SelectTrigger className="w-[100px] h-8 text-[10px] font-bold rounded-lg border-zinc-200">
+          <SelectTrigger className="w-[100px] h-8 text-[10px] font-bold rounded-lg text-white" style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)' }}>
             {isUpdatingStatus === lead.id ? 'Updating...' : <SelectValue placeholder="Status" />}
           </SelectTrigger>
           <SelectContent>
@@ -1264,46 +1266,47 @@ function LeadCard({ lead, openWhatsApp, handleLeadStatusChange, isUpdatingStatus
 // Helper Component for Order Cards
 function OrderCard({ order, handleOrderStatusChange, isUpdatingOrderStatus }: any) {
   const items = (order.items as any[]) || [];
-  
+
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm border border-zinc-200 hover:border-zinc-300 transition-all">
+    <div className="rounded-xl p-4 transition-all" style={{ background: 'rgba(15,23,42,.8)', border: '1px solid rgba(255,255,255,.06)' }}>
       <div className="flex justify-between items-start mb-2">
-        <h4 className="font-bold text-zinc-900 text-sm truncate">Order #{order.id.slice(0, 8)}</h4>
-        <span className="text-[9px] font-bold text-zinc-400 bg-zinc-100 px-1.5 py-0.5 rounded">{formatDistanceToNow(new Date(order.createdAt))}</span>
+        <h4 className="font-bold text-white text-sm truncate">Order #{order.id.slice(0, 8)}</h4>
+        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ color: '#64748b', background: 'rgba(255,255,255,.06)' }}>{formatDistanceToNow(new Date(order.createdAt))}</span>
       </div>
       <div className="mb-3 space-y-1">
-        {items.map((item, idx) => (
-          <div key={idx} className="flex justify-between text-xs text-zinc-500 font-medium">
+        {items.map((item: any, idx: number) => (
+          <div key={idx} className="flex justify-between text-xs font-medium" style={{ color: '#64748b' }}>
             <span className="line-clamp-1">{item.quantity}x {item.title || item.catalogItem?.title || 'Item'}</span>
             <span>₹{item.price * item.quantity}</span>
           </div>
         ))}
-        <div className="border-t border-zinc-100 mt-2 pt-2 flex justify-between font-bold text-zinc-800 text-sm">
+        <div className="mt-2 pt-2 flex justify-between font-bold text-white text-sm" style={{ borderTop: '1px solid rgba(255,255,255,.06)' }}>
           <span>Total</span>
           <span>₹{order.totalAmount}</span>
         </div>
       </div>
-      
+
       {order.status === 'PENDING' ? (
         <div className="flex gap-2">
-          <Button 
+          <Button
             disabled={isUpdatingOrderStatus === order.id}
             onClick={() => handleOrderStatusChange(order.id, 'CONFIRMED')}
             className="flex-1 h-8 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white px-2"
           >
             Accept
           </Button>
-          <Button 
+          <Button
             disabled={isUpdatingOrderStatus === order.id}
             onClick={() => handleOrderStatusChange(order.id, 'CANCELLED')}
             variant="outline"
-            className="flex-1 h-8 text-rose-600 border-rose-200 hover:bg-rose-50 text-xs font-bold px-2"
+            className="flex-1 h-8 text-rose-400 text-xs font-bold px-2"
+            style={{ background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)' }}
           >
             Reject
           </Button>
         </div>
       ) : order.status === 'CONFIRMED' ? (
-        <Button 
+        <Button
           disabled={isUpdatingOrderStatus === order.id}
           onClick={() => handleOrderStatusChange(order.id, 'COMPLETED')}
           className="w-full h-8 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white"
@@ -1311,7 +1314,7 @@ function OrderCard({ order, handleOrderStatusChange, isUpdatingOrderStatus }: an
           Mark Ready
         </Button>
       ) : (
-        <div className="text-center text-[10px] font-bold text-zinc-400 uppercase tracking-wide py-1 bg-zinc-50 rounded-lg border border-zinc-100">
+        <div className="text-center text-[10px] font-bold uppercase tracking-wide py-1 rounded-lg" style={{ color: '#475569', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)' }}>
           {order.status}
         </div>
       )}

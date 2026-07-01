@@ -62,7 +62,9 @@ export default function VendorOrdersPage() {
       const res = await apiClient.get('/orders/vendor', {
         headers: { 'x-business-id': activeBusinessId }
       });
-      setOrders(res.data?.data || []);
+      // Dedupe by id so a transient double-fetch can never render duplicate keys.
+      const raw = res.data?.data || [];
+      setOrders(Array.from(new Map(raw.map((o: any) => [o.id, o])).values()));
     } catch (error) {
       console.error('Failed to fetch orders:', error);
       toast.error('Could not load orders.');
@@ -110,8 +112,8 @@ export default function VendorOrdersPage() {
     <div className="max-w-7xl mx-auto space-y-6 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-black text-zinc-900 tracking-tight">Orders Manager</h1>
-          <p className="text-sm font-medium text-zinc-500 mt-1">Manage incoming food and supermarket cart orders.</p>
+          <h1 className="text-3xl font-black text-white tracking-tight">Orders Manager</h1>
+          <p className="text-sm font-medium text-zinc-400 mt-1">Manage incoming food and supermarket cart orders.</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-2">

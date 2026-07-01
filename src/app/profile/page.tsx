@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuthStore } from '@/store/authStore';
-import { User, Package, Heart, Bell, Shield, MapPin, CreditCard, ChevronRight, Zap, LayoutDashboard, MessageSquare, AlertTriangle } from 'lucide-react';
+import { User, Heart, Bell, Shield, MapPin, CreditCard, ChevronRight, Zap, LayoutDashboard, MessageSquare, AlertTriangle, BookOpen, Video, Play } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import DeleteAccountModal from '@/components/shared/DeleteAccountModal';
@@ -12,145 +12,169 @@ export default function ProfilePage() {
   const isVendor = user?.role === 'vendor' || user?.role === 'admin';
 
   const menuItems = [
-    { icon: Heart, title: 'Saved Pros', desc: 'View your favorite professionals', href: '/profile/saved' },
-    { icon: MessageSquare, title: 'My Enquiries', desc: 'Track services you have requested', href: '/profile/enquiries' },
-    { icon: MapPin, title: 'Addresses', desc: 'Manage your saved locations', href: '/profile/addresses' },
-    { icon: CreditCard, title: 'Payments', desc: 'Manage payment methods', href: '/profile/payments' },
-    { icon: Bell, title: 'Notifications', desc: 'Configure alerts and updates', href: '/profile/notifications' },
-    { icon: Shield, title: 'Security', desc: 'Password and authentication', href: '/profile/security' },
+    { icon: Heart, title: 'Saved Pros', desc: 'Your favourite professionals', href: '/profile/saved', color: '#f87171', bg: 'rgba(239,68,68,.08)', border: 'rgba(239,68,68,.15)' },
+    { icon: MessageSquare, title: 'My Enquiries', desc: 'Track services you requested', href: '/profile/enquiries', color: '#34d399', bg: 'rgba(16,185,129,.08)', border: 'rgba(16,185,129,.15)' },
+    { icon: BookOpen, title: 'My Bookings', desc: 'View and manage bookings', href: '/profile/bookings', color: '#a78bfa', bg: 'rgba(139,92,246,.08)', border: 'rgba(139,92,246,.15)' },
+    { icon: MapPin, title: 'Addresses', desc: 'Manage saved locations', href: '/profile/addresses', color: '#38bdf8', bg: 'rgba(56,189,248,.08)', border: 'rgba(56,189,248,.15)' },
+    { icon: CreditCard, title: 'Payments', desc: 'Manage payment methods', href: '/profile/payments', color: '#fbbf24', bg: 'rgba(245,158,11,.08)', border: 'rgba(245,158,11,.15)' },
+    { icon: Bell, title: 'Notifications', desc: 'Configure alerts', href: '/profile/notifications', color: '#fb923c', bg: 'rgba(251,146,60,.08)', border: 'rgba(251,146,60,.15)' },
+    { icon: Shield, title: 'Security', desc: 'Password & authentication', href: '/profile/security', color: '#94a3b8', bg: 'rgba(100,116,139,.08)', border: 'rgba(100,116,139,.15)' },
+    { icon: Video, title: 'Video Tutorials', desc: 'Learn how to use the app', href: '/video-guides', color: '#f59e0b', bg: 'rgba(245,158,11,.08)', border: 'rgba(245,158,11,.15)' },
+    { icon: Play, title: 'Relaunch Tour', desc: 'Replay the app walkthrough', href: '#tour', color: '#34d399', bg: 'rgba(16,185,129,.08)', border: 'rgba(16,185,129,.15)' },
   ];
 
-  return (
-    <div className="min-h-screen bg-muted/20 py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+  const initials = user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || '?';
 
-        {/* Header Profile Card */}
-        <div className="bg-white rounded-[2rem] p-8 mb-6 border border-zinc-200 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-[#F43F5E] flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-primary/20 flex-shrink-0">
-              {user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || <User size={36} />}
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="max-w-[640px] mx-auto px-5 py-6 pb-20">
+
+        {/* Profile card */}
+        <div className="bg-card border border-border rounded-3xl p-6 mb-5 flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full shrink-0 bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center text-2xl font-black text-white shadow-lg shadow-primary/25">
+              {initials}
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
-                Welcome back, {user?.name || 'User'}
+              <h1 className="text-[18px] font-black text-foreground mb-0.5">
+                {user?.name || 'User'}
               </h1>
-              <p className="text-zinc-500 font-medium mt-1 text-sm">
+              <p className="text-xs font-semibold text-muted-foreground">
                 {user?.email || user?.phoneNumber || 'Manage your account'}
               </p>
               {isVendor && (
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 mt-2">
-                  <Zap className="w-3 h-3" /> NearByBazar Pro
-                </span>
+                <div className="inline-flex items-center gap-1 mt-1.5 bg-primary/10 border border-primary/25 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold text-primary">
+                  <Zap className="w-2.5 h-2.5" /> NearByBazar Pro
+                </div>
               )}
             </div>
           </div>
           <Link
             href="/profile/edit"
-            className="hidden sm:inline-flex px-5 py-2.5 rounded-xl bg-zinc-100 text-zinc-700 text-sm font-semibold hover:bg-zinc-200 transition-colors"
+            className="px-4 py-2 rounded-xl bg-accent text-muted-foreground border border-border text-xs font-bold hover:text-foreground transition-all shrink-0"
           >
-            Edit Profile
+            Edit
           </Link>
         </div>
 
-        {/* Vendor Dashboard Quick Link — shown only to vendors */}
+        {/* Vendor dashboard link */}
         {isVendor && (
           <Link
             href="/vendor-dashboard"
-            className="flex items-center justify-between bg-gradient-to-r from-primary/90 to-purple-600 text-white rounded-2xl p-5 mb-6 shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:brightness-105 transition-all group"
+            className="flex items-center justify-between bg-gradient-to-br from-primary/10 via-accent/5 to-accent/10 border border-primary/20 rounded-[20px] p-4 mb-5 hover:border-primary/30 transition-all text-decoration-none"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center">
-                <LayoutDashboard className="w-6 h-6" />
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center">
+                <LayoutDashboard className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="font-bold text-base">My Pro Dashboard</p>
-                <p className="text-white/70 text-sm mt-0.5">View leads, analytics & manage your profile</p>
+                <p className="text-sm font-black text-foreground mb-0.5">My Pro Dashboard</p>
+                <p className="text-xs text-muted-foreground font-semibold">Leads, analytics & profile</p>
               </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all" />
+            <ChevronRight className="w-4.5 h-4.5 text-muted-foreground" />
           </Link>
         )}
 
-        {/* Settings Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {menuItems.map((item, idx) => (
-            <Link
-              key={idx}
-              href={item.href}
-              className="bg-white rounded-2xl p-6 border border-zinc-200 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group flex items-start justify-between"
-            >
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/5 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors flex-shrink-0">
-                  <item.icon className="w-6 h-6" />
+        {/* Menu grid */}
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          {menuItems.map((item) => {
+            const cardContent = (
+              <div className="bg-card border border-border rounded-2xl p-4 flex items-start gap-3 hover:border-border/80 transition-colors cursor-pointer w-full text-left">
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  flexShrink: 0,
+                  background: item.bg,
+                  border: `1px solid ${item.border}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <item.icon style={{ width: 16, height: 16, color: item.color }} />
                 </div>
-                <div>
-                  <h3 className="font-bold text-base text-zinc-900">{item.title}</h3>
-                  <p className="text-zinc-500 text-sm mt-0.5 leading-relaxed">
-                    {item.desc}
-                  </p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-black text-foreground mb-0.5">{item.title}</p>
+                  <p className="text-[10px] font-semibold text-muted-foreground leading-relaxed">{item.desc}</p>
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-zinc-300 group-hover:text-primary transition-colors flex-shrink-0 mt-1" />
-            </Link>
-          ))}
+            );
+
+            if (item.href === '#tour') {
+              return (
+                <button
+                  key={item.title}
+                  onClick={() => {
+                    localStorage.removeItem('spotlight_tour_done');
+                    window.dispatchEvent(new Event('relaunch_spotlight_tour'));
+                  }}
+                  className="bg-transparent border-none p-0 text-left cursor-pointer w-full"
+                >
+                  {cardContent}
+                </button>
+              );
+            }
+
+            return (
+              <Link key={item.href} href={item.href} className="text-decoration-none">
+                {cardContent}
+              </Link>
+            );
+          })}
         </div>
 
-        {/* Join as Pro Banner — shown only to non-vendors */}
+        {/* Join as Pro — non-vendors */}
         {!isVendor && (
-          <div className="mt-6 relative overflow-hidden bg-zinc-900 rounded-2xl p-8 text-white shadow-xl">
-            {/* Ambient glow */}
-            <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-primary/20 blur-[60px] pointer-events-none" />
-            <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-purple-600/20 blur-[60px] pointer-events-none" />
-
-            <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-yellow-400" />
-                  </div>
-                  <span className="text-xs font-bold text-white/60 uppercase tracking-wider">For Professionals</span>
+          <div className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-accent/5 to-accent/10 border border-primary/20 rounded-[20px] p-6 mb-5">
+            <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-radial-gradient(circle,rgba(16,185,129,.12),transparent 70%) pointer-events-none" />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-2.5">
+                <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                  <Zap className="w-3.5 h-3.5 text-amber-500" />
                 </div>
-                <h3 className="text-2xl font-bold mb-2 leading-tight">
-                  Grow your business<br />with NearByBazar
-                </h3>
-                <p className="text-zinc-400 text-sm max-w-sm leading-relaxed">
-                  List your services, get verified leads from local customers, and manage everything from a dedicated pro dashboard.
-                </p>
-                <div className="flex gap-4 mt-4">
-                  {['Free to join', 'Verified leads', 'Pro badge'].map((b) => (
-                    <div key={b} className="flex items-center gap-1 text-xs font-semibold text-emerald-400">
-                      <span>✓</span> {b}
-                    </div>
-                  ))}
-                </div>
+                <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest">For Professionals</span>
+              </div>
+              <h3 className="text-[18px] font-black text-foreground mb-1.5 leading-tight">
+                Grow your business<br />with NearByBazar
+              </h3>
+              <p className="text-[11px] text-muted-foreground leading-relaxed mb-3.5">
+                List your services, get verified leads from local customers, and manage everything from a dedicated pro dashboard.
+              </p>
+              <div className="flex gap-3 mb-4">
+                {['Free to join', 'Verified leads', 'Pro badge'].map(b => (
+                  <span key={b} className="text-[10px] font-bold text-primary flex items-center gap-1">
+                    ✓ {b}
+                  </span>
+                ))}
               </div>
               <Link
                 href="/vendor/register"
-                className="flex-shrink-0 inline-flex items-center gap-2 bg-white text-zinc-900 px-7 py-3.5 rounded-xl font-bold hover:bg-zinc-100 transition-colors shadow-lg text-sm"
+                className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary/95 text-primary-foreground text-xs font-black px-5 py-2.5 rounded-xl shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all text-decoration-none"
               >
-                <Zap className="w-4 h-4 text-primary" />
-                Join as a Pro →
+                <Zap className="w-3.5 h-3.5" /> Join as a Pro →
               </Link>
             </div>
           </div>
         )}
+
         {/* Danger Zone */}
-        <div className="mt-8 border-t border-destructive/20 pt-8 pb-4">
-          <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-6">
-            <div className="flex items-start justify-between gap-4">
+        <div className="border-t border-destructive/20 pt-6 pb-2">
+          <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-4">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-lg font-bold text-destructive flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5" /> Danger Zone
+                <h3 className="text-sm font-black text-destructive flex items-center gap-1.5 mb-1">
+                  <AlertTriangle className="w-4 h-4" /> Danger Zone
                 </h3>
-                <p className="text-muted-foreground text-sm mt-1">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   Once you delete your account, there is no going back. Please be certain.
                 </p>
               </div>
               <button
                 onClick={() => setIsDeleteModalOpen(true)}
-                className="flex-shrink-0 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-colors px-4 py-2 rounded-xl text-sm font-bold border border-destructive/20"
+                className="shrink-0 px-3.5 py-1.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs font-bold hover:bg-destructive/15 transition-colors cursor-pointer"
               >
-                Delete Account
+                Delete
               </button>
             </div>
           </div>

@@ -1,65 +1,103 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Left Pane - Marketing Visual (Hidden on Mobile) */}
-      <div className="hidden lg:flex w-1/2 relative bg-zinc-900 overflow-hidden flex-col justify-between p-12">
-        {/* Abstract Gradient Background */}
-        <div className="absolute inset-0 opacity-40">
-          <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-gradient-to-br from-purple-600 to-fuchsia-600 blur-[120px]" />
-          <div className="absolute top-[40%] -right-[20%] w-[80%] h-[80%] rounded-full bg-gradient-to-tl from-rose-500 to-orange-500 blur-[120px]" />
-        </div>
-        
-        {/* Glassmorphism Overlay */}
-        <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
+    <div className="flex min-h-screen" style={{ background: '#020617' }}>
+      {/* ── Left marketing panel (lg+) ── */}
+      <div
+        className="hidden lg:flex w-[420px] shrink-0 flex-col justify-between relative overflow-hidden p-12"
+        style={{ background: '#020617', borderRight: '1px solid rgba(255,255,255,.05)' }}
+      >
+        {/* Glow blobs */}
+        <div
+          className="pointer-events-none absolute -top-24 -left-16 w-80 h-80 rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(16,185,129,.28), transparent 70%)' }}
+        />
+        <div
+          className="pointer-events-none absolute bottom-0 -right-16 w-64 h-64 rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(139,92,246,.18), transparent 70%)' }}
+        />
 
-        {/* Content */}
+        {/* Logo */}
         <div className="relative z-10">
-          <Link href="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-semibold text-lg tracking-tight">NearByBazar</span>
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center text-sm"
+              style={{ background: 'linear-gradient(135deg,#10b981,#0d9488)' }}
+            >
+              🎯
+            </div>
+            <span className="text-base font-black text-white">NearByBazar</span>
           </Link>
         </div>
 
-        <div className="relative z-10 space-y-6 max-w-lg">
-          <h1 className="text-5xl font-bold tracking-tight text-white leading-[1.1]">
-            Your city's best services, instantly.
+        {/* Hero copy */}
+        <div className="relative z-10 space-y-5">
+          <h1 className="text-4xl font-black text-white leading-[1.15]">
+            Your city&apos;s best,
+            <br />
+            <span style={{ color: '#34d399' }}>one tap away.</span>
           </h1>
-          <p className="text-lg text-white/70 leading-relaxed font-medium">
-            Join thousands of users finding verified professionals for home repairs, events, and personal care within minutes.
+          <p className="text-sm font-medium leading-relaxed" style={{ color: '#64748b' }}>
+            Discover verified restaurants, salons, doctors &amp; repair services in Haryana — order, book, or call in seconds.
           </p>
-          
-          <div className="flex items-center gap-4 pt-8">
-            <div className="flex -space-x-3">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="w-10 h-10 rounded-full border-2 border-zinc-900 bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-xs font-bold text-white shadow-sm">
-                  {['JD', 'AM', 'SK', 'RK'][i-1]}
+
+          <div className="flex flex-wrap gap-2 pt-2">
+            {[
+              { label: '✅ 2,400+ businesses', bg: 'rgba(16,185,129,.1)', border: 'rgba(16,185,129,.2)', color: '#34d399' },
+              { label: '⭐ 16 verticals',       bg: 'rgba(56,189,248,.1)', border: 'rgba(56,189,248,.2)', color: '#38bdf8' },
+              { label: '₹0 commission',         bg: 'rgba(255,255,255,.05)', border: 'rgba(255,255,255,.06)', color: '#94a3b8' },
+            ].map((chip) => (
+              <span
+                key={chip.label}
+                className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full"
+                style={{ background: chip.bg, border: `1px solid ${chip.border}`, color: chip.color }}
+              >
+                {chip.label}
+              </span>
+            ))}
+          </div>
+
+          {/* Social proof avatars */}
+          <div className="flex items-center gap-3 pt-4">
+            <div className="flex">
+              {[
+                ['RK', 'linear-gradient(135deg,#312e81,#7c3aed)'],
+                ['AS', 'linear-gradient(135deg,#9d174d,#db2777)'],
+                ['PK', 'linear-gradient(135deg,#065f46,#059669)'],
+                ['MV', 'linear-gradient(135deg,#7c2d12,#c2410c)'],
+              ].map(([init, bg], idx) => (
+                <div
+                  key={idx}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black text-white"
+                  style={{ background: bg, border: '2px solid #020617', marginLeft: idx === 0 ? 0 : '-8px' }}
+                >
+                  {init}
                 </div>
               ))}
             </div>
-            <div className="text-sm font-medium text-white/80">
-              <span className="text-white font-bold">10k+</span> users onboarded
-            </div>
+            <p className="text-xs font-medium" style={{ color: '#64748b' }}>
+              <span className="text-white font-bold">10k+</span> users in Haryana
+            </p>
           </div>
         </div>
 
-        {/* Bottom Spacer for vertical center alignment */}
-        <div className="relative z-10 h-6" />
+        <div className="relative z-10 h-4" />
       </div>
 
-      {/* Right Pane - Auth Form */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 lg:p-24 relative">
-        <Link href="/" className="lg:hidden absolute top-6 left-6 inline-flex items-center gap-2 text-foreground/80 hover:text-foreground transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-          <span className="font-semibold tracking-tight">NearByBazar</span>
+      {/* ── Right form panel ── */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 relative" style={{ background: '#0f172a' }}>
+        {/* Mobile back link */}
+        <Link
+          href="/"
+          className="lg:hidden absolute top-5 left-5 inline-flex items-center gap-1.5 text-sm font-semibold"
+          style={{ color: '#64748b' }}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          NearByBazar
         </Link>
-        
+
         <div className="w-full max-w-sm mx-auto">
           {children}
         </div>

@@ -8,6 +8,7 @@ import apiClient from '@/lib/api-client';
 import { toast } from 'sonner';
 
 import { getTemplateComponent } from '@/lib/templateRegistry';
+import DevicePreviewFrame from '@/components/vendor/DevicePreviewFrame';
 
 export default function CatalogManagementPage() {
   const { activeBusinessId } = useAuthStore();
@@ -53,7 +54,9 @@ export default function CatalogManagementPage() {
         }
 
         const catRes = await apiClient.get(`/catalog/business/${activeBusinessId}`);
-        setItems(catRes.data.data);
+        // Dedupe by id so duplicate keys can never render in the grid or preview.
+        const rawItems = catRes.data.data || [];
+        setItems(Array.from(new Map(rawItems.map((i: any) => [i.id, i])).values()));
       } catch (error) {
         console.error(error);
         toast.error('Failed to load catalog items');
@@ -257,8 +260,8 @@ export default function CatalogManagementPage() {
     <div className="max-w-7xl mx-auto space-y-6 pb-20">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black text-zinc-900 tracking-tight">Catalog & Menu</h1>
-          <p className="text-sm font-medium text-zinc-500 mt-1">Manage the services you offer to customers.</p>
+          <h1 className="text-3xl font-black text-white tracking-tight">Catalog & Menu</h1>
+          <p className="text-sm font-medium text-zinc-400 mt-1">Manage the services you offer to customers.</p>
         </div>
         {!isBuilderMode && (
           <div className="flex items-center gap-3">
@@ -563,11 +566,13 @@ export default function CatalogManagementPage() {
             <div className="w-12 h-1 bg-zinc-900 rounded-full"></div>
             <div className="w-2 h-2 rounded-full bg-zinc-900"></div>
           </div>
-          <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-hide relative z-40 bg-zinc-50">
-            {(() => {
-              const PreviewTemplate = getTemplateComponent(businessData?.themeFlavor, businessData?.businessType);
-              return <PreviewTemplate business={previewBiz as any} theme="trust-utility" />;
-            })()}
+          <div className="h-full relative z-40 bg-zinc-50">
+            <DevicePreviewFrame className="scrollbar-hide">
+              {(() => {
+                const PreviewTemplate = getTemplateComponent(businessData?.themeFlavor, businessData?.businessType);
+                return <PreviewTemplate business={previewBiz as any} theme="trust-utility" />;
+              })()}
+            </DevicePreviewFrame>
           </div>
         </div>
       </div>

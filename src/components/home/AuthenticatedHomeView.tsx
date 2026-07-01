@@ -298,13 +298,13 @@ export function AuthenticatedHomeView() {
             </span>
             
             <h1 
-              className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-zinc-900 leading-tight mb-6"
+              className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight mb-6"
               style={{ fontFamily: 'Outfit, sans-serif' }}
             >
               {heroAds[currentAdIndex].title}
             </h1>
             
-            <p className="text-xs sm:text-sm md:text-base text-zinc-500 max-w-2xl mx-auto leading-relaxed font-semibold">
+            <p className="text-xs sm:text-sm md:text-base text-zinc-350 max-w-2xl mx-auto leading-relaxed font-semibold">
               {heroAds[currentAdIndex].subtitle}
             </p>
           </div>
@@ -441,10 +441,10 @@ export function AuthenticatedHomeView() {
         {/* ─── MARKETPLACE VERTICALS GRID ─── */}
         <section className="space-y-6 relative z-10">
           <div className="text-center space-y-1.5">
-            <h2 className="text-xl sm:text-2xl font-black text-zinc-900 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
               {t('verticalsTitle')}
             </h2>
-            <p className="text-xs text-zinc-500 font-bold max-w-md mx-auto">
+            <p className="text-xs text-zinc-400 font-bold max-w-md mx-auto">
               {t('verticalsSubtitle')}
             </p>
           </div>
@@ -500,12 +500,12 @@ export function AuthenticatedHomeView() {
 
         {/* ─── VERIFIED PROS CAROUSEL SHOWCASE ─── */}
         <section className="space-y-6 relative z-10">
-          <div className="flex items-end justify-between border-b border-zinc-200 pb-2">
+          <div className="flex items-end justify-between border-b border-zinc-800 pb-2">
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-zinc-900 tracking-tight">
+              <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">
                 {t('topRatedTitle')}
               </h2>
-              <p className="text-[10px] sm:text-xs text-zinc-500 font-bold">
+              <p className="text-[10px] sm:text-xs text-zinc-400 font-bold">
                 {t('topRatedSubtitle')}
               </p>
             </div>
@@ -563,7 +563,7 @@ export function AuthenticatedHomeView() {
 
         {/* ─── VALUE PROPOSITION CARDS (Zero-Brokerage / Direct Connect) ─── */}
         <section className="max-w-screen-2xl mx-auto px-4 lg:px-0 mb-8">
-          <div className="bg-white border border-zinc-200 rounded-3xl p-8 sm:p-10 relative overflow-hidden shadow-xl shadow-zinc-200/40">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 sm:p-10 relative overflow-hidden shadow-xl">
             <div className="absolute top-0 left-0 w-48 h-48 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
           
           <div className="flex flex-col lg:flex-row items-center gap-10 relative z-10">
@@ -571,32 +571,32 @@ export function AuthenticatedHomeView() {
               <span className="inline-flex bg-primary/10 text-primary text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded border border-primary/20">
                 Local B2B2C Mission
               </span>
-              <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight text-zinc-900">
+              <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight text-white">
                 {t('valueTitle')}
               </h2>
-              <p className="text-zinc-500 text-xs sm:text-sm leading-relaxed max-w-lg mx-auto lg:mx-0 font-medium">
+              <p className="text-zinc-300 text-xs sm:text-sm leading-relaxed max-w-lg mx-auto lg:mx-0 font-medium">
                 Helping small local businesses survive and scale without paying 20-30% commissions on third-party aggregators. Keep 100% of your earnings.
               </p>
               <Link href="/vendor/register" className="inline-block pt-2">
-                <Button className="bg-zinc-900 text-white hover:bg-zinc-800 font-black text-xs h-11 px-6 rounded-xl gap-1">
+                <Button className="bg-primary text-emerald-950 hover:bg-primary/90 font-black text-xs h-11 px-6 rounded-xl gap-1">
                   {t('joinProToday')}
-                  <ArrowRight className="w-4 h-4 text-white" />
+                  <ArrowRight className="w-4 h-4 text-emerald-950" />
                 </Button>
               </Link>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-[1.5] w-full">
               {[
-                { title: t('value1Title'), desc: t('value1Desc'), icon: Phone, color: 'text-emerald-500 bg-emerald-50 border-emerald-100' },
-                { title: t('value2Title'), desc: t('value2Desc'), icon: Zap, color: 'text-rose-500 bg-rose-50 border-rose-100' },
-                { title: t('value3Title'), desc: t('value3Desc'), icon: Users, color: 'text-indigo-500 bg-indigo-50 border-indigo-100' }
+                { title: t('value1Title'), desc: t('value1Desc'), icon: Phone, color: 'text-emerald-400 bg-emerald-950/20 border-emerald-500/10' },
+                { title: t('value2Title'), desc: t('value2Desc'), icon: Zap, color: 'text-amber-400 bg-amber-950/20 border-amber-500/10' },
+                { title: t('value3Title'), desc: t('value3Desc'), icon: Users, color: 'text-indigo-400 bg-indigo-950/20 border-indigo-500/10' }
               ].map((val, idx) => (
-                <div key={idx} className="bg-white border border-zinc-100 rounded-2xl p-5 space-y-3 shadow-sm hover:shadow-md transition-shadow">
+                <div key={idx} className="bg-zinc-950/50 border border-white/5 rounded-2xl p-5 space-y-3 shadow-inner hover:border-white/10 transition-all">
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${val.color}`}>
                     <val.icon className="w-4.5 h-4.5" />
                   </div>
-                  <h3 className="font-extrabold text-sm text-zinc-800">{val.title}</h3>
-                  <p className="text-[11px] text-zinc-500 font-medium leading-relaxed">{val.desc}</p>
+                  <h3 className="font-extrabold text-sm text-white">{val.title}</h3>
+                  <p className="text-[11px] text-zinc-400 font-medium leading-relaxed">{val.desc}</p>
                 </div>
               ))}
             </div>
@@ -609,18 +609,18 @@ export function AuthenticatedHomeView() {
         <section className="relative z-10 max-w-screen-2xl mx-auto mb-20 px-4 lg:px-0">
           {/* Mobile Trust Strip */}
           <div className="lg:hidden flex overflow-x-auto gap-3 pb-3 mb-2 scrollbar-none snap-x px-1">
-            <div className="snap-start shrink-0 flex items-center gap-1.5 bg-white border border-zinc-200 px-3 py-1.5 rounded-full text-[10px] font-bold text-zinc-700 shadow-sm">
+            <div className="snap-start shrink-0 flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-full text-[10px] font-bold text-zinc-300 shadow-sm">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> {language === 'hi' ? '100% सत्यापित प्रो' : '100% Verified Pros'}
             </div>
-            <div className="snap-start shrink-0 flex items-center gap-1.5 bg-white border border-zinc-200 px-3 py-1.5 rounded-full text-[10px] font-bold text-zinc-700 shadow-sm">
+            <div className="snap-start shrink-0 flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-full text-[10px] font-bold text-zinc-300 shadow-sm">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> {language === 'hi' ? 'शून्य कमीशन' : 'Zero Commission'}
             </div>
-            <div className="snap-start shrink-0 flex items-center gap-1.5 bg-white border border-zinc-200 px-3 py-1.5 rounded-full text-[10px] font-bold text-zinc-700 shadow-sm">
+            <div className="snap-start shrink-0 flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-full text-[10px] font-bold text-zinc-300 shadow-sm">
               <Zap className="w-3.5 h-3.5 text-amber-500" /> {language === 'hi' ? 'तुरंत व्हाट्सएप' : 'Instant WhatsApp'}
             </div>
           </div>
 
-          <div className="bg-white border border-zinc-200 rounded-3xl shadow-xl relative overflow-hidden">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl shadow-xl relative overflow-hidden">
             {/* Ambient primary glow */}
             <div className="absolute top-0 right-0 w-36 h-36 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
             
@@ -629,11 +629,11 @@ export function AuthenticatedHomeView() {
               {/* Left Column: The Form (col-span-7) */}
               <div className="p-6 sm:p-8 lg:col-span-7 space-y-6 flex flex-col justify-between">
                 <div className="space-y-1">
-                  <h2 className="text-lg sm:text-xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
+                  <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
                     <Megaphone className="w-5 h-5 text-primary" />
                     {t('rfqTitle')}
                   </h2>
-                  <p className="text-zinc-500 text-xs font-medium">
+                  <p className="text-zinc-400 text-xs font-medium">
                     {t('rfqSubtitle')}
                   </p>
                 </div>
@@ -642,14 +642,14 @@ export function AuthenticatedHomeView() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Your Name */}
                     <div className="space-y-1">
-                      <label className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
+                      <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
                         {language === 'hi' ? 'आपका नाम *' : 'Your Name *'}
                       </label>
                       <Input
                         placeholder="e.g. Rahul Sharma"
                         required
                         maxLength={50}
-                        className="h-11 rounded-xl bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 text-xs focus-visible:ring-primary"
+                        className="h-11 rounded-xl bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500 text-xs focus-visible:ring-primary"
                         value={rfqName}
                         onChange={(e) => setRfqName(e.target.value.substring(0, 50))}
                       />
@@ -657,7 +657,7 @@ export function AuthenticatedHomeView() {
 
                     {/* Phone Number */}
                     <div className="space-y-1">
-                      <label className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
+                      <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
                         {t('rfqPhone')} *
                       </label>
                       <Input
@@ -667,7 +667,7 @@ export function AuthenticatedHomeView() {
                         placeholder="e.g. 9876543210"
                         required
                         maxLength={10}
-                        className="h-11 rounded-xl bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 text-xs focus-visible:ring-primary"
+                        className="h-11 rounded-xl bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500 text-xs focus-visible:ring-primary"
                         value={rfqPhone}
                         onChange={(e) => setRfqPhone(e.target.value.replace(/\D/g, '').substring(0, 10))}
                       />
@@ -677,37 +677,37 @@ export function AuthenticatedHomeView() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Category Dropdown */}
                     <div className="space-y-1">
-                      <label className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
+                      <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
                         {t('rfqCategory')} *
                       </label>
                       <select
                         required
                         value={rfqCategory}
                         onChange={(e) => setRfqCategory(e.target.value)}
-                        className="w-full h-11 px-3 rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-900 text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-medium"
+                        className="w-full h-11 px-3 rounded-xl border border-zinc-800 bg-zinc-950 text-white text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-medium"
                       >
-                        <option value="" className="text-zinc-400">{t('rfqCategory')}...</option>
+                        <option value="" className="bg-zinc-950 text-zinc-500">{t('rfqCategory')}...</option>
                         {(() => {
                           const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_APP_ENV === 'production';
                           if (isProduction) {
                             return (
                               <>
-                                <option value="restaurant-cafe">{language === 'hi' ? 'रेस्टोरेंट और कैफ़े' : 'Restaurant & Cafe'}</option>
-                                <option value="salon-booking">{t('salonBooking')}</option>
+                                <option value="restaurant-cafe" className="bg-zinc-950 text-white">{language === 'hi' ? 'रेस्टोरेंट और कैफ़े' : 'Restaurant & Cafe'}</option>
+                                <option value="salon-booking" className="bg-zinc-950 text-white">{t('salonBooking')}</option>
                               </>
                             );
                           }
                           return (
                             <>
-                              <option value="electrician">{t('electrician')}</option>
-                              <option value="plumber">{t('plumber')}</option>
-                              <option value="ac-repair">{t('ac-repair')}</option>
-                              <option value="carpenter">{t('carpenter')}</option>
-                              <option value="painter">{t('painter')}</option>
-                              <option value="ro-repair">{t('ro-repair')}</option>
-                              <option value="car-rental">{t('carRental')}</option>
-                              <option value="salon-booking">{t('salonBooking')}</option>
-                              <option value="real-estate">{t('realEstate')}</option>
+                              <option value="electrician" className="bg-zinc-950 text-white">{t('electrician')}</option>
+                              <option value="plumber" className="bg-zinc-950 text-white">{t('plumber')}</option>
+                              <option value="ac-repair" className="bg-zinc-950 text-white">{t('ac-repair')}</option>
+                              <option value="carpenter" className="bg-zinc-950 text-white">{t('carpenter')}</option>
+                              <option value="painter" className="bg-zinc-950 text-white">{t('painter')}</option>
+                              <option value="ro-repair" className="bg-zinc-950 text-white">{t('ro-repair')}</option>
+                              <option value="car-rental" className="bg-zinc-950 text-white">{t('carRental')}</option>
+                              <option value="salon-booking" className="bg-zinc-950 text-white">{t('salonBooking')}</option>
+                              <option value="real-estate" className="bg-zinc-950 text-white">{t('realEstate')}</option>
                             </>
                           );
                         })()}
@@ -716,14 +716,14 @@ export function AuthenticatedHomeView() {
 
                     {/* Locality */}
                     <div className="space-y-1">
-                      <label className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
+                      <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
                         {t('rfqLocation')} *
                       </label>
                       <Input
                         placeholder="e.g. Model Town, GT Road"
                         required
                         maxLength={100}
-                        className="h-11 rounded-xl bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400 text-xs focus-visible:ring-primary"
+                        className="h-11 rounded-xl bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500 text-xs focus-visible:ring-primary"
                         value={rfqLocation}
                         onChange={(e) => setRfqLocation(e.target.value.substring(0, 100))}
                       />
@@ -732,21 +732,21 @@ export function AuthenticatedHomeView() {
 
                   {/* Requirement Details */}
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
+                    <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
                       {language === 'hi' ? 'अपनी आवश्यकता का विवरण' : 'Explain what you need'}
                     </label>
                     <textarea
                       rows={2}
                       maxLength={500}
                       placeholder={t('rfqPlaceholder')}
-                      className="w-full p-3.5 rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-900 placeholder-zinc-400 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full p-3.5 rounded-xl border border-zinc-800 bg-zinc-950 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-1 focus:ring-primary font-medium"
                       value={rfqDetails}
                       onChange={(e) => setRfqDetails(e.target.value.substring(0, 500))}
                     />
                   </div>
 
                   {/* Submit Button */}
-                  <div className="sticky bottom-0 z-50 p-4 -mx-6 sm:mx-0 sm:p-0 sm:static bg-white border-t border-zinc-100 sm:border-0 sm:bg-transparent shadow-[0_-10px_30px_rgba(0,0,0,0.05)] sm:shadow-none mt-4">
+                  <div className="sticky bottom-0 z-50 p-4 -mx-6 sm:mx-0 sm:p-0 sm:static bg-zinc-900 border-t border-zinc-800 sm:border-0 sm:bg-transparent shadow-none mt-4">
                     <Button
                       type="submit"
                       disabled={isSubmittingRfq}

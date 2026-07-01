@@ -1,7 +1,12 @@
 'use client';
 
-import VendorDashboardClient from '../VendorDashboardClient';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-export default function VendorCatalogPage() {
-  return <VendorDashboardClient defaultTab="services" />;
+export default function VendorCatalogRedirect() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace('/vendor-dashboard/workspace/management/catalog');
+  }, [router]);
+  return null;
 }

@@ -42,7 +42,7 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-white border-t border-zinc-200 flex items-center justify-around pb-safe shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
+    <nav className="md:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-[#0a1223]/97 backdrop-blur-md border-t border-white/[0.06] flex items-center justify-around pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
       {navItems.map((item) => {
         const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
         return (
@@ -50,12 +50,15 @@ export function BottomNav() {
             key={item.name}
             href={item.href}
             className={cn(
-              "flex flex-col items-center justify-center w-full h-full space-y-0.5 text-zinc-400 hover:text-emerald-600 transition-colors",
-              isActive && "text-emerald-600 font-bold"
+              "flex flex-col items-center justify-center w-full h-full space-y-0.5 text-zinc-400 hover:text-emerald-400 transition-colors relative",
+              isActive && "text-emerald-400 font-bold"
             )}
           >
             <item.icon className={cn("w-5 h-5 transition-transform duration-200", isActive && "scale-110")} />
             <span className="text-[10px] tracking-tight">{item.name}</span>
+            {isActive && (
+              <span className="absolute bottom-1 w-1 h-1 rounded-full bg-emerald-400" />
+            )}
           </Link>
         );
       })}
