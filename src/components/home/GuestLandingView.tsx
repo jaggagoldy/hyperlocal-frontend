@@ -7,6 +7,8 @@ import { useLanguageStore } from '@/store/languageStore';
 import ListingCard from '@/components/directory/ListingCard';
 import apiClient from '@/lib/api-client';
 
+import { DIRECTORY_CATEGORIES } from '@/lib/directory';
+
 interface District {
   name: string;
   slug: string;
@@ -17,21 +19,8 @@ interface StateGroup {
   districts: District[];
 }
 
-const DIRECTORY_CATEGORIES = [
-  { slug: 'restaurant-cafe',      label: 'Restaurant & Cafe', icon: '🍽️', blurb: 'Book tables or discover local dine-in menus' },
-  { slug: 'salon-beauty',         label: 'Salon & Beauty',    icon: '✂️', blurb: 'Salons, spas, hair stylists & grooming pros' },
-  { slug: 'electrician',          label: 'Electrician',       icon: '🔌', blurb: 'Fan repair, home wiring, inverter services' },
-  { slug: 'plumber',              label: 'Plumber',           icon: '🚰', blurb: 'Pipe leaks, taps repair, water filter setup' },
-  { slug: 'ac-repair',            label: 'AC & Appliance',    icon: '❄️', blurb: 'Air conditioner service & appliance repair' },
-  { slug: 'carpenter',            label: 'Carpenter',         icon: '🪚', blurb: 'Furniture assembly, locks & wooden repair' },
-  { slug: 'painter',              label: 'Painter',           icon: '🎨', blurb: 'Interior walls, exterior shine & wallpaper' },
-  { slug: 'ro-repair',            label: 'RO Service',        icon: '💧', blurb: 'Water purifier service & filter change' },
-  { slug: 'car-rental',           label: 'Car Rental',        icon: '🚗', blurb: 'Self-drive cars, local cabs & taxi services' },
-  { slug: 'real-estate',          label: 'Real Estate',       icon: '🏢', blurb: 'Rent, buy or list properties & storefronts' },
-];
-
 const INTENTS = [
-  { label: 'Order Food', cat: 'restaurant-cafe',  icon: Store,      bg: 'rgba(239,68,68,.08)', border: 'rgba(239,68,68,.12)',  color: '#f87171' },
+  { label: 'Order Food', cat: 'food-beverage',  icon: Store,      bg: 'rgba(239,68,68,.08)', border: 'rgba(239,68,68,.12)',  color: '#f87171' },
   { label: 'Book Salon', cat: 'salon-beauty',     icon: Scissors,   bg: 'rgba(139,92,246,.08)', border: 'rgba(139,92,246,.12)', color: '#a78bfa' },
   { label: 'Find Doctor', cat: 'health-medical',   icon: UserPlus,   bg: 'rgba(56,189,248,.08)', border: 'rgba(56,189,248,.12)', color: '#38bdf8' },
   { label: 'Home Repair', cat: 'home-repair',      icon: Zap,        bg: 'rgba(245,158,11,.08)', border: 'rgba(245,158,11,.12)',  color: '#fbbf24' },
@@ -191,6 +180,7 @@ export function GuestLandingView() {
 
           {/* Search bar */}
           <form
+            data-tour="search"
             onSubmit={handleSearchSubmit}
             className="mt-6 flex max-w-2xl items-center gap-2 rounded-2xl p-2 bg-card border border-border shadow-xl focus-within:ring-2 focus-within:ring-primary/20"
           >
@@ -231,7 +221,7 @@ export function GuestLandingView() {
 
       <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8 pb-24">
         {/* ── INTENT SHORTCUTS ── */}
-        <section className="-mt-10 relative z-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <section data-tour="shortcuts" className="-mt-10 relative z-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {INTENTS.map((i) => {
             const Icon = i.icon;
             return (
@@ -273,7 +263,7 @@ export function GuestLandingView() {
         </section>
 
         {/* ── 16-CATEGORY GRID ── */}
-        <section className="mt-12">
+        <section data-tour="categories" className="mt-12">
           <div className="flex items-end justify-between mb-4">
             <div>
               <h2 className="text-xl font-black text-foreground">Browse categories</h2>
@@ -312,7 +302,7 @@ export function GuestLandingView() {
         </section>
 
         {/* ── NEARBY / FEATURED LISTINGS ── */}
-        <section className="mt-12">
+        <section data-tour="listings" className="mt-12">
           <div className="flex items-end justify-between mb-4">
             <h2 className="text-xl font-black text-foreground">Popular in {districtName}</h2>
             <Link href={`/directory?district=${districtSlug}`} className="text-sm font-bold shrink-0 text-primary hover:underline">
