@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import QRCode from 'react-qr-code';
 import { Download, X, Smartphone, Share, Plus, Check } from 'lucide-react';
 
@@ -54,7 +55,7 @@ export default function InstallPWAButton() {
         <span className="hidden sm:inline">Install app</span>
       </button>
 
-      {open && (
+      {open && createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: 'rgba(2,6,23,.7)', backdropFilter: 'blur(4px)' }} onClick={() => setOpen(false)}>
           <div className="w-full max-w-sm rounded-3xl bg-white text-zinc-900 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 shrink-0">
@@ -104,7 +105,8 @@ export default function InstallPWAButton() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
