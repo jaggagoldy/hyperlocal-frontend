@@ -83,7 +83,7 @@ function CartContent({ business, onSuccess }: { business: BusinessProfile; onSuc
       clearCart();
       setShowCheckout(false);
       onSuccess?.();
-      router.push('/profile/orders');
+      router.push('/profile/enquiries');
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Failed to place order. Please try again.');
     } finally {
@@ -193,7 +193,10 @@ function CartContent({ business, onSuccess }: { business: BusinessProfile; onSuc
                 const { isAuthenticated } = useAuthStore.getState();
                 if (!isAuthenticated) {
                   toast.error('Please login to place an order.');
-                  router.push('/login');
+                  // Return the user to this storefront after login so they can finish
+                  // the order (the cart is preserved in the store).
+                  const back = typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/';
+                  router.push(`/login?redirect=${encodeURIComponent(back)}`);
                   return;
                 }
                 setShowCheckout(true);

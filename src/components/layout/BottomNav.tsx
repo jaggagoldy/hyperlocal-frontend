@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, User, Coffee } from 'lucide-react';
+import { Home, Search, User, LayoutGrid } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/translations';
 import { useAuthStore } from '@/store/authStore';
@@ -14,7 +14,7 @@ export function BottomNav() {
 
   const navItems = [
     { name: t('home') || 'Home', href: '/', icon: Home },
-    { name: t('food') || 'Food', href: '/food', icon: Coffee },
+    { name: t('categories') || 'Categories', href: '/directory', icon: LayoutGrid },
     { name: t('explore') || 'Explore', href: '/explore', icon: Search },
     { name: t('profile') || 'Profile', href: '/profile', icon: User },
   ];

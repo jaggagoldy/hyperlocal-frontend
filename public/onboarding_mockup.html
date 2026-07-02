@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NearByBazar — Customer to Vendor Transition Workflow</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Outfit', sans-serif; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-[#0b0f19] text-zinc-100 min-h-screen flex flex-col antialiased">
+
+  <!-- Header -->
+  <header class="border-b border-zinc-800 bg-[#0f172a]/80 backdrop-blur px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center font-black text-neutral-950 text-lg shadow-lg shadow-emerald-500/20">
+        N
+      </div>
+      <div>
+        <span class="text-lg font-black tracking-tight text-white">NearByBazar <span class="text-emerald-400">Onboarding Flow</span></span>
+        <span class="text-[10px] text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded-full ml-2 font-semibold">Transition Mockup</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="toggleDevice('mobile')" id="btn-mobile" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-emerald-600 text-white">Mobile Emulator</button>
+      <button onclick="toggleDevice('desktop')" id="btn-desktop" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-zinc-800 text-zinc-400 hover:text-white">Desktop View</button>
+    </div>
+  </header>
+
+  <!-- Sidebar & Main Workspace -->
+  <div class="flex-1 flex flex-col lg:flex-row">
+    
+    <!-- Sidebar: Selector Controls -->
+    <aside class="w-full lg:w-80 border-r border-zinc-800 bg-[#0d1322] p-6 space-y-6 shrink-0">
+      <div>
+        <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3">Transition Steps</h3>
+        <nav class="space-y-1.5">
+          <button onclick="selectScreen(1)" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold flex items-center justify-between transition-all bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" id="nav-1">
+            <span>1. Customer App (Logged In)</span>
+            <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300">Start</span>
+          </button>
+          <button onclick="selectScreen(2)" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold flex items-center justify-between transition-all text-zinc-400 hover:bg-zinc-800 hover:text-white" id="nav-2">
+            <span>2. Activate Pro Account</span>
+            <span class="text-[10px] bg-emerald-500/25 px-2 py-0.5 rounded text-emerald-300">Form</span>
+          </button>
+          <button onclick="selectScreen(3)" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold flex items-center justify-between transition-all text-zinc-400 hover:bg-zinc-800 hover:text-white" id="nav-3">
+            <span>3. Database Role Upgrade</span>
+            <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded">BE Update</span>
+          </button>
+          <button onclick="selectScreen(4)" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold flex items-center justify-between transition-all text-zinc-400 hover:bg-zinc-800 hover:text-white" id="nav-4">
+            <span>4. Pro Dashboard Checklist</span>
+            <span class="text-[10px] bg-emerald-500/25 px-2 py-0.5 rounded text-emerald-300">Dashboard</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="pt-4 border-t border-zinc-800 space-y-4">
+        <h4 class="text-xs font-bold text-zinc-500 uppercase tracking-widest">Workflow Architecture</h4>
+        <div class="text-xs text-zinc-450 leading-relaxed space-y-2">
+          <p><strong class="text-white">BE Sync:</strong> `POST /business/register` automatically sets `role='vendor'` and `hasVendorProfile=true` on the user table.</p>
+          <p><strong class="text-white">FE Switch:</strong> Frontend does `setAuth(token, updatedUser, 'vendor')` to switch dashboard context instantly.</p>
+          <p><strong class="text-white">Autosave Guide:</strong> Wizard is progressive, meaning they go live minimally on mobile first, then customize items on desktop.</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Content Workspace -->
+    <main class="flex-1 bg-[#0b0e17] flex items-center justify-center p-6 min-h-[700px] overflow-auto">
+      
+      <!-- Device Emulator Wrapper -->
+      <div id="device-container" class="transition-all duration-300 ease-in-out relative border-8 border-zinc-800 rounded-[40px] shadow-2xl bg-neutral-900 overflow-hidden w-[390px] h-[780px]">
+        
+        <!-- Camera Speaker Pill Overlay for Mobile -->
+        <div id="emulator-camera" class="absolute top-2.5 left-1/2 -translate-x-1/2 w-32 h-6 bg-zinc-950 rounded-full z-50 pointer-events-none flex items-center justify-end px-3">
+          <div class="w-1.5 h-1.5 rounded-full bg-blue-900 mr-2"></div>
+          <div class="w-6 h-1 bg-zinc-800 rounded-full"></div>
+        </div>
+
+        <!-- Inner Emulator Display -->
+        <div class="w-full h-full bg-[#0a1223] overflow-y-auto scrollbar-hide pt-12 pb-safe flex flex-col text-zinc-200">
+          
+          <!-- Mockup Header -->
+          <div class="flex items-center justify-between px-4 py-3 bg-[#0d1322]/90 border-b border-zinc-800">
+            <span class="text-xs font-bold text-white flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> NearByBazar
+            </span>
+            <span class="text-[10px] text-zinc-400 font-bold">21:09 PM</span>
+          </div>
+
+          <!-- SCREEN 1: CUSTOMER VIEW -->
+          <div id="screen-1" class="screen-content flex-1 flex flex-col bg-[#020617]">
+            <!-- Customer Navbar -->
+            <div class="px-4 py-3 border-b border-white/[0.05] bg-[#0f172a]/40 flex items-center justify-between">
+              <div class="flex items-center gap-1.5">
+                <div class="w-5 h-5 rounded bg-emerald-500 flex items-center justify-center font-bold text-[10px] text-zinc-950">N</div>
+                <span class="text-[11px] font-black text-white">NearByBazar</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[9px] font-bold text-zinc-400 bg-white/5 px-2 py-0.5 rounded-full">Explore</span>
+                <span class="text-[9px] font-bold text-zinc-300">Ramesh K.</span>
+              </div>
+            </div>
+
+            <!-- Page Body -->
+            <div class="p-5 space-y-4">
+              <div class="bg-gradient-to-br from-indigo-900/30 to-slate-900 border border-white/[0.06] p-5 rounded-2xl space-y-3">
+                <h2 class="text-sm font-black text-white">Welcome back, Ramesh!</h2>
+                <p class="text-[11px] text-zinc-400">Discover top-rated local dining, grocery shops, salons, and home services near you in Hisar.</p>
+              </div>
+
+              <!-- List Business Callout Card -->
+              <div class="bg-gradient-to-br from-emerald-950/20 to-slate-900 border border-emerald-500/25 p-5 rounded-2xl space-y-3 relative overflow-hidden">
+                <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl"></div>
+                <span class="text-[9px] font-black uppercase text-emerald-400 tracking-wider">For Shop Owners</span>
+                <h3 class="text-sm font-black text-white">List your business for free!</h3>
+                <p class="text-[11px] text-zinc-400 leading-relaxed">Reach thousands of customers in Haryana & Punjab. Set up your storefront with 0% commission fees.</p>
+                
+                <button onclick="selectScreen(2)" class="w-full bg-emerald-500 hover:bg-emerald-600 text-neutral-950 font-black py-2.5 rounded-xl text-xs transition-all shadow-md">
+                  List Your Business Now →
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SCREEN 2: ACTIVATE PRO ACCOUNT -->
+          <div id="screen-2" class="screen-content hidden flex-1 p-5 space-y-5 bg-[#080d1a]">
+            <div>
+              <span class="text-[9px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-950/45 px-2.5 py-0.5 rounded-full border border-emerald-800/40">Activate Pro Account</span>
+              <h2 class="text-xl font-black text-white mt-2">Activate Partner Profile</h2>
+              <p class="text-[11px] text-zinc-400 mt-0.5">Upgrade your account to list your business. Keep your customer login active.</p>
+            </div>
+
+            <div class="space-y-3">
+              <div class="space-y-1">
+                <label class="text-[9px] font-bold uppercase tracking-wider text-zinc-400">Business Name *</label>
+                <input type="text" value="Ramesh Sweets & Bakery" class="w-full h-10 px-3.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-semibold text-white outline-none">
+              </div>
+              <div class="space-y-1">
+                <label class="text-[9px] font-bold uppercase tracking-wider text-zinc-400">Business Phone (WhatsApp preferred) *</label>
+                <input type="tel" value="9876543210" class="w-full h-10 px-3.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-semibold text-white outline-none">
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                  <label class="text-[9px] font-bold uppercase tracking-wider text-zinc-400">Vertical Category *</label>
+                  <select class="w-full h-10 px-3.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-semibold text-white outline-none">
+                    <option>Food & Beverage</option>
+                    <option>Grocery & Daily Needs</option>
+                    <option>Salon & Beauty</option>
+                    <option>Home & Repair</option>
+                  </select>
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[9px] font-bold uppercase tracking-wider text-zinc-400">District *</label>
+                  <select class="w-full h-10 px-3.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-semibold text-white outline-none">
+                    <option>Hisar</option>
+                    <option>Fatehabad</option>
+                    <option>Gurugram</option>
+                    <option>Karnal</option>
+                  </select>
+                </div>
+              </div>
+              <div class="space-y-1">
+                <label class="text-[9px] font-bold uppercase tracking-wider text-zinc-400">Storefront Address</label>
+                <input type="text" placeholder="Shop No. 4, Main Bazar Road" class="w-full h-10 px-3.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-semibold text-white outline-none">
+              </div>
+
+              <button onclick="selectScreen(3)" class="w-full bg-emerald-500 hover:bg-emerald-600 text-neutral-950 font-black py-3 rounded-xl text-xs transition-all shadow-md mt-4">
+                Register Storefront & Upgrade Account
+              </button>
+            </div>
+          </div>
+
+          <!-- SCREEN 3: DATABASE ROLE UPGRADE LOADER -->
+          <div id="screen-3" class="screen-content hidden flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4 bg-[#080d1a]">
+            <!-- Animated Spinner Representation -->
+            <div class="relative w-14 h-14">
+              <div class="absolute inset-0 rounded-full border-4 border-emerald-950"></div>
+              <div class="absolute inset-0 rounded-full border-4 border-t-emerald-500 animate-spin"></div>
+            </div>
+            
+            <div class="space-y-1">
+              <h3 class="text-sm font-black text-white">Upgrading Profile...</h3>
+              <p class="text-[10px] text-zinc-400">Executing sequence transaction:</p>
+            </div>
+
+            <!-- Transaction checklist -->
+            <div class="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800 text-left font-mono text-[9px] space-y-1 w-full max-w-xs text-zinc-400">
+              <div class="text-emerald-400">✓ POST /business/register -> Created</div>
+              <div class="text-emerald-400">✓ DB UPDATE: role = 'vendor'</div>
+              <div class="text-emerald-400">✓ DB UPDATE: hasVendorProfile = true</div>
+              <div class="text-emerald-400">✓ GET /auth/me -> Refreshed context</div>
+              <div class="text-zinc-500 animate-pulse">⚙ Redirecting to Vendor Dashboard...</div>
+            </div>
+
+            <button onclick="selectScreen(4)" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-[10px] font-bold text-white rounded-lg">Skip to Dashboard</button>
+          </div>
+
+          <!-- SCREEN 4: VENDOR DASHBOARD CHECKLIST -->
+          <div id="screen-4" class="screen-content hidden flex-1 flex flex-col bg-[#070b14]">
+            
+            <!-- Vendor App Header -->
+            <div class="px-4 py-3 border-b border-zinc-800 bg-[#0d1322]/85 flex items-center justify-between">
+              <div class="flex items-center gap-1.5">
+                <div class="w-5 h-5 rounded bg-emerald-500 flex items-center justify-center font-bold text-[10px] text-zinc-950">N</div>
+                <span class="text-[11px] font-black text-white">Biz Dashboard</span>
+              </div>
+              <button onclick="selectScreen(1)" class="text-[9px] font-bold text-zinc-400 hover:text-white bg-zinc-800 px-2 py-0.5 rounded">
+                Switch to User Mode
+              </button>
+            </div>
+
+            <!-- Page content -->
+            <div class="p-4 space-y-4">
+              <!-- Welcome -->
+              <div>
+                <h3 class="text-xs font-bold text-zinc-400">Welcome, Ramesh Sweets</h3>
+                <h2 class="text-base font-black text-white mt-0.5">Your Business is LIVE! 🎉</h2>
+              </div>
+
+              <!-- Progressive checklist card -->
+              <div class="bg-gradient-to-br from-[#0c1b18] to-slate-900 border border-emerald-500/20 p-4 rounded-xl space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-emerald-400">Storefront Completeness</span>
+                  <span class="text-[10px] font-bold text-emerald-400">17% Done</span>
+                </div>
+                <div class="w-full h-1 bg-zinc-850 rounded-full overflow-hidden">
+                  <div class="w-[17%] h-full bg-emerald-500"></div>
+                </div>
+                
+                <div class="space-y-2 pt-2 border-t border-white/[0.04]">
+                  <div class="flex items-center gap-2 text-[10px]">
+                    <span class="text-emerald-400 font-bold">✓</span>
+                    <span class="text-zinc-300">Core business profile created</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-[10px]">
+                    <span class="text-zinc-600 font-bold">□</span>
+                    <span class="text-zinc-400">Upload business logo/banners</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-[10px]">
+                    <span class="text-zinc-600 font-bold">□</span>
+                    <span class="text-zinc-400">Add 3-5 items to service catalog</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-[10px]">
+                    <span class="text-zinc-600 font-bold">□</span>
+                    <span class="text-zinc-400">Configure hours & contact slots</span>
+                  </div>
+                </div>
+
+                <button onclick="alert('Opening wizard settings...')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-[10px] transition-all">
+                  Complete Storefront Wizard
+                </button>
+              </div>
+
+              <!-- Quick stats -->
+              <div class="grid grid-cols-2 gap-3">
+                <div class="bg-[#0f172a]/40 p-3 rounded-lg border border-zinc-800">
+                  <span class="text-[9px] font-bold text-zinc-500 uppercase">WhatsApp Views</span>
+                  <p class="text-base font-black text-white mt-0.5">0</p>
+                </div>
+                <div class="bg-[#0f172a]/40 p-3 rounded-lg border border-zinc-800">
+                  <span class="text-[9px] font-bold text-zinc-500 uppercase">Leads Generated</span>
+                  <p class="text-base font-black text-white mt-0.5">0</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-zinc-800 bg-[#0d1322] px-6 py-4 text-center text-xs text-zinc-500 font-semibold">
+    NearByBazar Onboarding Flow Mockups
+  </footer>
+
+  <script>
+    function toggleDevice(mode) {
+      const container = document.getElementById('device-container');
+      const camera = document.getElementById('emulator-camera');
+      const btnMobile = document.getElementById('btn-mobile');
+      const btnDesktop = document.getElementById('btn-desktop');
+
+      if (mode === 'mobile') {
+        container.style.width = '390px';
+        container.style.height = '780px';
+        container.style.borderRadius = '40px';
+        container.style.borderWidth = '8px';
+        camera.style.display = 'flex';
+        btnMobile.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-emerald-600 text-white";
+        btnDesktop.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-zinc-800 text-zinc-400 hover:text-white";
+      } else {
+        container.style.width = '100%';
+        container.style.height = '85vh';
+        container.style.borderRadius = '0px';
+        container.style.borderWidth = '0px';
+        camera.style.display = 'none';
+        btnMobile.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-zinc-800 text-zinc-400 hover:text-white";
+        btnDesktop.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-emerald-600 text-white";
+      }
+    }
+
+    function selectScreen(index) {
+      // Hide all screen contents
+      document.querySelectorAll('.screen-content').forEach(s => s.classList.add('hidden'));
+
+      // Show requested
+      document.getElementById(`screen-${index}`).classList.remove('hidden');
+
+      // Update sidebar nav highlights
+      for (let i = 1; i <= 4; i++) {
+        const btn = document.getElementById(`nav-${i}`);
+        if (i === index) {
+          btn.className = "w-full text-left px-4 py-3 rounded-xl text-sm font-semibold flex items-center justify-between transition-all bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+        } else {
+          btn.className = "w-full text-left px-4 py-3 rounded-xl text-sm font-semibold flex items-center justify-between transition-all text-zinc-400 hover:bg-zinc-800 hover:text-white";
+        }
+      }
+    }
+  </script>
+</body>
+</html>

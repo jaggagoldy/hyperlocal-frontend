@@ -25,8 +25,10 @@ export function TutorialModal() {
   const { setCity } = useSearchStore();
 
   useEffect(() => {
-    const seen = localStorage.getItem('tutorial_seen');
-    if (!seen) {
+    // Only greet BRAND-NEW signups (the register flow sets this flag), never
+    // anonymous first-time visitors.
+    const pending = localStorage.getItem('nbb_show_onboarding');
+    if (pending && !localStorage.getItem('tutorial_seen')) {
       const t = setTimeout(() => setIsOpen(true), 1200);
       return () => clearTimeout(t);
     }
@@ -37,6 +39,7 @@ export function TutorialModal() {
     setCity(selectedCity);
     localStorage.setItem('tutorial_seen', 'true');
     localStorage.setItem('spotlight_tour_done', 'true'); // don't ambush a user who skipped
+    localStorage.removeItem('nbb_show_onboarding');
     setIsOpen(false);
   };
 
@@ -44,6 +47,7 @@ export function TutorialModal() {
   const handleComplete = () => {
     setCity(selectedCity);
     localStorage.setItem('tutorial_seen', 'true');
+    localStorage.removeItem('nbb_show_onboarding');
     setIsOpen(false);
     window.dispatchEvent(new Event('tutorial_modal_closed'));
   };
@@ -208,20 +212,7 @@ export function TutorialModal() {
               <span className="text-white font-bold">{CITIES.find(c => c.slug === selectedCity)?.name ?? 'your city'}</span>.
               {' '}Start exploring businesses around you.
             </p>
-            {/* Video tour CTA */}
-            <a
-              href="/video-guides"
-              onClick={handleSkip}
-              className="w-full p-4 rounded-2xl flex items-center gap-3 mb-4 text-left active:scale-[.98] transition-transform"
-              style={{ background: 'rgba(245,158,11,.06)', border: '1px solid rgba(245,158,11,.2)', textDecoration: 'none' }}
-            >
-              <span className="text-[20px] shrink-0">🎬</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-black text-white mb-0.5">Take a 2-min video tour</p>
-                <p className="text-[11px] leading-snug" style={{ color: '#64748b' }}>See how to order, book, and discover deals fast.</p>
-              </div>
-              <div className="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-black whitespace-nowrap" style={{ background: 'rgba(245,158,11,.15)', border: '1px solid rgba(245,158,11,.25)', color: '#f59e0b' }}>Watch →</div>
-            </a>
+            {/* Video tour CTA intentionally omitted until we publish a video. */}
             {/* Social proof */}
             <div className="flex items-center gap-2.5">
               <div className="flex">

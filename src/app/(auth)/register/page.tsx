@@ -84,10 +84,12 @@ export function RegisterForm() {
       toast.success('Account created successfully!');
       if (role === 'vendor') {
         router.push('/vendor/register');
-      } else if (redirect) {
-        router.push(redirect);
       } else {
-        router.push('/profile');
+        // First-time consumer signup: flag the onboarding tour (shown only to
+        // brand-new signups, never to anonymous visitors). If they were mid-flow
+        // (redirect), honour it; otherwise land on home so the tour can run.
+        localStorage.setItem('nbb_show_onboarding', '1');
+        router.push(redirect || '/');
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Registration failed. Try again.');

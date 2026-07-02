@@ -30,7 +30,7 @@ const NAV_CATEGORIES = [
 ];
 
 export function Navbar() {
-  const { isAuthenticated, logout, user, activeContext, updateToken } = useAuthStore();
+  const { isAuthenticated, logout, user, activeContext, token, setAuth } = useAuthStore();
   const { language, setLanguage } = useLanguageStore();
   const { selectedCity } = useSearchStore();
   const { theme, setTheme } = useThemeStore();
@@ -99,25 +99,15 @@ export function Navbar() {
     return null;
   }
 
-  const handleContextSwitch = async () => {
+  const handleContextSwitch = () => {
+    // Single-role model: a user with a vendor profile can use both sides, so
+    // switching is pure navigation (no token swap). We flip the local activeContext
+    // for the UI and route to the matching home.
     const targetContext = isProMode ? 'customer' : 'vendor';
-    setIsSwitching(true);
     setProfileMenuOpen(false);
-    try {
-      const res = await apiClient.post('/auth/switch-context', { targetContext });
-      const { token, user: newUser } = res.data.data;
-      updateToken(token, newUser);
-      toast.success(
-        targetContext === 'vendor'
-          ? '🔧 Switched to Vendor Dashboard'
-          : '🏠 Switched to Consumer App'
-      );
-      router.push(targetContext === 'vendor' ? '/vendor-dashboard' : '/explore');
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Could not switch context');
-    } finally {
-      setIsSwitching(false);
-    }
+    if (token && user) setAuth(token, user, targetContext);
+    toast.success(targetContext === 'vendor' ? '🔧 Switched to Business Dashboard' : '🏠 Switched to Customer App');
+    router.push(targetContext === 'vendor' ? '/vendor-dashboard/workspace' : '/');
   };
 
   const navLinkClass = (active: boolean) =>
@@ -243,7 +233,8 @@ export function Navbar() {
             variant="ghost" 
             size="icon" 
             onClick={() => setTheme(theme === 'dark' ? 'vibrant' : 'dark')}
-            className="hidden md:flex rounded-xl border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground h-10 w-10"
+            aria-label="Toggle theme"
+            className="flex rounded-xl border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground h-10 w-10"
           >
             {theme === 'vibrant' ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4" />}
           </Button>

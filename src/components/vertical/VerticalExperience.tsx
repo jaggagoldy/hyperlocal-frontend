@@ -51,8 +51,11 @@ export default function VerticalExperience({ config, districtSlug }: VerticalExp
   const debouncedQuery = useDebounce(localQuery, 450);
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  // Explicit "browse everything" flag for the "See all" affordance (a trimmed
+  // query can't trigger browse mode on its own).
+  const [forceBrowse, setForceBrowse] = useState(false);
 
-  const browseMode = Boolean(debouncedQuery.trim() || activeQuickFilter);
+  const browseMode = Boolean(debouncedQuery.trim() || activeQuickFilter || forceBrowse);
 
   // Browse results
   const [items, setItems] = useState<Listing[]>([]);
@@ -181,7 +184,7 @@ export default function VerticalExperience({ config, districtSlug }: VerticalExp
     if (collection.params?.minRating) setFilters({ minRating: String(collection.params.minRating) });
     if (collection.params?.openNow) setFilters({ openNow: true });
     setActiveQuickFilter(collection.id === 'pure-veg' ? 'veg' : null);
-    setLocalQuery(' ');
+    setForceBrowse(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -189,6 +192,7 @@ export default function VerticalExperience({ config, districtSlug }: VerticalExp
     setLocalQuery('');
     setActiveQuickFilter(null);
     setVerifiedOnly(false);
+    setForceBrowse(false);
     setFilters({ minRating: '', openNow: false });
   };
 

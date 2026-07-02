@@ -43,6 +43,13 @@ export function GuestLandingView() {
   const district = allDistricts.find((d) => d.slug === districtSlug);
   const districtName = district?.name || 'Hisar';
 
+  // Lightweight bilingual copy so the EN/हिन्दी switch visibly changes the homepage.
+  const hi = language === 'hi';
+  const INTENT_HI: Record<string, string> = {
+    'food-beverage': 'खाना ऑर्डर करें', 'salon-beauty': 'सैलून बुक करें',
+    'health-medical': 'डॉक्टर खोजें', 'home-repair': 'घर की मरम्मत',
+  };
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('nbb-district');
@@ -162,7 +169,7 @@ export function GuestLandingView() {
           </label>
 
           <h1 className="mt-6 max-w-2xl text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tight">
-            Everything local in{' '}
+            {hi ? '' : 'Everything local in '}
             <span
               style={{
                 background: 'linear-gradient(135deg,#10b981,#34d399)',
@@ -172,10 +179,12 @@ export function GuestLandingView() {
             >
               {districtName}
             </span>
-            ,<br className="hidden sm:block" /> one tap away.
+            {hi ? ' में सब कुछ,' : ','}<br className="hidden sm:block" /> {hi ? 'एक टैप दूर।' : 'one tap away.'}
           </h1>
           <p className="mt-3 max-w-xl text-sm sm:text-base font-medium text-muted-foreground">
-            Discover, call, book or order from trusted businesses near you — restaurants, salons, doctors, repairs &amp; more.
+            {hi
+              ? 'अपने आस-पास के भरोसेमंद व्यवसायों से खोजें, कॉल करें, बुक करें या ऑर्डर करें — रेस्टोरेंट, सैलून, डॉक्टर, मरम्मत और भी बहुत कुछ।'
+              : 'Discover, call, book or order from trusted businesses near you — restaurants, salons, doctors, repairs & more.'}
           </p>
 
           {/* Search bar */}
@@ -190,7 +199,7 @@ export function GuestLandingView() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Search in ${districtName}…`}
+                placeholder={hi ? `${districtName} में खोजें…` : `Search in ${districtName}…`}
                 className="h-10 w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground outline-none"
               />
             </div>
@@ -198,7 +207,7 @@ export function GuestLandingView() {
               type="submit"
               className="h-10 shrink-0 rounded-xl px-5 text-sm font-black bg-primary text-primary-foreground transition-all hover:opacity-90 active:scale-[0.97]"
             >
-              Search
+              {hi ? 'खोजें' : 'Search'}
             </button>
           </form>
 
@@ -206,14 +215,14 @@ export function GuestLandingView() {
           <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-bold text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <Zap className="h-3.5 w-3.5 text-primary" />
-              Instant WhatsApp connect
+              {hi ? 'तुरंत WhatsApp कनेक्ट' : 'Instant WhatsApp connect'}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-              Verified local businesses
+              {hi ? 'सत्यापित स्थानीय व्यवसाय' : 'Verified local businesses'}
             </span>
             <span className="inline-flex items-center gap-1.5 text-primary">
-              ₹0 commission
+              {hi ? '₹0 कमीशन' : '₹0 commission'}
             </span>
           </div>
         </div>
@@ -236,7 +245,7 @@ export function GuestLandingView() {
                 >
                   <Icon className="h-5 w-5" style={{ color: i.color }} />
                 </span>
-                <span className="text-sm font-extrabold leading-tight text-foreground">{i.label}</span>
+                <span className="text-sm font-extrabold leading-tight text-foreground">{hi ? (INTENT_HI[i.cat] || i.label) : i.label}</span>
               </Link>
             );
           })}
@@ -266,16 +275,16 @@ export function GuestLandingView() {
         <section data-tour="categories" className="mt-12">
           <div className="flex items-end justify-between mb-4">
             <div>
-              <h2 className="text-xl font-black text-foreground">Browse categories</h2>
+              <h2 className="text-xl font-black text-foreground">{hi ? 'श्रेणियाँ देखें' : 'Browse categories'}</h2>
               <p className="text-sm font-medium mt-0.5 text-muted-foreground">
-                Explore {districtName} across 16 verticals.
+                {hi ? `${districtName} में 16 श्रेणियों में देखें।` : `Explore ${districtName} across 16 verticals.`}
               </p>
             </div>
             <Link
               href={`/directory?district=${districtSlug}`}
               className="hidden sm:flex items-center gap-1 text-sm font-bold text-primary hover:underline"
             >
-              All <ArrowRight className="h-4 w-4" />
+              {hi ? 'सभी' : 'All'} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -296,7 +305,7 @@ export function GuestLandingView() {
               onClick={() => setIsCategoriesExpanded(prev => !prev)}
               className="inline-flex items-center gap-2 rounded-xl bg-card border border-border hover:bg-accent text-foreground font-bold text-xs px-5 py-2.5 transition-all cursor-pointer"
             >
-              {isCategoriesExpanded ? 'Show fewer categories ↑' : 'Show all 16 categories ↓'}
+              {isCategoriesExpanded ? (hi ? 'कम श्रेणियाँ दिखाएँ ↑' : 'Show fewer categories ↑') : (hi ? 'सभी 16 श्रेणियाँ दिखाएँ ↓' : 'Show all 16 categories ↓')}
             </button>
           </div>
         </section>
@@ -304,9 +313,9 @@ export function GuestLandingView() {
         {/* ── NEARBY / FEATURED LISTINGS ── */}
         <section data-tour="listings" className="mt-12">
           <div className="flex items-end justify-between mb-4">
-            <h2 className="text-xl font-black text-foreground">Popular in {districtName}</h2>
+            <h2 className="text-xl font-black text-foreground">{hi ? `${districtName} में लोकप्रिय` : `Popular in ${districtName}`}</h2>
             <Link href={`/directory?district=${districtSlug}`} className="text-sm font-bold shrink-0 text-primary hover:underline">
-              See all
+              {hi ? 'सभी देखें' : 'See all'}
             </Link>
           </div>
 
@@ -344,9 +353,9 @@ export function GuestLandingView() {
           >
             <Store className="h-8 w-8 shrink-0 text-primary" />
             <div>
-              <p className="font-extrabold text-foreground">List your business — free</p>
+              <p className="font-extrabold text-foreground">{hi ? 'अपना व्यवसाय सूचीबद्ध करें — मुफ़्त' : 'List your business — free'}</p>
               <p className="text-xs font-medium mt-0.5 text-muted-foreground">
-                Get discovered by customers nearby in minutes.
+                {hi ? 'मिनटों में आस-पास के ग्राहकों तक पहुँचें।' : 'Get discovered by customers nearby in minutes.'}
               </p>
             </div>
           </Link>
@@ -356,9 +365,9 @@ export function GuestLandingView() {
           >
             <Smartphone className="h-8 w-8 shrink-0 text-violet-400" />
             <div>
-              <p className="font-extrabold text-foreground">Get your own ordering app</p>
+              <p className="font-extrabold text-foreground">{hi ? 'अपना खुद का ऑर्डरिंग ऐप पाएँ' : 'Get your own ordering app'}</p>
               <p className="text-xs font-medium mt-0.5 text-muted-foreground">
-                Upgrade your listing into a storefront &amp; PWA.
+                {hi ? 'अपनी लिस्टिंग को स्टोरफ्रंट और PWA में बदलें।' : 'Upgrade your listing into a storefront & PWA.'}
               </p>
             </div>
           </Link>
