@@ -279,11 +279,6 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               Online · Taking Orders
             </div>
-            <button className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors hover:bg-zinc-800"
-              style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: '#9ca3af' }}>
-              <Megaphone className="w-3.5 h-3.5" />
-              Announce
-            </button>
             <button
               onClick={() => router.push('/vendor-dashboard/workspace/management/orders')}
               className="p-2 rounded-lg hover:bg-zinc-800 transition-colors relative"
