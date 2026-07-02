@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 export default async function DirectoryHubPage({
   searchParams,
 }: {
-  searchParams: Promise<{ district?: string }> | { district?: string };
+  searchParams: Promise<{ district?: string }>;
 }) {
   const sp = await searchParams;
   const states = await fetchRegions();

@@ -337,7 +337,7 @@ export function GuestLandingView() {
           ) : (
             <div className="rounded-2xl p-8 text-center text-sm font-medium border-2 border-dashed border-border bg-card text-muted-foreground">
               No listings in {districtName} yet — try another district, or{' '}
-              <Link href="/vendor/register" className="font-bold text-primary hover:underline">
+              <Link href="/business" className="font-bold text-primary hover:underline">
                 list your business
               </Link>
               .
@@ -348,7 +348,7 @@ export function GuestLandingView() {
         {/* ── DUAL VALUE STRIP ── */}
         <section className="mt-12 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Link
-            href="/vendor/register"
+            href="/business"
             className="flex items-center gap-3 rounded-2xl p-4 transition-all hover:-translate-y-0.5 bg-primary/5 border border-primary/20 hover:border-primary/45"
           >
             <Store className="h-8 w-8 shrink-0 text-primary" />
@@ -360,7 +360,7 @@ export function GuestLandingView() {
             </div>
           </Link>
           <Link
-            href="/vendor/register"
+            href="/business"
             className="flex items-center gap-3 rounded-2xl p-4 transition-all hover:-translate-y-0.5 bg-card border border-border hover:border-border/80"
           >
             <Smartphone className="h-8 w-8 shrink-0 text-violet-400" />

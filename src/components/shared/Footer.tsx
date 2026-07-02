@@ -138,7 +138,7 @@ export function Footer() {
           </ul>
 
           <div className="pt-2">
-            <Link href="/vendor/register">
+            <Link href="/business">
               <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black text-xs h-10 rounded-lg shadow-md shadow-emerald-500/10 transition-all active:scale-97">
                 Register Your Shop
               </Button>
