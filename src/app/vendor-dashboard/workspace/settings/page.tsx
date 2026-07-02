@@ -408,7 +408,7 @@ export default function WorkspaceSettingsPage() {
               </div>
             </div>
             
-            {/* App Icon Preview */}
+            {/* App Icon — configurable */}
             <div className="bg-black/40 p-4 border-t border-zinc-800/50 flex items-center gap-4">
                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-900/50 flex-shrink-0 overflow-hidden border-2 border-emerald-400">
                  {mediaPreview ? (
@@ -417,10 +417,18 @@ export default function WorkspaceSettingsPage() {
                    <span className="text-white font-black text-xl">{business.businessName?.charAt(0)}</span>
                  )}
                </div>
-               <div>
-                 <h4 className="text-white font-bold text-sm leading-tight">App Icon Preview</h4>
-                 <p className="text-zinc-500 text-xs mt-0.5">This will appear on their home screen.</p>
+               <div className="flex-1 min-w-0">
+                 <h4 className="text-white font-bold text-sm leading-tight">App Icon</h4>
+                 <p className="text-zinc-500 text-xs mt-0.5">Shown when customers install your app. Use a square logo — remember to Save.</p>
                </div>
+               <label className="shrink-0 cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 transition-colors">
+                 <FileUp className="w-3.5 h-3.5" />
+                 {mediaPreview ? 'Change' : 'Upload'}
+                 <input type="file" accept="image/jpeg, image/png, image/webp" className="hidden" onChange={(e) => {
+                   const file = e.target.files?.[0];
+                   if (file) { setMediaFile(file); setMediaPreview(URL.createObjectURL(file)); }
+                 }} />
+               </label>
             </div>
           </div>
         </div>
