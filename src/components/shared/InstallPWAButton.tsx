@@ -56,8 +56,8 @@ export default function InstallPWAButton() {
 
       {open && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: 'rgba(2,6,23,.7)', backdropFilter: 'blur(4px)' }} onClick={() => setOpen(false)}>
-          <div className="w-full max-w-sm rounded-3xl bg-white text-zinc-900 overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
+          <div className="w-full max-w-sm rounded-3xl bg-white text-zinc-900 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center"><Smartphone className="w-4 h-4" /></span>
                 <span className="font-black text-base">Install NearByBazar</span>
@@ -65,7 +65,7 @@ export default function InstallPWAButton() {
               <button onClick={() => setOpen(false)} aria-label="Close" className="p-1.5 rounded-full hover:bg-zinc-100 text-zinc-500"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="p-5">
+            <div className="p-5 overflow-y-auto">
               {deferred && (
                 <button onClick={nativeInstall} className="w-full h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm flex items-center justify-center gap-2 mb-5 active:scale-[0.98] transition-all">
                   <Download className="w-4 h-4" /> Install now
@@ -74,8 +74,12 @@ export default function InstallPWAButton() {
 
               <div className="flex flex-col items-center text-center">
                 <p className="text-sm font-bold text-zinc-800 mb-3">Get it on your phone</p>
-                <div className="p-3 bg-white rounded-2xl border border-zinc-200">
-                  <QRCode value={url || 'https://nearbybazar.in'} size={148} />
+                <div className="p-3 bg-white rounded-2xl border border-zinc-200 w-40 h-40 flex items-center justify-center">
+                  <QRCode 
+                    value={url || 'https://nearbybazar.in'} 
+                    size={136} 
+                    style={{ height: 'auto', maxWidth: '100%', width: '100%' }}
+                  />
                 </div>
                 <p className="text-xs text-zinc-500 mt-3 max-w-[240px]">Scan with your phone camera to open NearByBazar, then add it to your home screen.</p>
               </div>
