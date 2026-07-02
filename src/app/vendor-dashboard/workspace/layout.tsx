@@ -8,6 +8,7 @@ import {
   LayoutDashboard, ShoppingBag, Package, BarChart3, Star, Settings,
   HelpCircle, LogOut, ChevronDown, Plus, Bell, Megaphone, Menu, X
 } from 'lucide-react';
+import VendorTour from '@/components/vendor/VendorTour';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/vendor-dashboard/workspace', icon: LayoutDashboard, section: 'OVERVIEW' },
@@ -301,6 +302,8 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
+
+      <VendorTour />
     </div>
   );
 }

@@ -95,6 +95,8 @@ export default function AddBusinessFlow() {
       } else if (token && user) {
         setAuth(token, { ...user, hasVendorProfile: true, role: 'vendor', hasCustomerProfile: (user as any).hasCustomerProfile ?? true } as any, 'vendor');
       }
+      // Trigger the one-time vendor guided tour on their first dashboard visit.
+      localStorage.setItem('nbb_vendor_tour', '1');
       setSuccess(true);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Could not create your business. Please try again.');

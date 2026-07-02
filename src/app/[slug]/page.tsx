@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { cache } from 'react';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTemplateComponent, getTemplateArchetype, TEMPLATE_METADATA } from '@/lib/templateRegistry';
 import { ReviewSection } from '@/components/vendor/ReviewSection';
@@ -6,9 +8,28 @@ import TrackProfileView from '@/components/TrackProfileView';
 
 export const dynamic = 'force-dynamic';
 
-// This function simulates fetching business data from your backend.
-// In a real implementation, you would call your API.
-async function getBusinessBySlug(slug: string) {
+const storefrontLogo = (business: any): string | undefined =>
+  business?.media?.find((m: any) => m.type === 'profile_image')?.secureUrl;
+
+// Per-vendor PWA metadata so installing a storefront shows THAT business's name
+// and logo (not the generic NearByBazar app). Cached so metadata + page share one fetch.
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  if (slug.includes('.')) return {};
+  const business = await getBusinessBySlug(slug);
+  if (!business) return {};
+  const logo = storefrontLogo(business);
+  return {
+    title: `${business.businessName} — NearByBazar`,
+    description: business.metaData?.aboutText || `Order & book from ${business.businessName} on NearByBazar.`,
+    manifest: `/${slug}/manifest.webmanifest`,
+    appleWebApp: { capable: true, statusBarStyle: 'default', title: business.businessName },
+    ...(logo ? { icons: { icon: logo, apple: logo } } : {}),
+  };
+}
+
+// This function fetches business data from the backend.
+const getBusinessBySlug = cache(async (slug: string) => {
   const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1'}/business/${slug}`;
   // The backend (Render free tier) can cold-start slowly, so allow a generous
   // timeout and retry once — the first request wakes the server, the retry lands.
@@ -27,7 +48,7 @@ async function getBusinessBySlug(slug: string) {
     }
   }
   return null;
-}
+});
 
 export default async function StorefrontPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
