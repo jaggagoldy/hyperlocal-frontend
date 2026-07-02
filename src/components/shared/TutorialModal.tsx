@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchStore } from '@/store/searchStore';
+import { useAuthStore } from '@/store/authStore';
 
 const CITIES = [
   { slug: 'hisar', name: 'Hisar' },
@@ -23,16 +24,17 @@ export function TutorialModal() {
   const [step, setStep] = useState(1);
   const [selectedCity, setSelectedCity] = useState('hisar');
   const { setCity } = useSearchStore();
+  const { isAuthenticated, activeContext } = useAuthStore();
 
   useEffect(() => {
-    // Only greet BRAND-NEW signups (the register flow sets this flag), never
+    // Only greet BRAND-NEW signups (the register/login flow sets this flag), never
     // anonymous first-time visitors.
     const pending = localStorage.getItem('nbb_show_onboarding');
     if (pending && !localStorage.getItem('tutorial_seen')) {
       const t = setTimeout(() => setIsOpen(true), 1200);
       return () => clearTimeout(t);
     }
-  }, []);
+  }, [isAuthenticated, activeContext]);
 
   // Skip: close without starting the spotlight tour
   const handleSkip = () => {

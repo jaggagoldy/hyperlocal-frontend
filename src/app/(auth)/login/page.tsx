@@ -54,6 +54,9 @@ export function LoginForm() {
       });
       const { token, user } = response.data?.data || response.data;
       setAuth(token, user);
+      if (user?.role !== 'vendor' && user?.role !== 'admin' && !localStorage.getItem('tutorial_seen')) {
+        localStorage.setItem('nbb_show_onboarding', '1');
+      }
       toast.success('Successfully logged in!');
       if (redirect) {
         router.push(redirect);
