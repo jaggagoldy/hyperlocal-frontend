@@ -65,7 +65,7 @@ export default function InstallPWAButton() {
               <button onClick={() => setOpen(false)} aria-label="Close" className="p-1.5 rounded-full hover:bg-zinc-100 text-zinc-500"><X className="w-5 h-5" /></button>
             </div>
 
-            <div className="p-5 overflow-y-auto">
+            <div className="p-5 overflow-y-auto flex-1 min-h-0">
               {deferred && (
                 <button onClick={nativeInstall} className="w-full h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm flex items-center justify-center gap-2 mb-5 active:scale-[0.98] transition-all">
                   <Download className="w-4 h-4" /> Install now
