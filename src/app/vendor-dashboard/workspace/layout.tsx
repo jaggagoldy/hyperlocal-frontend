@@ -46,6 +46,9 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     }
     fetchBusinesses();
     fetchNewOrdersCount();
+    // Refresh the notification count periodically so the bell reflects new orders.
+    const poll = setInterval(fetchNewOrdersCount, 60000);
+    return () => clearInterval(poll);
   }, [_hasHydrated, activeBusinessId]);
 
   const fetchBusinesses = async () => {
@@ -281,8 +284,19 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
               <Megaphone className="w-3.5 h-3.5" />
               Announce
             </button>
-            <button className="p-2 rounded-lg hover:bg-zinc-800 transition-colors relative" style={{ color: '#6b7280' }}>
+            <button
+              onClick={() => router.push('/vendor-dashboard/workspace/management/orders')}
+              className="p-2 rounded-lg hover:bg-zinc-800 transition-colors relative"
+              style={{ color: newOrdersCount > 0 ? '#34d399' : '#6b7280' }}
+              aria-label={newOrdersCount > 0 ? `${newOrdersCount} new orders` : 'Notifications'}
+              title={newOrdersCount > 0 ? `${newOrdersCount} new order${newOrdersCount > 1 ? 's' : ''}` : 'No new orders'}
+            >
               <Bell className="w-4 h-4" />
+              {newOrdersCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center leading-none">
+                  {newOrdersCount > 9 ? '9+' : newOrdersCount}
+                </span>
+              )}
             </button>
           </div>
         </header>

@@ -15,6 +15,7 @@ import { useThemeStore } from "@/store/themeStore";
 import { useState, useRef, useEffect } from "react";
 import apiClient from "@/lib/api-client";
 import { toast } from "sonner";
+import InstallPWAButton from "@/components/shared/InstallPWAButton";
 
 const NAV_CATEGORIES = [
   { slug: 'food-beverage',        label: 'Food & Drinks',    emoji: '🍽️' },
@@ -195,6 +196,7 @@ export function Navbar() {
 
         {/* Right Actions */}
         <div className="flex items-center gap-2">
+          <InstallPWAButton />
           {/* What's New */}
           <Link
             href="/whats-new"

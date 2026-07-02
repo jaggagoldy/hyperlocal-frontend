@@ -127,6 +127,18 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
   const [editItem, setEditItem] = useState<any | null>(null);
   const [menuViewMode, setMenuViewMode] = useState<'list' | 'grid'>('list');
 
+  // The full storefront builder (3-column + live preview) needs a wide screen.
+  const [mounted, setMounted] = useState(false);
+  const [isNarrow, setIsNarrow] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    const check = () => setIsNarrow(window.innerWidth < 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  const [copiedLink, setCopiedLink] = useState(false);
+
   // Drag and Drop State
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
 
@@ -460,6 +472,35 @@ export default function WorkspaceBuilder({ onSuccess, initialData, mode = 'creat
   const handleBack = () => {
     if (prevTab) setActiveTabId(prevTab.id);
   };
+
+  // On phones the 3-column builder + live preview can't fit — guide the vendor to
+  // a computer instead of showing a broken layout.
+  if (mounted && isNarrow) {
+    const copyLink = () => {
+      navigator.clipboard?.writeText(window.location.href).then(() => {
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2000);
+      });
+    };
+    return (
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center px-7 text-center" style={{ background: '#020617', color: '#fff' }}>
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5" style={{ background: 'rgba(16,185,129,.12)', border: '1px solid rgba(16,185,129,.3)' }}>
+          <Palette className="w-7 h-7" style={{ color: '#34d399' }} />
+        </div>
+        <h1 className="text-xl font-black mb-2">Design your storefront on a computer</h1>
+        <p className="text-[13px] leading-relaxed mb-7 max-w-xs" style={{ color: '#94a3b8' }}>
+          The full app builder — logo, menu, theme and live preview — works best on a
+          bigger screen. Your business is already live; open this link on a laptop to customise it.
+        </p>
+        <button onClick={copyLink} className="w-full max-w-xs h-12 rounded-2xl font-black text-sm flex items-center justify-center gap-2 mb-3" style={{ background: 'linear-gradient(135deg,#059669,#10b981)', color: '#052e16' }}>
+          <Check className="w-4 h-4" /> {copiedLink ? 'Link copied!' : 'Copy link for desktop'}
+        </button>
+        <button onClick={() => (onExit ? onExit() : router.push('/vendor-dashboard/workspace'))} className="w-full max-w-xs h-11 rounded-2xl font-bold text-sm" style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: '#94a3b8' }}>
+          Back to dashboard
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex overflow-hidden" style={{ background: '#020617' }}>
