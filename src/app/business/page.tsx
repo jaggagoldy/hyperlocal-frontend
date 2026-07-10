@@ -7,9 +7,6 @@ import { useAuthStore } from '@/store/authStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { Store, MessageCircle, Check, Banknote, Smartphone, Monitor, LayoutDashboard, ChevronDown } from 'lucide-react';
 
-// TODO: replace with the real NearByBazar support/onboarding WhatsApp number.
-const SUPPORT_WA = '919812345678';
-
 const EM = '#10b981';
 
 export default function BusinessLandingPage() {
@@ -31,10 +28,6 @@ export default function BusinessLandingPage() {
   const primaryLabel = isVendor
     ? (hi ? 'बिज़नेस डैशबोर्ड खोलें' : 'Go to Business Dashboard')
     : (hi ? 'अपना व्यवसाय सूचीबद्ध करें — मुफ़्त' : 'List your business — free');
-
-  const waHref = `https://wa.me/${SUPPORT_WA}?text=${encodeURIComponent(
-    hi ? 'नमस्ते! मैं NearByBazar पर अपना व्यवसाय सूचीबद्ध करना चाहता/चाहती हूँ।' : "Hi! I'd like to list my business on NearByBazar."
-  )}`;
 
   const t = (en: string, h: string) => (hi ? h : en);
 
@@ -90,9 +83,9 @@ export default function BusinessLandingPage() {
             {isVendor ? <LayoutDashboard className="w-4 h-4" /> : <Store className="w-4 h-4" />}
             {primaryLabel}
           </Link>
-          <a href={waHref} target="_blank" rel="noopener noreferrer" className="mt-2.5 flex items-center justify-center gap-2 h-11 rounded-2xl font-bold text-sm" style={{ border: '1px solid rgba(255,255,255,.14)', color: '#cbd5e1', textDecoration: 'none' }}>
-            <MessageCircle className="w-4 h-4" /> {t('Talk to us on WhatsApp', 'WhatsApp पर बात करें')}
-          </a>
+          <Link href="/contact" className="mt-2.5 flex items-center justify-center gap-2 h-11 rounded-2xl font-bold text-sm" style={{ border: '1px solid rgba(255,255,255,.14)', color: '#cbd5e1', textDecoration: 'none' }}>
+            <MessageCircle className="w-4 h-4" /> {t('Talk to us', 'हमसे बात करें')}
+          </Link>
 
           <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs font-medium" style={{ color: '#94a3b8' }}>
             {[t('0% commission', '0% कमीशन'), t('WhatsApp leads', 'WhatsApp लीड'), t('Free forever', 'हमेशा मुफ़्त')].map(x => (
